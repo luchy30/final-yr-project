@@ -318,18 +318,20 @@ function App() {
               <h2>Material Balance: P/Z vs Cumulative Production</h2>
               <p className="chart-desc">Extrapolation of reservoir pressure decline against cumulative gas production to determine ultimate recovery.</p>
               <div className="chart-holder">
-                <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={results.pzCurve} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={results.pzCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
                     <XAxis
                       dataKey="gp"
                       stroke="#9ca3af"
                       tickLine={false}
-                      label={{ value: 'Cumulative Gas Gp (Bscf)', position: 'insideBottom', offset: -10, fill: '#6b7280' }}
+                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      label={{ value: 'Cumulative Gas Gp (Bscf)', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
                     />
                     <YAxis
                       stroke="#9ca3af"
                       tickLine={false}
-                      label={{ value: 'P/Z (psia)', angle: -90, position: 'insideLeft', fill: '#6b7280' }}
+                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      label={{ value: 'P/Z (psia)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
                     />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
@@ -356,24 +358,26 @@ function App() {
               <h2>Z-Factor vs Pressure: Empirical vs Machine Learning</h2>
               <p className="chart-desc">Comparison between conventional correlation and machine learning model trained on experimental PVT data.</p>
               <div className="chart-holder">
-                <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={results.zCurve} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={results.zCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
                     <XAxis
                       dataKey="pressure"
                       stroke="#9ca3af"
                       tickLine={false}
-                      label={{ value: 'Pressure (psia)', position: 'insideBottom', offset: -10, fill: '#6b7280' }}
+                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      label={{ value: 'Pressure (psia)', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
                     />
                     <YAxis
                       domain={['auto', 'auto']}
                       stroke="#9ca3af"
                       tickLine={false}
-                      label={{ value: 'Z-Factor', angle: -90, position: 'insideLeft', fill: '#6b7280' }}
+                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      label={{ value: 'Z-Factor', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
                     />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
                     />
-                    <Legend verticalAlign="top" height={36} />
+                    <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12, paddingBottom: 10 }} />
                     <Line
                       type="monotone"
                       dataKey="empirical"
@@ -404,18 +408,20 @@ function App() {
               <h2>Decline Curve Analysis: Forecasted Production</h2>
               <p className="chart-desc">Estimated gas production rate decline over 24 months based on initial deliverability.</p>
               <div className="chart-holder">
-                <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={results.dcaCurve} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={results.dcaCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
                     <XAxis
                       dataKey="month"
                       stroke="#9ca3af"
                       tickLine={false}
-                      label={{ value: 'Production Month', position: 'insideBottom', offset: -10, fill: '#6b7280' }}
+                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      label={{ value: 'Production Month', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
                     />
                     <YAxis
                       stroke="#9ca3af"
                       tickLine={false}
-                      label={{ value: 'Rate (Mscf/day)', angle: -90, position: 'insideLeft', fill: '#6b7280' }}
+                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      label={{ value: 'Rate (Mscf/day)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
                     />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
