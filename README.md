@@ -3,6 +3,7 @@
 A React + Vite project configured with:
 - **React 19**
 - **Vite**
+- **Tailwind CSS** (`tailwindcss`, `@tailwindcss/vite`)
 - **Hugeicons** (`@hugeicons/react`, `hugeicons-react`)
 - **Framer Motion** (`framer-motion`)
 - **GSAP** (`gsap`, `@gsap/react`)

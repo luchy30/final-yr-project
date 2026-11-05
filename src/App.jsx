@@ -29,6 +29,7 @@ function App() {
   const stack = [
     { name: 'React 19', tag: 'UI Library' },
     { name: 'Vite', tag: 'Fast Bundler' },
+    { name: 'Tailwind CSS', tag: 'Utility-first Styling' },
     { name: 'Hugeicons', tag: 'Icon System' },
     { name: 'Framer Motion', tag: 'Gestures & Motion' },
     { name: 'GSAP', tag: 'Timeline Animations' },
