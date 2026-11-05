@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import './App.css'
 
 function App() {
@@ -53,7 +54,12 @@ function App() {
 
   return (
     <main className="center-container">
-      <div className="content-wrap">
+      <motion.div
+        className="content-wrap"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+      >
         <header className="intro-block">
           <h1>Gas Reserves Estimation</h1>
           <p>Enter your reservoir parameters below to calculate gas in place and reserves.</p>
@@ -152,14 +158,23 @@ function App() {
           </div>
 
           <div className="button-group">
-            <button type="submit" className="submit-btn">
+            <motion.button
+              type="submit"
+              className="submit-btn"
+              whileTap={{ scale: 0.99 }}
+            >
               Calculate Reserves
-            </button>
+            </motion.button>
           </div>
         </form>
 
         {results && (
-          <section className="results-block">
+          <motion.section
+            className="results-block"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          >
             <h2>Calculated Results</h2>
 
             <div className="result-row">
@@ -186,9 +201,9 @@ function App() {
               <span className="result-name">3P Possible Reserves</span>
               <span className="result-val">{results.reserve3p} Bscf</span>
             </div>
-          </section>
+          </motion.section>
         )}
-      </div>
+      </motion.div>
     </main>
   )
 }
