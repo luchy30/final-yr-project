@@ -27,3 +27,4 @@ Follow these rules on every prompt and interaction.
 ## Communication and Language Rules
 1. Use day to day grammar.
 2. Keep responses simple, clean, and clear.
+
