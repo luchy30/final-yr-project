@@ -8,3 +8,4 @@ Key parameters needed:
 - Gas gravity (relative to air)
 - Gas composition (mole fractions of hydrocarbon and non-hydrocarbon components)
 - Experimental Z-factor values
+

@@ -74,3 +74,4 @@ def predict_z_factor(data: ZFactorInput):
         z_factor_predicted=0.88,
         method="Machine Learning Model"
     )
+
