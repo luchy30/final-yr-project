@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   ResponsiveContainer,
   LineChart,
@@ -121,302 +121,336 @@ function App() {
 
   return (
     <main className="center-container">
-      {currentView === 'form' ? (
-        <motion.div
-          key="form"
-          className="content-wrap form-width"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -16 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-        >
-          <header className="intro-block">
-            <h1>Gas Reserves Estimation</h1>
-            <p>Enter your reservoir parameters below to calculate gas in place and reserves.</p>
-          </header>
+      <AnimatePresence mode="wait">
+        {currentView === 'form' ? (
+          <motion.div
+            key="form-view"
+            className="content-wrap form-width"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          >
+            <header className="intro-block">
+              <h1>Gas Reserves Estimation</h1>
+              <p>Enter your reservoir parameters below to calculate gas in place and reserves.</p>
+            </header>
 
-          <form onSubmit={handleCalculate} className="form-stack">
-            <div className="field-group">
-              <label htmlFor="area">Reservoir Area (acres)</label>
-              <input
-                id="area"
-                type="number"
-                step="any"
-                value={area}
-                onChange={(e) => setArea(e.target.value)}
-                className="text-input"
-                required
-              />
-            </div>
+            <form onSubmit={handleCalculate} className="form-stack">
+              <div className="field-group">
+                <label htmlFor="area">Reservoir Area (acres)</label>
+                <input
+                  id="area"
+                  type="number"
+                  step="any"
+                  value={area}
+                  onChange={(e) => setArea(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
 
-            <div className="field-group">
-              <label htmlFor="thickness">Net Pay Thickness (feet)</label>
-              <input
-                id="thickness"
-                type="number"
-                step="any"
-                value={thickness}
-                onChange={(e) => setThickness(e.target.value)}
-                className="text-input"
-                required
-              />
-            </div>
+              <div className="field-group">
+                <label htmlFor="thickness">Net Pay Thickness (feet)</label>
+                <input
+                  id="thickness"
+                  type="number"
+                  step="any"
+                  value={thickness}
+                  onChange={(e) => setThickness(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
 
-            <div className="field-group">
-              <label htmlFor="porosity">Porosity (fraction)</label>
-              <input
-                id="porosity"
-                type="number"
-                step="any"
-                value={porosity}
-                onChange={(e) => setPorosity(e.target.value)}
-                className="text-input"
-                required
-              />
-            </div>
+              <div className="field-group">
+                <label htmlFor="porosity">Porosity (fraction)</label>
+                <input
+                  id="porosity"
+                  type="number"
+                  step="any"
+                  value={porosity}
+                  onChange={(e) => setPorosity(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
 
-            <div className="field-group">
-              <label htmlFor="waterSat">Water Saturation (fraction)</label>
-              <input
-                id="waterSat"
-                type="number"
-                step="any"
-                value={waterSat}
-                onChange={(e) => setWaterSat(e.target.value)}
-                className="text-input"
-                required
-              />
-            </div>
+              <div className="field-group">
+                <label htmlFor="waterSat">Water Saturation (fraction)</label>
+                <input
+                  id="waterSat"
+                  type="number"
+                  step="any"
+                  value={waterSat}
+                  onChange={(e) => setWaterSat(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
 
-            <div className="field-group">
-              <label htmlFor="pressure">Reservoir Pressure (psia)</label>
-              <input
-                id="pressure"
-                type="number"
-                step="any"
-                value={pressure}
-                onChange={(e) => setPressure(e.target.value)}
-                className="text-input"
-                required
-              />
-            </div>
+              <div className="field-group">
+                <label htmlFor="pressure">Reservoir Pressure (psia)</label>
+                <input
+                  id="pressure"
+                  type="number"
+                  step="any"
+                  value={pressure}
+                  onChange={(e) => setPressure(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
 
-            <div className="field-group">
-              <label htmlFor="temperature">Reservoir Temperature (Fahrenheit)</label>
-              <input
-                id="temperature"
-                type="number"
-                step="any"
-                value={temperature}
-                onChange={(e) => setTemperature(e.target.value)}
-                className="text-input"
-                required
-              />
-            </div>
+              <div className="field-group">
+                <label htmlFor="temperature">Reservoir Temperature (Fahrenheit)</label>
+                <input
+                  id="temperature"
+                  type="number"
+                  step="any"
+                  value={temperature}
+                  onChange={(e) => setTemperature(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
 
-            <div className="field-group">
-              <label htmlFor="gasGravity">Gas Specific Gravity (air = 1.0)</label>
-              <input
-                id="gasGravity"
-                type="number"
-                step="any"
-                value={gasGravity}
-                onChange={(e) => setGasGravity(e.target.value)}
-                className="text-input"
-                required
-              />
-            </div>
+              <div className="field-group">
+                <label htmlFor="gasGravity">Gas Specific Gravity (air = 1.0)</label>
+                <input
+                  id="gasGravity"
+                  type="number"
+                  step="any"
+                  value={gasGravity}
+                  onChange={(e) => setGasGravity(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
 
-            <div className="button-group">
+              <div className="button-group">
+                <motion.button
+                  type="submit"
+                  className="submit-btn"
+                  whileTap={{ scale: 0.99 }}
+                >
+                  Calculate Reserves
+                </motion.button>
+              </div>
+            </form>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="results-view"
+            className="content-wrap results-width"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          >
+            <motion.header
+              className="results-header"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.05 }}
+            >
               <motion.button
-                type="submit"
+                type="button"
+                onClick={handleBackToForm}
+                className="back-btn"
+                whileTap={{ scale: 0.98 }}
+              >
+                Back to Parameters
+              </motion.button>
+              <h1>Processed Reservoir Data</h1>
+              <p>Calculated gas initially in place, recovery classifications, and analytical curves.</p>
+            </motion.header>
+
+            <motion.section
+              className="section-block"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.1 }}
+            >
+              <h2>Reserves Summary</h2>
+              <div className="data-grid">
+                <div className="data-item">
+                  <span className="data-label">Gas Initially in Place (GIIP)</span>
+                  <span className="data-value">{results.giip} Bscf</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">1P Proved Reserves</span>
+                  <span className="data-value">{results.reserve1p} Bscf</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">2P Probable Reserves</span>
+                  <span className="data-value">{results.reserve2p} Bscf</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">3P Possible Reserves</span>
+                  <span className="data-value">{results.reserve3p} Bscf</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Predicted Z Factor</span>
+                  <span className="data-value">{results.zFactor}</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Initial P/Z</span>
+                  <span className="data-value">{results.pzInitial} psia</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Formation Volume Factor (Bgi)</span>
+                  <span className="data-value">{results.bgi} cu ft/scf</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Recommended Mechanism</span>
+                  <span className="data-value">{results.recommendedDrive}</span>
+                </div>
+              </div>
+            </motion.section>
+
+            <motion.section
+              className="section-block"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.18 }}
+            >
+              <h2>Material Balance: P/Z vs Cumulative Production</h2>
+              <p className="chart-desc">Extrapolation of reservoir pressure decline against cumulative gas production to determine ultimate recovery.</p>
+              <div className="chart-holder">
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={results.pzCurve} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                    <XAxis
+                      dataKey="gp"
+                      stroke="#9ca3af"
+                      tickLine={false}
+                      label={{ value: 'Cumulative Gas Gp (Bscf)', position: 'insideBottom', offset: -10, fill: '#6b7280' }}
+                    />
+                    <YAxis
+                      stroke="#9ca3af"
+                      tickLine={false}
+                      label={{ value: 'P/Z (psia)', angle: -90, position: 'insideLeft', fill: '#6b7280' }}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="pz"
+                      name="P/Z"
+                      stroke="#111827"
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: '#111827' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.section>
+
+            <motion.section
+              className="section-block"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.26 }}
+            >
+              <h2>Z-Factor vs Pressure: Empirical vs Machine Learning</h2>
+              <p className="chart-desc">Comparison between conventional correlation and machine learning model trained on experimental PVT data.</p>
+              <div className="chart-holder">
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={results.zCurve} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                    <XAxis
+                      dataKey="pressure"
+                      stroke="#9ca3af"
+                      tickLine={false}
+                      label={{ value: 'Pressure (psia)', position: 'insideBottom', offset: -10, fill: '#6b7280' }}
+                    />
+                    <YAxis
+                      domain={['auto', 'auto']}
+                      stroke="#9ca3af"
+                      tickLine={false}
+                      label={{ value: 'Z-Factor', angle: -90, position: 'insideLeft', fill: '#6b7280' }}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
+                    />
+                    <Legend verticalAlign="top" height={36} />
+                    <Line
+                      type="monotone"
+                      dataKey="empirical"
+                      name="Empirical Correlation"
+                      stroke="#9ca3af"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="machineLearning"
+                      name="Machine Learning Model"
+                      stroke="#111827"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.section>
+
+            <motion.section
+              className="section-block"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.34 }}
+            >
+              <h2>Decline Curve Analysis: Forecasted Production</h2>
+              <p className="chart-desc">Estimated gas production rate decline over 24 months based on initial deliverability.</p>
+              <div className="chart-holder">
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={results.dcaCurve} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                    <XAxis
+                      dataKey="month"
+                      stroke="#9ca3af"
+                      tickLine={false}
+                      label={{ value: 'Production Month', position: 'insideBottom', offset: -10, fill: '#6b7280' }}
+                    />
+                    <YAxis
+                      stroke="#9ca3af"
+                      tickLine={false}
+                      label={{ value: 'Rate (Mscf/day)', angle: -90, position: 'insideLeft', fill: '#6b7280' }}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="rate"
+                      name="Gas Production Rate"
+                      stroke="#111827"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.section>
+
+            <motion.div
+              className="bottom-action"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
+            >
+              <motion.button
+                type="button"
+                onClick={handleBackToForm}
                 className="submit-btn"
                 whileTap={{ scale: 0.99 }}
               >
-                Calculate Reserves
+                Modify Reservoir Parameters
               </motion.button>
-            </div>
-          </form>
-        </motion.div>
-      ) : (
-        <motion.div
-          key="results"
-          className="content-wrap results-width"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -16 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-        >
-          <header className="results-header">
-            <button
-              type="button"
-              onClick={handleBackToForm}
-              className="back-btn"
-            >
-              Back to Parameters
-            </button>
-            <h1>Processed Reservoir Data</h1>
-            <p>Calculated gas initially in place, recovery classifications, and analytical curves.</p>
-          </header>
-
-          <section className="section-block">
-            <h2>Reserves Summary</h2>
-            <div className="data-grid">
-              <div className="data-item">
-                <span className="data-label">Gas Initially in Place (GIIP)</span>
-                <span className="data-value">{results.giip} Bscf</span>
-              </div>
-              <div className="data-item">
-                <span className="data-label">1P Proved Reserves</span>
-                <span className="data-value">{results.reserve1p} Bscf</span>
-              </div>
-              <div className="data-item">
-                <span className="data-label">2P Probable Reserves</span>
-                <span className="data-value">{results.reserve2p} Bscf</span>
-              </div>
-              <div className="data-item">
-                <span className="data-label">3P Possible Reserves</span>
-                <span className="data-value">{results.reserve3p} Bscf</span>
-              </div>
-              <div className="data-item">
-                <span className="data-label">Predicted Z Factor</span>
-                <span className="data-value">{results.zFactor}</span>
-              </div>
-              <div className="data-item">
-                <span className="data-label">Initial P/Z</span>
-                <span className="data-value">{results.pzInitial} psia</span>
-              </div>
-              <div className="data-item">
-                <span className="data-label">Formation Volume Factor (Bgi)</span>
-                <span className="data-value">{results.bgi} cu ft/scf</span>
-              </div>
-              <div className="data-item">
-                <span className="data-label">Recommended Mechanism</span>
-                <span className="data-value">{results.recommendedDrive}</span>
-              </div>
-            </div>
-          </section>
-
-          <section className="section-block">
-            <h2>Material Balance: P/Z vs Cumulative Production</h2>
-            <p className="chart-desc">Extrapolation of reservoir pressure decline against cumulative gas production to determine ultimate recovery.</p>
-            <div className="chart-holder">
-              <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={results.pzCurve} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                  <XAxis
-                    dataKey="gp"
-                    stroke="#9ca3af"
-                    tickLine={false}
-                    label={{ value: 'Cumulative Gas Gp (Bscf)', position: 'insideBottom', offset: -10, fill: '#6b7280' }}
-                  />
-                  <YAxis
-                    stroke="#9ca3af"
-                    tickLine={false}
-                    label={{ value: 'P/Z (psia)', angle: -90, position: 'insideLeft', fill: '#6b7280' }}
-                  />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="pz"
-                    name="P/Z"
-                    stroke="#111827"
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: '#111827' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </section>
-
-          <section className="section-block">
-            <h2>Z-Factor vs Pressure: Empirical vs Machine Learning</h2>
-            <p className="chart-desc">Comparison between conventional correlation and machine learning model trained on experimental PVT data.</p>
-            <div className="chart-holder">
-              <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={results.zCurve} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                  <XAxis
-                    dataKey="pressure"
-                    stroke="#9ca3af"
-                    tickLine={false}
-                    label={{ value: 'Pressure (psia)', position: 'insideBottom', offset: -10, fill: '#6b7280' }}
-                  />
-                  <YAxis
-                    domain={['auto', 'auto']}
-                    stroke="#9ca3af"
-                    tickLine={false}
-                    label={{ value: 'Z-Factor', angle: -90, position: 'insideLeft', fill: '#6b7280' }}
-                  />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
-                  />
-                  <Legend verticalAlign="top" height={36} />
-                  <Line
-                    type="monotone"
-                    dataKey="empirical"
-                    name="Empirical Correlation"
-                    stroke="#9ca3af"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="machineLearning"
-                    name="Machine Learning Model"
-                    stroke="#111827"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </section>
-
-          <section className="section-block">
-            <h2>Decline Curve Analysis: Forecasted Production</h2>
-            <p className="chart-desc">Estimated gas production rate decline over 24 months based on initial deliverability.</p>
-            <div className="chart-holder">
-              <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={results.dcaCurve} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                  <XAxis
-                    dataKey="month"
-                    stroke="#9ca3af"
-                    tickLine={false}
-                    label={{ value: 'Production Month', position: 'insideBottom', offset: -10, fill: '#6b7280' }}
-                  />
-                  <YAxis
-                    stroke="#9ca3af"
-                    tickLine={false}
-                    label={{ value: 'Rate (Mscf/day)', angle: -90, position: 'insideLeft', fill: '#6b7280' }}
-                  />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="rate"
-                    name="Gas Production Rate"
-                    stroke="#111827"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </section>
-
-          <div className="bottom-action">
-            <button
-              type="button"
-              onClick={handleBackToForm}
-              className="submit-btn"
-            >
-              Modify Reservoir Parameters
-            </button>
-          </div>
-        </motion.div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   )
 }
