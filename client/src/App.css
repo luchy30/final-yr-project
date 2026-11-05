@@ -3,13 +3,28 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 6rem 1.5rem;
+  padding: 0;
+  background-color: #ffffff;
 }
 
 .content-wrap {
   width: 100%;
-  max-width: 480px;
+  max-width: 620px;
+  min-height: 100vh;
   margin: 0 auto;
+  border-left: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+  padding: 6rem 3.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .content-wrap {
+    padding: 4rem 1.5rem;
+  }
 }
 
 .intro-block {
