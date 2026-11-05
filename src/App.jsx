@@ -30,6 +30,8 @@ function App() {
     { name: 'React 19', tag: 'UI Library' },
     { name: 'Vite', tag: 'Fast Bundler' },
     { name: 'Tailwind CSS', tag: 'Utility-first Styling' },
+    { name: 'TanStack Query', tag: 'Data Fetching & Caching' },
+    { name: 'TanStack / React Router', tag: 'Declarative Routing' },
     { name: 'Hugeicons', tag: 'Icon System' },
     { name: 'Framer Motion', tag: 'Gestures & Motion' },
     { name: 'GSAP', tag: 'Timeline Animations' },

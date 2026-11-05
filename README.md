@@ -4,6 +4,9 @@ A React + Vite project configured with:
 - **React 19**
 - **Vite**
 - **Tailwind CSS** (`tailwindcss`, `@tailwindcss/vite`)
+- **TanStack Query** (`@tanstack/react-query`)
+- **TanStack Router** (`@tanstack/react-router`)
+- **React Router** (`react-router-dom`)
 - **Hugeicons** (`@hugeicons/react`, `hugeicons-react`)
 - **Framer Motion** (`framer-motion`)
 - **GSAP** (`gsap`, `@gsap/react`)
