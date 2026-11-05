@@ -1,34 +1,61 @@
 # final-yr-project
 
-A React + Vite project configured with:
-- **React 19**
-- **Vite**
-- **Tailwind CSS** (`tailwindcss`, `@tailwindcss/vite`)
-- **TanStack Query** (`@tanstack/react-query`)
-- **TanStack Router** (`@tanstack/react-router`)
-- **React Router** (`react-router-dom`)
-- **Hugeicons** (`@hugeicons/react`, `hugeicons-react`)
-- **Framer Motion** (`framer-motion`)
-- **GSAP** (`gsap`, `@gsap/react`)
+Software for Estimating Gas Reserves using conventional reservoir engineering methods and machine learning Z-factor prediction.
 
-## Getting Started
+## Repository Structure
 
-### Install Dependencies
-```bash
-npm install
+```text
+final-yr-project/
+  client/               React, Vite, Tailwind CSS, TanStack, Recharts, Chart.js
+  server/               Python FastAPI backend for calculations and ML inference
+  ml/                   Data preparation, notebooks, and trained models
+  README.md
 ```
 
-### Run Development Server
+## Quick Start
+
+### 1. Frontend Setup (Client)
+
+Run the web application directly from the root:
 ```bash
 npm run dev
 ```
 
-### Build for Production
+Or navigate to the client folder:
+```bash
+cd client
+npm run dev
+```
+
+Build for production:
 ```bash
 npm run build
 ```
 
-### Preview Production Build
+### 2. Backend Setup (Server)
+
+1. Navigate to the server folder:
 ```bash
-npm run preview
+cd server
 ```
+
+2. Create and activate a Python virtual environment:
+```bash
+python -m venv venv
+.\venv\Scripts\activate
+```
+
+3. Install requirements and run the API:
+```bash
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+Interactive API documentation will be available at http://127.0.0.1:8000/docs.
+
+### 3. Machine Learning (ML)
+
+The `ml/` directory contains:
+- `data/`: Published PVT datasets.
+- `notebooks/`: Data exploration and model training notebooks.
+- `models/`: Saved model files for deployment.
