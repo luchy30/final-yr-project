@@ -9,136 +9,217 @@ import {
   Tooltip,
   Legend,
 } from 'recharts'
+import {
+  classifyReservoirFluid,
+  calcPseudoReduced,
+  calcBrillBeggsZ,
+  calcHallYarboroughZ,
+  calcDranchukAbouKassemZ,
+  calcBg,
+  calcWetGasProperties,
+} from './utils/fluidProperties'
+import { calcVolumetricReserves } from './utils/volumetric'
+import {
+  calcAquiferProperties,
+  calcMaterialBalanceAndDriveIndices,
+} from './utils/materialBalance'
+import { calcArpsDecline } from './utils/declineCurve'
+import {
+  calcPRMSReserves,
+  recommendMethodAndMechanism,
+} from './utils/reservesAndRecommendation'
 import './App.css'
 
 function App() {
+  // Reservoir & Petrophysical Inputs
   const [area, setArea] = useState('640')
   const [thickness, setThickness] = useState('45')
   const [porosity, setPorosity] = useState('0.18')
   const [waterSat, setWaterSat] = useState('0.25')
+  const [residualGasSat, setResidualGasSat] = useState('0.25')
+
+  // Fluid & Pressure Inputs
   const [pressure, setPressure] = useState('3200')
+  const [abandonmentPressure, setAbandonmentPressure] = useState('500')
   const [temperature, setTemperature] = useState('180')
   const [gasGravity, setGasGravity] = useState('0.65')
+  const [gor, setGor] = useState('120000')
+  const [apiGravity, setApiGravity] = useState('55')
+  const [zMethod, setZMethod] = useState('hall_yarborough')
+
+  // Drive Mechanism, Aquifer & Decline Inputs
+  const [driveMechanism, setDriveMechanism] = useState('volumetric')
+  const [aquiferModel, setAquiferModel] = useState('fetkovich')
+  const [fieldStage, setFieldStage] = useState('producing')
+  const [initialRate, setInitialRate] = useState('12000')
+  const [declineRate, setDeclineRate] = useState('0.025')
+  const [arpsB, setArpsB] = useState('0.5')
+  const [economicLimit, setEconomicLimit] = useState('500')
 
   const [currentView, setCurrentView] = useState('form')
   const [results, setResults] = useState(null)
 
+  const computeZByMethod = (pPsia, tempF, gg, selectedMethod) => {
+    const { ppr, tpr } = calcPseudoReduced(pPsia, tempF, gg, 'chapter3')
+    if (selectedMethod === 'brill_beggs') {
+      return calcBrillBeggsZ(ppr, tpr)
+    }
+    if (selectedMethod === 'dak') {
+      return calcDranchukAbouKassemZ(ppr, tpr)
+    }
+    return calcHallYarboroughZ(ppr, tpr)
+  }
+
   const handleCalculate = (e) => {
     e.preventDefault()
 
-    const a = parseFloat(area) ? parseFloat(area) : 0
-    const h = parseFloat(thickness) ? parseFloat(thickness) : 0
-    const phi = parseFloat(porosity) ? parseFloat(porosity) : 0
-    const sw = parseFloat(waterSat) ? parseFloat(waterSat) : 0
-    const p = parseFloat(pressure) ? parseFloat(pressure) : 0
-    const tempF = parseFloat(temperature) ? parseFloat(temperature) : 0
-    const gg = parseFloat(gasGravity) ? parseFloat(gasGravity) : 0
+    const a = parseFloat(area) ? parseFloat(area) : 640
+    const h = parseFloat(thickness) ? parseFloat(thickness) : 45
+    const phi = parseFloat(porosity) ? parseFloat(porosity) : 0.18
+    const swi = parseFloat(waterSat) ? parseFloat(waterSat) : 0.25
+    const sgr = parseFloat(residualGasSat) ? parseFloat(residualGasSat) : 0.25
+    const pi = parseFloat(pressure) ? parseFloat(pressure) : 3200
+    const pa = parseFloat(abandonmentPressure) ? parseFloat(abandonmentPressure) : 500
+    const tempF = parseFloat(temperature) ? parseFloat(temperature) : 180
+    const gg = parseFloat(gasGravity) ? parseFloat(gasGravity) : 0.65
+    const gorVal = parseFloat(gor) ? parseFloat(gor) : 120000
+    const apiVal = parseFloat(apiGravity) ? parseFloat(apiGravity) : 55
 
-    const tempR = tempF + 459.67
+    // 1. Fluid classification (Section 3.1)
+    const classification = classifyReservoirFluid({
+      gorScfStb: gorVal,
+      apiGravity: apiVal,
+      reservoirTempF: tempF,
+      dewPointPsia: 0,
+      initialPressurePsia: pi,
+    })
 
-    // Sutton pseudo-critical properties
-    const ppc = 756.8 - 131.0 * gg - 3.6 * gg * gg
-    const tpc = 169.2 + 349.5 * gg - 74.0 * gg * gg
+    // 2. Pseudo-critical & Z-factor calculations at Pi and Pa (Section 3.2)
+    const initialReduced = calcPseudoReduced(pi, tempF, gg, 'chapter3')
+    const zBrillBeggsInitial = calcBrillBeggsZ(initialReduced.ppr, initialReduced.tpr)
+    const zHallYarboroughInitial = calcHallYarboroughZ(initialReduced.ppr, initialReduced.tpr)
+    const zDakInitial = calcDranchukAbouKassemZ(initialReduced.ppr, initialReduced.tpr)
 
-    const tpr = tpc > 0 ? tempR / tpc : 1
+    const zi = computeZByMethod(pi, tempF, gg, zMethod)
+    const za = computeZByMethod(pa, tempF, gg, zMethod)
 
-    // Papay explicit Z-factor correlation
-    const calcPapayZ = (currP) => {
-      const currPpr = ppc > 0 ? currP / ppc : 1
-      const zVal =
-        1 -
-        (3.52 * currPpr) / Math.pow(10, 0.9813 * tpr) +
-        (0.274 * currPpr * currPpr) / Math.pow(10, 0.8157 * tpr)
-      return Math.max(0.5, zVal)
-    }
+    const { bgCuftScf: bgiCuft, bgRbScf: bgiRb } = calcBg({
+      pressurePsia: pi,
+      tempR: initialReduced.tempR,
+      zFactor: zi,
+    })
+    const { bgCuftScf: bgaCuft } = calcBg({
+      pressurePsia: pa,
+      tempR: initialReduced.tempR,
+      zFactor: za,
+    })
 
-    // Hall-Yarborough iterative Z-factor correlation
-    const calcHallYarboroughZ = (currP) => {
-      const currPpr = ppc > 0 ? currP / ppc : 1
-      const t = tpr > 0 ? 1 / tpr : 1
-      const X1 = -0.06125 * currPpr * t * Math.exp(-1.2 * Math.pow(1 - t, 2))
-      const X2 = 14.76 * t - 9.76 * t * t + 4.58 * t * t * t
-      const X3 = 90.7 * t - 242.2 * t * t + 42.4 * t * t * t
-      const X4 = 2.18 + 2.82 * t
+    // 3. Volumetric Reserves (Section 3.4)
+    const volRes = calcVolumetricReserves({
+      areaAcres: a,
+      netPayFeet: h,
+      porosity: phi,
+      initialWaterSat: swi,
+      residualGasSat: sgr,
+      initialPressurePsia: pi,
+      initialZ: zi,
+      bgiCuftScf: bgiCuft,
+      abandonmentPressurePsia: pa,
+      abandonmentZ: za,
+      bgaCuftScf: bgaCuft,
+      cumulativeGasProducedBscf: 0,
+      driveMechanism,
+    })
 
-      let y = 0.0125 * currPpr * t * Math.exp(-1.2 * Math.pow(1 - t, 2))
-      for (let iter = 0; iter < 25; iter++) {
-        const oneMinusY = 1 - y
-        const fy =
-          X1 +
-          (y + y * y + y * y * y - Math.pow(y, 4)) / Math.pow(oneMinusY, 3) -
-          X2 * y * y +
-          X3 * Math.pow(y, X4)
-        const dfy =
-          (1 + 4 * y + 4 * y * y - 4 * y * y * y + Math.pow(y, 4)) /
-            Math.pow(oneMinusY, 4) -
-          2 * X2 * y +
-          X3 * X4 * Math.pow(y, X4 - 1)
-        if (Math.abs(dfy) < 1e-12) break
-        const nextY = y - fy / dfy
-        if (Math.abs(nextY - y) < 1e-7) {
-          y = nextY
-          break
-        }
-        y = Math.max(1e-6, Math.min(0.95, nextY))
-      }
-      const zVal = y > 0 ? -X1 / y : 1
-      return Math.max(0.5, zVal)
-    }
+    // 4. Wet Gas & Condensate Equivalent Properties (Section 3.3)
+    const wetProps = calcWetGasProperties({
+      gorScfStb: gorVal,
+      apiGravity: apiVal,
+      surfaceGasGravity: gg,
+      wellStreamGasInPlaceScf: volRes.giipScf,
+    })
 
-    const z = calcHallYarboroughZ(p)
-    const bgi = p > 0 ? (0.02827 * z * tempR) / p : 0.005
+    // 5. Water Influx & Material Balance (Sections 3.5, 3.6, 3.7)
+    const reFt = Math.sqrt((a * 43560) / Math.PI)
+    const aquiferProps = calcAquiferProperties({
+      reservoirRadiusFt: reFt,
+      aquiferRadiusFt: reFt * 5,
+      netPayFeet: h,
+      porosity: phi,
+      initialPressurePsia: pi,
+    })
 
-    // GIIP in Billion Standard Cubic Feet (Bscf)
-    const giipScf = bgi > 0 ? (43560 * a * h * phi * (1 - sw)) / bgi : 0
-    const giipBscf = giipScf / 1e9
+    const mbeRes = calcMaterialBalanceAndDriveIndices({
+      giipScf: volRes.giipScf,
+      initialPressurePsia: pi,
+      abandonmentPressurePsia: pa,
+      tempF,
+      gasGravity: gg,
+      initialWaterSat: swi,
+      aquiferModel,
+      driveMechanism,
+      calcZFunc: (pVal) => computeZByMethod(pVal, tempF, gg, zMethod),
+      calcBgFunc: (pVal, zVal) =>
+        calcBg({ pressurePsia: pVal, tempR: initialReduced.tempR, zFactor: zVal }),
+      aquiferProps,
+    })
 
-    // Material Balance P/Z curve data
-    const pOverZInitial = z > 0 ? p / z : 0
-    const pzCurve = []
-    const steps = 6
-    for (let i = 0; i <= steps; i++) {
-      const frac = i / steps
-      const gp = Number((giipBscf * frac).toFixed(2))
-      const pzVal = Number((pOverZInitial * (1 - frac)).toFixed(1))
-      pzCurve.push({ gp, pz: pzVal })
-    }
-
-    // Z-factor vs Pressure curve data (Hall-Yarborough vs Papay)
+    // 6. Z-Factor vs Pressure Curve across all 3 correlations
     const zCurve = []
-    const maxP = Math.max(p, 4500)
+    const maxP = Math.max(pi, 4500)
     for (let testP = 500; testP <= maxP; testP += 500) {
-      const hyZ = calcHallYarboroughZ(testP)
-      const papayZ = calcPapayZ(testP)
+      const red = calcPseudoReduced(testP, tempF, gg, 'chapter3')
       zCurve.push({
         pressure: testP,
-        hallYarborough: Number(hyZ.toFixed(4)),
-        papay: Number(papayZ.toFixed(4)),
+        brillBeggs: Number(calcBrillBeggsZ(red.ppr, red.tpr).toFixed(4)),
+        hallYarborough: Number(calcHallYarboroughZ(red.ppr, red.tpr).toFixed(4)),
+        dak: Number(calcDranchukAbouKassemZ(red.ppr, red.tpr).toFixed(4)),
       })
     }
 
-    // Decline curve analysis data (monthly forecast)
-    const dcaCurve = []
-    const initialRate = Math.max(500, Math.round(giipBscf * 180))
-    const monthlyDecline = 0.02
-    for (let month = 1; month <= 24; month++) {
-      const rate = Math.round(initialRate * Math.exp(-monthlyDecline * month))
-      dcaCurve.push({ month, rate })
-    }
+    // 7. Arps Decline Curve Analysis (Section 3.8)
+    const dcaRes = calcArpsDecline({
+      initialRateMscfDay: initialRate,
+      nominalDeclinePerMonth: declineRate,
+      hyperbolicExponentB: arpsB,
+      economicLimitMscfDay: economicLimit,
+      forecastMonths: 36,
+    })
+
+    // 8. PRMS 1P, 2P, 3P Monte Carlo & Method Recommendation (Sections 3.6 & 3.7)
+    const prmsRes = calcPRMSReserves({
+      areaAcres: a,
+      netPayFeet: h,
+      porosity: phi,
+      initialWaterSat: swi,
+      bgiCuftScf: bgiCuft,
+      activeRf: volRes.activeRf,
+    })
+
+    const recommendation = recommendMethodAndMechanism({
+      fluidType: classification.fluidType,
+      driveMechanism,
+      fieldStage,
+    })
 
     setResults({
-      inputs: { area: a, thickness: h, porosity: phi, waterSat: sw, pressure: p, temperature: tempF, gasGravity: gg },
-      zFactor: z.toFixed(4),
-      bgi: bgi.toFixed(5),
-      giip: giipBscf.toFixed(2),
-      reserve1p: (giipBscf * 0.65).toFixed(2),
-      reserve2p: (giipBscf * 0.75).toFixed(2),
-      reserve3p: (giipBscf * 0.85).toFixed(2),
-      pzInitial: Math.round(pOverZInitial),
-      pzCurve,
+      classification,
+      initialReduced,
+      zBrillBeggsInitial: zBrillBeggsInitial.toFixed(4),
+      zHallYarboroughInitial: zHallYarboroughInitial.toFixed(4),
+      zDakInitial: zDakInitial.toFixed(4),
+      zi: zi.toFixed(4),
+      za: za.toFixed(4),
+      bgiCuft: bgiCuft.toFixed(5),
+      bgiRb: bgiRb.toFixed(6),
+      bgaCuft: bgaCuft.toFixed(5),
+      volRes,
+      wetProps,
+      mbeRes,
       zCurve,
-      dcaCurve,
-      recommendedDrive: 'Volumetric Depletion Drive',
+      dcaRes,
+      prmsRes,
+      recommendation,
     })
 
     setCurrentView('results')
@@ -164,12 +245,16 @@ function App() {
           >
             <header className="intro-block">
               <h1>Gas Reserves Estimation</h1>
-              <p>Enter your reservoir parameters below to predict the Z-factor and calculate gas reserves.</p>
+              <p>
+                Enter reservoir, fluid, aquifer, and decline parameters to run the Chapter Three estimation models.
+              </p>
             </header>
 
             <form onSubmit={handleCalculate} className="form-stack">
+              <h2 className="form-section-title">Reservoir Rock and Geometry</h2>
+
               <div className="field-group">
-                <label htmlFor="area">Reservoir Area (acres)</label>
+                <label htmlFor="area">Drainage Area A (acres)</label>
                 <input
                   id="area"
                   type="number"
@@ -182,7 +267,7 @@ function App() {
               </div>
 
               <div className="field-group">
-                <label htmlFor="thickness">Net Pay Thickness (feet)</label>
+                <label htmlFor="thickness">Net Pay Thickness h (feet)</label>
                 <input
                   id="thickness"
                   type="number"
@@ -195,7 +280,7 @@ function App() {
               </div>
 
               <div className="field-group">
-                <label htmlFor="porosity">Porosity (fraction)</label>
+                <label htmlFor="porosity">Porosity phi (fraction)</label>
                 <input
                   id="porosity"
                   type="number"
@@ -208,7 +293,7 @@ function App() {
               </div>
 
               <div className="field-group">
-                <label htmlFor="waterSat">Water Saturation (fraction)</label>
+                <label htmlFor="waterSat">Initial Water Saturation Swi (fraction)</label>
                 <input
                   id="waterSat"
                   type="number"
@@ -221,7 +306,22 @@ function App() {
               </div>
 
               <div className="field-group">
-                <label htmlFor="pressure">Reservoir Pressure (psia)</label>
+                <label htmlFor="residualGasSat">Residual Gas Saturation Sgr (fraction)</label>
+                <input
+                  id="residualGasSat"
+                  type="number"
+                  step="any"
+                  value={residualGasSat}
+                  onChange={(e) => setResidualGasSat(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
+
+              <h2 className="form-section-title">Fluid PVT and Z-Factor Correlation</h2>
+
+              <div className="field-group">
+                <label htmlFor="pressure">Initial Reservoir Pressure pi (psia)</label>
                 <input
                   id="pressure"
                   type="number"
@@ -234,7 +334,20 @@ function App() {
               </div>
 
               <div className="field-group">
-                <label htmlFor="temperature">Reservoir Temperature (Fahrenheit)</label>
+                <label htmlFor="abandonmentPressure">Abandonment Pressure pa (psia)</label>
+                <input
+                  id="abandonmentPressure"
+                  type="number"
+                  step="any"
+                  value={abandonmentPressure}
+                  onChange={(e) => setAbandonmentPressure(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="temperature">Reservoir Temperature T (Fahrenheit)</label>
                 <input
                   id="temperature"
                   type="number"
@@ -259,13 +372,150 @@ function App() {
                 />
               </div>
 
+              <div className="field-group">
+                <label htmlFor="gor">Initial Producing GOR (scf/STB)</label>
+                <input
+                  id="gor"
+                  type="number"
+                  step="any"
+                  value={gor}
+                  onChange={(e) => setGor(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="apiGravity">Condensate Gravity (API)</label>
+                <input
+                  id="apiGravity"
+                  type="number"
+                  step="any"
+                  value={apiGravity}
+                  onChange={(e) => setApiGravity(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="zMethod">Primary Z-Factor Correlation</label>
+                <select
+                  id="zMethod"
+                  value={zMethod}
+                  onChange={(e) => setZMethod(e.target.value)}
+                  className="text-input"
+                >
+                  <option value="hall_yarborough">Hall and Yarborough (Iterative EOS)</option>
+                  <option value="brill_beggs">Brill and Beggs (Explicit)</option>
+                  <option value="dak">Dranchuk and Abou-Kassem (11-Constant EOS)</option>
+                </select>
+              </div>
+
+              <h2 className="form-section-title">Drive Mechanism, Aquifer, and Decline</h2>
+
+              <div className="field-group">
+                <label htmlFor="driveMechanism">Reservoir Drive Mechanism</label>
+                <select
+                  id="driveMechanism"
+                  value={driveMechanism}
+                  onChange={(e) => setDriveMechanism(e.target.value)}
+                  className="text-input"
+                >
+                  <option value="volumetric">Volumetric Depletion Drive (No Water Influx)</option>
+                  <option value="water_drive">Active Water Drive (Aquifer Encroachment)</option>
+                </select>
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="aquiferModel">Aquifer Water Influx Model</label>
+                <select
+                  id="aquiferModel"
+                  value={aquiferModel}
+                  onChange={(e) => setAquiferModel(e.target.value)}
+                  className="text-input"
+                >
+                  <option value="fetkovich">Fetkovich Finite Aquifer</option>
+                  <option value="schilthuis">Schilthuis Steady-State</option>
+                  <option value="veh">van Everdingen and Hurst Unsteady-State</option>
+                  <option value="carter_tracy">Carter and Tracy Recursion</option>
+                  <option value="pot">Pot Aquifer</option>
+                </select>
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="fieldStage">Field Maturity Stage</label>
+                <select
+                  id="fieldStage"
+                  value={fieldStage}
+                  onChange={(e) => setFieldStage(e.target.value)}
+                  className="text-input"
+                >
+                  <option value="early">Early Appraisal (Static Data Only)</option>
+                  <option value="producing">Active Depletion (Pressure and Production History)</option>
+                  <option value="mature">Late Field Life (Decline Curve Trend)</option>
+                </select>
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="initialRate">Initial Gas Rate qi (Mscf/day)</label>
+                <input
+                  id="initialRate"
+                  type="number"
+                  step="any"
+                  value={initialRate}
+                  onChange={(e) => setInitialRate(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="declineRate">Initial Nominal Decline Rate Di (1/month)</label>
+                <input
+                  id="declineRate"
+                  type="number"
+                  step="any"
+                  value={declineRate}
+                  onChange={(e) => setDeclineRate(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="arpsB">Arps Hyperbolic Exponent b (0 to 1)</label>
+                <input
+                  id="arpsB"
+                  type="number"
+                  step="any"
+                  value={arpsB}
+                  onChange={(e) => setArpsB(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="economicLimit">Economic Limit Rate qa (Mscf/day)</label>
+                <input
+                  id="economicLimit"
+                  type="number"
+                  step="any"
+                  value={economicLimit}
+                  onChange={(e) => setEconomicLimit(e.target.value)}
+                  className="text-input"
+                  required
+                />
+              </div>
+
               <div className="button-group">
                 <motion.button
                   type="submit"
                   className="submit-btn"
                   whileTap={{ scale: 0.99 }}
                 >
-                  Calculate Reserves
+                  Run Reserves Estimation
                 </motion.button>
               </div>
             </form>
@@ -293,49 +543,85 @@ function App() {
               >
                 Back to Parameters
               </motion.button>
-              <h1>Processed Reservoir Data</h1>
-              <p>Calculated Z-factor, gas initially in place, recovery classifications, and analytical curves.</p>
+              <h1>Processed Reservoir Evaluation</h1>
+              <p>Complete fluid characterization, Z-factor correlations, volumetric, material balance, aquifer influx, and decline curve outputs.</p>
             </motion.header>
 
             <motion.section
               className="section-block"
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.1 }}
+              transition={{ duration: 0.45, delay: 0.08 }}
             >
-              <h2>Reserves Summary</h2>
+              <h2>Fluid Classification and Method Recommendation</h2>
               <div className="data-grid">
                 <div className="data-item">
-                  <span className="data-label">Gas Initially in Place (GIIP)</span>
-                  <span className="data-value">{results.giip} Bscf</span>
+                  <span className="data-label">Reservoir Fluid Type</span>
+                  <span className="data-value">{results.classification.fluidType}</span>
                 </div>
                 <div className="data-item">
-                  <span className="data-label">1P Proved Reserves</span>
-                  <span className="data-value">{results.reserve1p} Bscf</span>
+                  <span className="data-label">Assigned Reservoir Class</span>
+                  <span className="data-value">{results.recommendation.reservoirClass}</span>
                 </div>
                 <div className="data-item">
-                  <span className="data-label">2P Probable Reserves</span>
-                  <span className="data-value">{results.reserve2p} Bscf</span>
+                  <span className="data-label">Recommended Method</span>
+                  <span className="data-value">{results.recommendation.recommendedMethod}</span>
                 </div>
                 <div className="data-item">
-                  <span className="data-label">3P Possible Reserves</span>
-                  <span className="data-value">{results.reserve3p} Bscf</span>
+                  <span className="data-label">Gas Equivalent of Condensate (GE)</span>
+                  <span className="data-value">{results.wetProps.gasEquivalentGE.toFixed(0)} scf/STB</span>
                 </div>
                 <div className="data-item">
-                  <span className="data-label">Predicted Z Factor</span>
-                  <span className="data-value">{results.zFactor}</span>
+                  <span className="data-label">Well-Stream Specific Gravity</span>
+                  <span className="data-value">{results.wetProps.wellStreamGravity.toFixed(4)}</span>
                 </div>
                 <div className="data-item">
-                  <span className="data-label">Initial P/Z</span>
-                  <span className="data-value">{results.pzInitial} psia</span>
+                  <span className="data-label">Initial Condensate in Place (Nc)</span>
+                  <span className="data-value">{(results.wetProps.initialCondensateInPlaceStb / 1e6).toFixed(2)} MMSTB</span>
+                </div>
+              </div>
+              <p className="diagnostic-note">{results.recommendation.evidence}</p>
+            </motion.section>
+
+            <motion.section
+              className="section-block"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.12 }}
+            >
+              <h2>Gas Properties and Z-Factor Correlations at Initial Conditions</h2>
+              <div className="data-grid">
+                <div className="data-item">
+                  <span className="data-label">Pseudo-Reduced Pressure (Ppr)</span>
+                  <span className="data-value">{results.initialReduced.ppr.toFixed(3)}</span>
                 </div>
                 <div className="data-item">
-                  <span className="data-label">Formation Volume Factor (Bgi)</span>
-                  <span className="data-value">{results.bgi} cu ft/scf</span>
+                  <span className="data-label">Pseudo-Reduced Temp (Tpr)</span>
+                  <span className="data-value">{results.initialReduced.tpr.toFixed(3)}</span>
                 </div>
                 <div className="data-item">
-                  <span className="data-label">Recommended Mechanism</span>
-                  <span className="data-value">{results.recommendedDrive}</span>
+                  <span className="data-label">Hall-Yarborough Z (zi)</span>
+                  <span className="data-value">{results.zHallYarboroughInitial}</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Brill and Beggs Z (zi)</span>
+                  <span className="data-value">{results.zBrillBeggsInitial}</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Dranchuk-Abou-Kassem Z (zi)</span>
+                  <span className="data-value">{results.zDakInitial}</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Initial Bgi (Eq. 3.1)</span>
+                  <span className="data-value">{results.bgiCuft} ft3/scf</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Initial Bgi (Eq. 3.2)</span>
+                  <span className="data-value">{results.bgiRb} rb/scf</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Abandonment Bga</span>
+                  <span className="data-value">{results.bgaCuft} ft3/scf</span>
                 </div>
               </div>
             </motion.section>
@@ -344,13 +630,93 @@ function App() {
               className="section-block"
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.18 }}
+              transition={{ duration: 0.45, delay: 0.16 }}
             >
-              <h2>Material Balance: P/Z vs Cumulative Production</h2>
-              <p className="chart-desc">Extrapolation of reservoir pressure decline against cumulative gas production to determine ultimate recovery.</p>
+              <h2>Volumetric, Material Balance, and PRMS Reserves</h2>
+              <div className="data-grid">
+                <div className="data-item">
+                  <span className="data-label">Original Gas in Place (G)</span>
+                  <span className="data-value">{results.volRes.giipBscf.toFixed(2)} Bscf</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Volumetric Recovery Factor (Eq. 3.12)</span>
+                  <span className="data-value">{(results.volRes.rfVolumetric * 100).toFixed(1)}%</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Water-Drive Recovery Factor (Eq. 3.13)</span>
+                  <span className="data-value">{(results.volRes.rfWaterDrive * 100).toFixed(1)}%</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Ultimate Recoverable Gas (EUR)</span>
+                  <span className="data-value">{results.volRes.ultimateRecoveryBscf.toFixed(2)} Bscf</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">1P Proved Reserves (P90)</span>
+                  <span className="data-value">{results.prmsRes.reserve1P} Bscf</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">2P Probable Reserves (P50)</span>
+                  <span className="data-value">{results.prmsRes.reserve2P} Bscf</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">3P Possible Reserves (P10)</span>
+                  <span className="data-value">{results.prmsRes.reserve3P} Bscf</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Initial pi/zi Intercept</span>
+                  <span className="data-value">{results.volRes.piOverZi.toFixed(0)} psia</span>
+                </div>
+              </div>
+            </motion.section>
+
+            <motion.section
+              className="section-block"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.2 }}
+            >
+              <h2>Reservoir Drive Energy Indices and Aquifer Influx (Sections 3.6 and 3.7)</h2>
+              <div className="data-grid">
+                <div className="data-item">
+                  <span className="data-label">Depletion Drive Index (IDD)</span>
+                  <span className="data-value">{results.mbeRes.IDD.toFixed(3)}</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Compaction Drive Index (ICD)</span>
+                  <span className="data-value">{results.mbeRes.ICD.toFixed(3)}</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Water Drive Index (IWD)</span>
+                  <span className="data-value">{results.mbeRes.IWD.toFixed(3)}</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Drive Index Sum Check (Eq. 3.57)</span>
+                  <span className="data-value">{results.mbeRes.driveSum.toFixed(3)}</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Cumulative Water Influx (We)</span>
+                  <span className="data-value">{(results.mbeRes.cumulativeWeBbl / 1e6).toFixed(2)} MMbbl</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Arps Hyperbolic EUR (Eq. 3.73)</span>
+                  <span className="data-value">{results.dcaRes.eurHyperbolicBscf.toFixed(2)} Bscf</span>
+                </div>
+              </div>
+            </motion.section>
+
+            <motion.section
+              className="section-block"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.24 }}
+            >
+              <h2>Material Balance: p/z vs Cumulative Gas Production (Figure 3.1)</h2>
+              <p className="chart-desc">
+                Comparison of linear volumetric depletion (Eq. 3.17) against water-drive pressure support curvature (Eq. 3.30).
+              </p>
               <div className="chart-holder">
                 <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={results.pzCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
+                  <LineChart data={results.mbeRes.pzComparisonCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
                     <XAxis
                       dataKey="gp"
                       stroke="#9ca3af"
@@ -362,18 +728,27 @@ function App() {
                       stroke="#9ca3af"
                       tickLine={false}
                       tick={{ fontSize: 11, fill: '#6b7280' }}
-                      label={{ value: 'P/Z (psia)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
+                      label={{ value: 'p/z (psia)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
                     />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
                     />
+                    <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12, paddingBottom: 10 }} />
                     <Line
                       type="monotone"
-                      dataKey="pz"
-                      name="P/Z"
+                      dataKey="volumetricPz"
+                      name="Volumetric Depletion (Straight Line)"
                       stroke="#111827"
                       strokeWidth={2}
                       dot={{ r: 3, fill: '#111827' }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="waterDrivePz"
+                      name="Water Drive (Aquifer Support)"
+                      stroke="#9ca3af"
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: '#9ca3af' }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -384,10 +759,12 @@ function App() {
               className="section-block"
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.26 }}
+              transition={{ duration: 0.45, delay: 0.28 }}
             >
-              <h2>Z-Factor Prediction Across Pressure</h2>
-              <p className="chart-desc">Comparison between the iterative Hall-Yarborough equation of state and the explicit Papay correlation.</p>
+              <h2>Z-Factor Correlations Across Pressure (Section 3.2.1 and 3.4.1)</h2>
+              <p className="chart-desc">
+                Comparison of Hall-Yarborough, Brill and Beggs, and Dranchuk-Abou-Kassem Z-factor predictions across pressure.
+              </p>
               <div className="chart-holder">
                 <ResponsiveContainer width="100%" height={260}>
                   <LineChart data={results.zCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
@@ -411,17 +788,25 @@ function App() {
                     <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12, paddingBottom: 10 }} />
                     <Line
                       type="monotone"
-                      dataKey="papay"
-                      name="Papay Correlation"
-                      stroke="#9ca3af"
+                      dataKey="hallYarborough"
+                      name="Hall-Yarborough"
+                      stroke="#111827"
                       strokeWidth={2}
                       dot={false}
                     />
                     <Line
                       type="monotone"
-                      dataKey="hallYarborough"
-                      name="Hall-Yarborough Correlation"
-                      stroke="#111827"
+                      dataKey="brillBeggs"
+                      name="Brill and Beggs"
+                      stroke="#6b7280"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="dak"
+                      name="Dranchuk-Abou-Kassem"
+                      stroke="#9ca3af"
                       strokeWidth={2}
                       dot={false}
                     />
@@ -434,13 +819,58 @@ function App() {
               className="section-block"
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.34 }}
+              transition={{ duration: 0.45, delay: 0.32 }}
             >
-              <h2>Decline Curve Analysis: Forecasted Production</h2>
-              <p className="chart-desc">Estimated gas production rate decline over 24 months based on initial deliverability.</p>
+              <h2>Cole Diagnostic Plot: Apparent GIIP (F/Eg) vs Gp (Section 3.5.4)</h2>
+              <p className="chart-desc">
+                For a volumetric reservoir, F/Eg remains flat at true G. An upward trend indicates active water influx (Eq. 3.52).
+              </p>
               <div className="chart-holder">
                 <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={results.dcaCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
+                  <LineChart data={results.mbeRes.havlenaOdehPoints} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
+                    <XAxis
+                      dataKey="gpBscf"
+                      stroke="#9ca3af"
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      label={{ value: 'Cumulative Gas Gp (Bscf)', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
+                    />
+                    <YAxis
+                      domain={['auto', 'auto']}
+                      stroke="#9ca3af"
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      label={{ value: 'F/Eg Apparent G (Bscf)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="coleApparentGBscf"
+                      name="Apparent GIIP (F/Eg)"
+                      stroke="#111827"
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: '#111827' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.section>
+
+            <motion.section
+              className="section-block"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.36 }}
+            >
+              <h2>Arps Decline Curve Analysis: Exponential, Hyperbolic, and Harmonic (Section 3.8)</h2>
+              <p className="chart-desc">
+                Production rate forecast over 36 months comparing Exponential (b=0), Hyperbolic (b={arpsB}), and Harmonic (b=1) models.
+              </p>
+              <div className="chart-holder">
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={results.dcaRes.dcaCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
                     <XAxis
                       dataKey="month"
                       stroke="#9ca3af"
@@ -457,13 +887,73 @@ function App() {
                     <Tooltip
                       contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
                     />
+                    <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12, paddingBottom: 10 }} />
                     <Line
                       type="monotone"
-                      dataKey="rate"
-                      name="Gas Production Rate"
+                      dataKey="hyperbolicRate"
+                      name="Hyperbolic"
                       stroke="#111827"
                       strokeWidth={2}
                       dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="exponentialRate"
+                      name="Exponential"
+                      stroke="#6b7280"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="harmonicRate"
+                      name="Harmonic"
+                      stroke="#9ca3af"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.section>
+
+            <motion.section
+              className="section-block"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.4 }}
+            >
+              <h2>PRMS Probabilistic Reserves Exceedance Curve (Section 3.6)</h2>
+              <p className="chart-desc">
+                Cumulative probability distribution from Monte Carlo simulation showing P90 (1P), P50 (2P), and P10 (3P) recoverable reserves.
+              </p>
+              <div className="chart-holder">
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={results.prmsRes.probabilityCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
+                    <XAxis
+                      dataKey="exceedancePct"
+                      stroke="#9ca3af"
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      label={{ value: 'Probability of Exceedance', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
+                    />
+                    <YAxis
+                      domain={['auto', 'auto']}
+                      stroke="#9ca3af"
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      label={{ value: 'Reserves (Bscf)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="reservesBscf"
+                      name="Recoverable Reserves (Bscf)"
+                      stroke="#111827"
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: '#111827' }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -474,7 +964,7 @@ function App() {
               className="bottom-action"
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.4 }}
+              transition={{ duration: 0.4, delay: 0.44 }}
             >
               <motion.button
                 type="button"
