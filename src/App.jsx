@@ -26,34 +26,67 @@ function App() {
   const handleCalculate = (e) => {
     e.preventDefault()
 
-    const a = parseFloat(area) || 0
-    const h = parseFloat(thickness) || 0
-    const phi = parseFloat(porosity) || 0
-    const sw = parseFloat(waterSat) || 0
-    const p = parseFloat(pressure) || 0
-    const tempF = parseFloat(temperature) || 0
-    const gg = parseFloat(gasGravity) || 0
+    const a = parseFloat(area) ? parseFloat(area) : 0
+    const h = parseFloat(thickness) ? parseFloat(thickness) : 0
+    const phi = parseFloat(porosity) ? parseFloat(porosity) : 0
+    const sw = parseFloat(waterSat) ? parseFloat(waterSat) : 0
+    const p = parseFloat(pressure) ? parseFloat(pressure) : 0
+    const tempF = parseFloat(temperature) ? parseFloat(temperature) : 0
+    const gg = parseFloat(gasGravity) ? parseFloat(gasGravity) : 0
 
     const tempR = tempF + 459.67
 
-    // Pseudo-critical properties
+    // Sutton pseudo-critical properties
     const ppc = 756.8 - 131.0 * gg - 3.6 * gg * gg
     const tpc = 169.2 + 349.5 * gg - 74.0 * gg * gg
 
-    const ppr = ppc > 0 ? p / ppc : 1
     const tpr = tpc > 0 ? tempR / tpc : 1
 
-    // Gas deviation factor approximation
-    const calcZ = (currP) => {
+    // Papay explicit Z-factor correlation
+    const calcPapayZ = (currP) => {
       const currPpr = ppc > 0 ? currP / ppc : 1
-      const empirical = Math.max(
-        0.65,
-        1 - (3.52 * currPpr) / Math.pow(10, 0.9813 * tpr) + (0.274 * currPpr * currPpr) / Math.pow(10, 0.8157 * tpr)
-      )
-      return empirical
+      const zVal =
+        1 -
+        (3.52 * currPpr) / Math.pow(10, 0.9813 * tpr) +
+        (0.274 * currPpr * currPpr) / Math.pow(10, 0.8157 * tpr)
+      return Math.max(0.5, zVal)
     }
 
-    const z = calcZ(p)
+    // Hall-Yarborough iterative Z-factor correlation
+    const calcHallYarboroughZ = (currP) => {
+      const currPpr = ppc > 0 ? currP / ppc : 1
+      const t = tpr > 0 ? 1 / tpr : 1
+      const X1 = -0.06125 * currPpr * t * Math.exp(-1.2 * Math.pow(1 - t, 2))
+      const X2 = 14.76 * t - 9.76 * t * t + 4.58 * t * t * t
+      const X3 = 90.7 * t - 242.2 * t * t + 42.4 * t * t * t
+      const X4 = 2.18 + 2.82 * t
+
+      let y = 0.0125 * currPpr * t * Math.exp(-1.2 * Math.pow(1 - t, 2))
+      for (let iter = 0; iter < 25; iter++) {
+        const oneMinusY = 1 - y
+        const fy =
+          X1 +
+          (y + y * y + y * y * y - Math.pow(y, 4)) / Math.pow(oneMinusY, 3) -
+          X2 * y * y +
+          X3 * Math.pow(y, X4)
+        const dfy =
+          (1 + 4 * y + 4 * y * y - 4 * y * y * y + Math.pow(y, 4)) /
+            Math.pow(oneMinusY, 4) -
+          2 * X2 * y +
+          X3 * X4 * Math.pow(y, X4 - 1)
+        if (Math.abs(dfy) < 1e-12) break
+        const nextY = y - fy / dfy
+        if (Math.abs(nextY - y) < 1e-7) {
+          y = nextY
+          break
+        }
+        y = Math.max(1e-6, Math.min(0.95, nextY))
+      }
+      const zVal = y > 0 ? -X1 / y : 1
+      return Math.max(0.5, zVal)
+    }
+
+    const z = calcHallYarboroughZ(p)
     const bgi = p > 0 ? (0.02827 * z * tempR) / p : 0.005
 
     // GIIP in Billion Standard Cubic Feet (Bscf)
@@ -71,24 +104,22 @@ function App() {
       pzCurve.push({ gp, pz: pzVal })
     }
 
-    // Z-factor vs Pressure curve data (comparing Empirical vs Machine Learning)
+    // Z-factor vs Pressure curve data (Hall-Yarborough vs Papay)
     const zCurve = []
     const maxP = Math.max(p, 4500)
     for (let testP = 500; testP <= maxP; testP += 500) {
-      const empZ = calcZ(testP)
-      // ML model trained on experimental PVT data adjusts for non-ideal condensate behavior
-      const mlOffset = 0.015 * Math.sin(testP / 1000)
-      const mlZ = Number((empZ - mlOffset).toFixed(4))
+      const hyZ = calcHallYarboroughZ(testP)
+      const papayZ = calcPapayZ(testP)
       zCurve.push({
         pressure: testP,
-        empirical: Number(empZ.toFixed(4)),
-        machineLearning: mlZ,
+        hallYarborough: Number(hyZ.toFixed(4)),
+        papay: Number(papayZ.toFixed(4)),
       })
     }
 
     // Decline curve analysis data (monthly forecast)
     const dcaCurve = []
-    const initialRate = Math.max(500, Math.round(giipBscf * 180)) // Mscf/day
+    const initialRate = Math.max(500, Math.round(giipBscf * 180))
     const monthlyDecline = 0.02
     for (let month = 1; month <= 24; month++) {
       const rate = Math.round(initialRate * Math.exp(-monthlyDecline * month))
@@ -133,7 +164,7 @@ function App() {
           >
             <header className="intro-block">
               <h1>Gas Reserves Estimation</h1>
-              <p>Enter your reservoir parameters below to calculate gas in place and reserves.</p>
+              <p>Enter your reservoir parameters below to predict the Z-factor and calculate gas reserves.</p>
             </header>
 
             <form onSubmit={handleCalculate} className="form-stack">
@@ -263,7 +294,7 @@ function App() {
                 Back to Parameters
               </motion.button>
               <h1>Processed Reservoir Data</h1>
-              <p>Calculated gas initially in place, recovery classifications, and analytical curves.</p>
+              <p>Calculated Z-factor, gas initially in place, recovery classifications, and analytical curves.</p>
             </motion.header>
 
             <motion.section
@@ -355,8 +386,8 @@ function App() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.26 }}
             >
-              <h2>Z-Factor vs Pressure: Empirical vs Machine Learning</h2>
-              <p className="chart-desc">Comparison between conventional correlation and machine learning model trained on experimental PVT data.</p>
+              <h2>Z-Factor Prediction Across Pressure</h2>
+              <p className="chart-desc">Comparison between the iterative Hall-Yarborough equation of state and the explicit Papay correlation.</p>
               <div className="chart-holder">
                 <ResponsiveContainer width="100%" height={260}>
                   <LineChart data={results.zCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
@@ -380,16 +411,16 @@ function App() {
                     <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12, paddingBottom: 10 }} />
                     <Line
                       type="monotone"
-                      dataKey="empirical"
-                      name="Empirical Correlation"
+                      dataKey="papay"
+                      name="Papay Correlation"
                       stroke="#9ca3af"
                       strokeWidth={2}
                       dot={false}
                     />
                     <Line
                       type="monotone"
-                      dataKey="machineLearning"
-                      name="Machine Learning Model"
+                      dataKey="hallYarborough"
+                      name="Hall-Yarborough Correlation"
                       stroke="#111827"
                       strokeWidth={2}
                       dot={false}

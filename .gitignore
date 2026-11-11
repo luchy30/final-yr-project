@@ -1,4 +1,4 @@
-# Node and build
+# Dependencies and build output
 node_modules
 dist
 dist-ssr
@@ -14,16 +14,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Python
-venv/
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.pytest_cache/
-.ipynb_checkpoints
-
-# Environment variables
+# Environment files
 .env
 .env.*
 
