@@ -273,6 +273,26 @@ export function calcMaterialBalanceAndDriveIndices({
 
   const driveSum = latestIDD + latestICD + latestIWD
 
+  // Final abandonment step values for Material Balance GIIP and EUR
+  const lastPoint =
+    havlenaOdehPoints.length > 0
+      ? havlenaOdehPoints[havlenaOdehPoints.length - 1]
+      : { gpBscf: 0, coleApparentGBscf: G / 1e9, fOverEtBscf: G / 1e9, weOverEtBscf: 0 }
+
+  // Havlena-Odeh corrected GIIP: (F - We) / (Eg + Efw)
+  const mbeGiipBscf = Math.max(0, lastPoint.fOverEtBscf - lastPoint.weOverEtBscf)
+  const apparentColeGiipBscf = lastPoint.coleApparentGBscf
+
+  // Material Balance EUR at abandonment accounting for rock/water expansion and aquifer sweep trapping
+  const za = calcZFunc(pa)
+  const { bgRbScf: bgaRb } = calcBgFunc(pa, za)
+  const ega = Math.max(0, bgaRb - bgiRb)
+  const efwa = bgiRb * Ce * Math.max(0, pi - pa)
+  const baseMbeRecBscf = bgaRb > 0 ? (G * (ega + efwa)) / bgaRb / 1e9 : 0
+  const activeWeFinal = driveMechanism === 'water_drive' ? weBbl : 0
+  const trappedByWaterScf = bgaRb > 0 ? (activeWeFinal * 0.25) / bgaRb : 0
+  const mbeEurBscf = Math.max(0, baseMbeRecBscf - trappedByWaterScf / 1e9)
+
   return {
     Ce,
     cumulativeWeBbl: weBbl,
@@ -280,6 +300,9 @@ export function calcMaterialBalanceAndDriveIndices({
     ICD: latestICD,
     IWD: latestIWD,
     driveSum,
+    mbeGiipBscf,
+    apparentColeGiipBscf,
+    mbeEurBscf,
     pzComparisonCurve,
     havlenaOdehPoints,
   }

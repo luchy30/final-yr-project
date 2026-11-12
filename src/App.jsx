@@ -94,13 +94,10 @@ function App() {
 
   const [currentView, setCurrentView] = useState('form')
   const [results, setResults] = useState(null)
-  const [openSections, setOpenSections] = useState({ 0: true })
+  const [activeSection, setActiveSection] = useState(0)
 
   const toggleSection = (index) => {
-    setOpenSections((prev) => ({
-      ...prev,
-      [index]: !prev[index],
-    }))
+    setActiveSection((prev) => (prev === index ? -1 : index))
   }
 
   const computeZByMethod = (pPsia, tempF, gg, selectedMethod) => {
@@ -112,6 +109,16 @@ function App() {
       return calcDranchukAbouKassemZ(ppr, tpr)
     }
     return calcHallYarboroughZ(ppr, tpr)
+  }
+
+  const getZMethodLabel = (selectedMethod) => {
+    if (selectedMethod === 'brill_beggs') {
+      return 'Brill and Beggs'
+    }
+    if (selectedMethod === 'dak') {
+      return 'Dranchuk and Abou-Kassem'
+    }
+    return 'Hall and Yarborough'
   }
 
   const handleCalculate = (e) => {
@@ -129,6 +136,7 @@ function App() {
     const gorVal = parseFloat(gor) ? parseFloat(gor) : 120000
     const apiVal = parseFloat(apiGravity) ? parseFloat(apiGravity) : 55
 
+    // Step 1: Fluid Classification & Preliminary Wet-Gas Gravity Link
     const classification = classifyReservoirFluid({
       gorScfStb: gorVal,
       apiGravity: apiVal,
@@ -137,13 +145,27 @@ function App() {
       initialPressurePsia: pi,
     })
 
-    const initialReduced = calcPseudoReduced(pi, tempF, gg, 'chapter3')
+    const prelimWetProps = calcWetGasProperties({
+      gorScfStb: gorVal,
+      apiGravity: apiVal,
+      surfaceGasGravity: gg,
+      wellStreamGasInPlaceScf: 0,
+    })
+
+    // Tie fluid type into effective gas gravity for Z-factor correlations
+    const effectiveGasGravity =
+      classification.fluidType === 'Dry Gas'
+        ? gg
+        : prelimWetProps.wellStreamGravity
+
+    // Step 2: Pseudo-Critical, Pseudo-Reduced, Z-Factor, and Bg
+    const initialReduced = calcPseudoReduced(pi, tempF, effectiveGasGravity, 'chapter3')
     const zBrillBeggsInitial = calcBrillBeggsZ(initialReduced.ppr, initialReduced.tpr)
     const zHallYarboroughInitial = calcHallYarboroughZ(initialReduced.ppr, initialReduced.tpr)
     const zDakInitial = calcDranchukAbouKassemZ(initialReduced.ppr, initialReduced.tpr)
 
-    const zi = computeZByMethod(pi, tempF, gg, zMethod)
-    const za = computeZByMethod(pa, tempF, gg, zMethod)
+    const zi = computeZByMethod(pi, tempF, effectiveGasGravity, zMethod)
+    const za = computeZByMethod(pa, tempF, effectiveGasGravity, zMethod)
 
     const { bgCuftScf: bgiCuft, bgRbScf: bgiRb } = calcBg({
       pressurePsia: pi,
@@ -156,6 +178,7 @@ function App() {
       zFactor: za,
     })
 
+    // Step 3: Volumetric Reserves & Wet-Gas Surface Gas / Condensate Split
     const volRes = calcVolumetricReserves({
       areaAcres: a,
       netPayFeet: h,
@@ -179,6 +202,7 @@ function App() {
       wellStreamGasInPlaceScf: volRes.giipScf,
     })
 
+    // Step 4: Aquifer Influx, Havlena-Odeh Material Balance, and Drive Energy Indices
     const reFt = Math.sqrt((a * 43560) / Math.PI)
     const aquiferProps = calcAquiferProperties({
       reservoirRadiusFt: reFt,
@@ -193,20 +217,21 @@ function App() {
       initialPressurePsia: pi,
       abandonmentPressurePsia: pa,
       tempF,
-      gasGravity: gg,
+      gasGravity: effectiveGasGravity,
       initialWaterSat: swi,
       aquiferModel,
       driveMechanism,
-      calcZFunc: (pVal) => computeZByMethod(pVal, tempF, gg, zMethod),
+      calcZFunc: (pVal) => computeZByMethod(pVal, tempF, effectiveGasGravity, zMethod),
       calcBgFunc: (pVal, zVal) =>
         calcBg({ pressurePsia: pVal, tempR: initialReduced.tempR, zFactor: zVal }),
       aquiferProps,
     })
 
+    // Step 5: Z-Factor vs Pressure Curve across all 3 correlations
     const zCurve = []
     const maxP = Math.max(pi, 4500)
     for (let testP = 500; testP <= maxP; testP += 500) {
-      const red = calcPseudoReduced(testP, tempF, gg, 'chapter3')
+      const red = calcPseudoReduced(testP, tempF, effectiveGasGravity, 'chapter3')
       zCurve.push({
         pressure: testP,
         brillBeggs: Number(calcBrillBeggsZ(red.ppr, red.tpr).toFixed(4)),
@@ -215,6 +240,7 @@ function App() {
       })
     }
 
+    // Step 6: Arps Decline Curve Analysis
     const dcaRes = calcArpsDecline({
       initialRateMscfDay: initialRate,
       nominalDeclinePerMonth: declineRate,
@@ -223,6 +249,22 @@ function App() {
       forecastMonths: 36,
     })
 
+    // Step 7: Reconcile Volumetric, Material Balance, and Decline Curve Reserves
+    const recommendation = recommendMethodAndMechanism({
+      fluidType: classification.fluidType,
+      driveMechanism,
+      fieldStage,
+      volumetricEurBscf: volRes.ultimateRecoveryBscf,
+      mbeEurBscf: mbeRes.mbeEurBscf,
+      dcaEurBscf: dcaRes.eurHyperbolicBscf,
+      IDD: mbeRes.IDD,
+      ICD: mbeRes.ICD,
+      IWD: mbeRes.IWD,
+      zMethodLabel: getZMethodLabel(zMethod),
+      effectiveGasGravity,
+    })
+
+    // Step 8: Tie PRMS 1P, 2P, 3P Monte Carlo to the Recommended Reserves and Class Spread
     const prmsRes = calcPRMSReserves({
       areaAcres: a,
       netPayFeet: h,
@@ -230,16 +272,13 @@ function App() {
       initialWaterSat: swi,
       bgiCuftScf: bgiCuft,
       activeRf: volRes.activeRf,
-    })
-
-    const recommendation = recommendMethodAndMechanism({
-      fluidType: classification.fluidType,
-      driveMechanism,
-      fieldStage,
+      baseTargetEurBscf: recommendation.finalRecommendedEurBscf,
+      uncertaintySpread: recommendation.uncertaintySpread,
     })
 
     setResults({
       classification,
+      effectiveGasGravity: effectiveGasGravity.toFixed(4),
       initialReduced,
       zBrillBeggsInitial: zBrillBeggsInitial.toFixed(4),
       zHallYarboroughInitial: zHallYarboroughInitial.toFixed(4),
@@ -258,8 +297,8 @@ function App() {
       recommendation,
     })
 
-    // First section expanded, all others collapsed
-    setOpenSections({ 0: true })
+    // First section expanded, all others collapsed in single-open accordion
+    setActiveSection(0)
     setCurrentView('results')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -588,35 +627,59 @@ function App() {
             <div className="collapsible-list">
               <CollapsibleSection
                 index={0}
-                title="Fluid Classification and Method Recommendation"
-                isOpen={Boolean(openSections[0])}
+                title="Unified Reserves Reconciliation and Final Recommendation"
+                isOpen={activeSection === 0}
                 onToggle={toggleSection}
                 delay={0.08}
               >
                 <div className="data-grid">
                   <div className="data-item">
-                    <span className="data-label">Reservoir Fluid Type</span>
-                    <span className="data-value">{results.classification.fluidType}</span>
-                  </div>
-                  <div className="data-item">
-                    <span className="data-label">Assigned Reservoir Class</span>
-                    <span className="data-value">{results.recommendation.reservoirClass}</span>
+                    <span className="data-label">Final Recommended Reserves</span>
+                    <span className="data-value">{results.recommendation.finalRecommendedEurBscf.toFixed(2)} Bscf</span>
                   </div>
                   <div className="data-item">
                     <span className="data-label">Recommended Method</span>
                     <span className="data-value">{results.recommendation.recommendedMethod}</span>
                   </div>
                   <div className="data-item">
-                    <span className="data-label">Gas Equivalent of Condensate (GE)</span>
-                    <span className="data-value">{results.wetProps.gasEquivalentGE.toFixed(0)} scf/STB</span>
+                    <span className="data-label">Reconciled Weighted Reserves</span>
+                    <span className="data-value">{results.recommendation.reconciledWeightedEurBscf.toFixed(2)} Bscf</span>
                   </div>
                   <div className="data-item">
-                    <span className="data-label">Well-Stream Specific Gravity</span>
-                    <span className="data-value">{results.wetProps.wellStreamGravity.toFixed(4)}</span>
+                    <span className="data-label">Volumetric EUR</span>
+                    <span className="data-value">{results.recommendation.volumetricEurBscf.toFixed(2)} Bscf</span>
                   </div>
                   <div className="data-item">
-                    <span className="data-label">Initial Condensate in Place (Nc)</span>
-                    <span className="data-value">{(results.wetProps.initialCondensateInPlaceStb / 1e6).toFixed(2)} MMSTB</span>
+                    <span className="data-label">Material Balance EUR</span>
+                    <span className="data-value">{results.recommendation.mbeEurBscf.toFixed(2)} Bscf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Arps Decline Curve EUR</span>
+                    <span className="data-value">{results.recommendation.dcaEurBscf.toFixed(2)} Bscf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">1P Proved Reserves (P90)</span>
+                    <span className="data-value">{results.prmsRes.reserve1P.toFixed(2)} Bscf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">2P Probable Reserves (P50)</span>
+                    <span className="data-value">{results.prmsRes.reserve2P.toFixed(2)} Bscf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">3P Possible Reserves (P10)</span>
+                    <span className="data-value">{results.prmsRes.reserve3P.toFixed(2)} Bscf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Dominant Drive Mechanism</span>
+                    <span className="data-value">{results.recommendation.dominantDrive}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Assigned Reservoir Class</span>
+                    <span className="data-value">{results.recommendation.reservoirClass}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Reservoir Fluid Type</span>
+                    <span className="data-value">{results.classification.fluidType}</span>
                   </div>
                 </div>
                 <p className="diagnostic-note">{results.recommendation.evidence}</p>
@@ -624,10 +687,49 @@ function App() {
 
               <CollapsibleSection
                 index={1}
-                title="Gas Properties and Z-Factor Correlations at Initial Conditions"
-                isOpen={Boolean(openSections[1])}
+                title="Fluid Classification and Wet-Gas Equivalence"
+                isOpen={activeSection === 1}
                 onToggle={toggleSection}
                 delay={0.11}
+              >
+                <div className="data-grid">
+                  <div className="data-item">
+                    <span className="data-label">Reservoir Fluid Type</span>
+                    <span className="data-value">{results.classification.fluidType}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Phase Regime</span>
+                    <span className="data-value">{results.classification.phaseRegime}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Effective Gravity for Z-Factor</span>
+                    <span className="data-value">{results.effectiveGasGravity}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Well-Stream Specific Gravity</span>
+                    <span className="data-value">{results.wetProps.wellStreamGravity.toFixed(4)}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Gas Equivalent of Condensate (GE)</span>
+                    <span className="data-value">{results.wetProps.gasEquivalentGE.toFixed(0)} scf/STB</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Dry Surface Gas in Place (Gs)</span>
+                    <span className="data-value">{(results.wetProps.surfaceGasInPlaceScf / 1e9).toFixed(2)} Bscf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Initial Condensate in Place (Nc)</span>
+                    <span className="data-value">{(results.wetProps.initialCondensateInPlaceStb / 1e6).toFixed(2)} MMSTB</span>
+                  </div>
+                </div>
+              </CollapsibleSection>
+
+              <CollapsibleSection
+                index={2}
+                title="Gas Properties and Z-Factor Correlations at Initial Conditions"
+                isOpen={activeSection === 2}
+                onToggle={toggleSection}
+                delay={0.14}
               >
                 <div className="data-grid">
                   <div className="data-item">
@@ -651,6 +753,14 @@ function App() {
                     <span className="data-value">{results.zDakInitial}</span>
                   </div>
                   <div className="data-item">
+                    <span className="data-label">Active Initial Z (zi)</span>
+                    <span className="data-value">{results.zi}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Active Abandonment Z (za)</span>
+                    <span className="data-value">{results.za}</span>
+                  </div>
+                  <div className="data-item">
                     <span className="data-label">Initial Bgi (ft3/scf)</span>
                     <span className="data-value">{results.bgiCuft} ft3/scf</span>
                   </div>
@@ -666,16 +776,24 @@ function App() {
               </CollapsibleSection>
 
               <CollapsibleSection
-                index={2}
-                title="Volumetric, Material Balance, and PRMS Reserves"
-                isOpen={Boolean(openSections[2])}
+                index={3}
+                title="Volumetric and Material Balance Breakdown"
+                isOpen={activeSection === 3}
                 onToggle={toggleSection}
-                delay={0.14}
+                delay={0.17}
               >
                 <div className="data-grid">
                   <div className="data-item">
-                    <span className="data-label">Original Gas in Place (G)</span>
+                    <span className="data-label">Volumetric Gas in Place (G)</span>
                     <span className="data-value">{results.volRes.giipBscf.toFixed(2)} Bscf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Material Balance Gas in Place</span>
+                    <span className="data-value">{results.mbeRes.mbeGiipBscf.toFixed(2)} Bscf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Apparent Cole GIIP (F/Eg)</span>
+                    <span className="data-value">{results.mbeRes.apparentColeGiipBscf.toFixed(2)} Bscf</span>
                   </div>
                   <div className="data-item">
                     <span className="data-label">Volumetric Recovery Factor</span>
@@ -686,20 +804,12 @@ function App() {
                     <span className="data-value">{(results.volRes.rfWaterDrive * 100).toFixed(1)}%</span>
                   </div>
                   <div className="data-item">
-                    <span className="data-label">Ultimate Recoverable Gas (EUR)</span>
+                    <span className="data-label">Volumetric EUR</span>
                     <span className="data-value">{results.volRes.ultimateRecoveryBscf.toFixed(2)} Bscf</span>
                   </div>
                   <div className="data-item">
-                    <span className="data-label">1P Proved Reserves (P90)</span>
-                    <span className="data-value">{results.prmsRes.reserve1P} Bscf</span>
-                  </div>
-                  <div className="data-item">
-                    <span className="data-label">2P Probable Reserves (P50)</span>
-                    <span className="data-value">{results.prmsRes.reserve2P} Bscf</span>
-                  </div>
-                  <div className="data-item">
-                    <span className="data-label">3P Possible Reserves (P10)</span>
-                    <span className="data-value">{results.prmsRes.reserve3P} Bscf</span>
+                    <span className="data-label">Material Balance EUR</span>
+                    <span className="data-value">{results.mbeRes.mbeEurBscf.toFixed(2)} Bscf</span>
                   </div>
                   <div className="data-item">
                     <span className="data-label">Initial pi/zi Intercept</span>
@@ -709,11 +819,11 @@ function App() {
               </CollapsibleSection>
 
               <CollapsibleSection
-                index={3}
+                index={4}
                 title="Reservoir Drive Energy Indices and Aquifer Influx"
-                isOpen={Boolean(openSections[3])}
+                isOpen={activeSection === 4}
                 onToggle={toggleSection}
-                delay={0.17}
+                delay={0.2}
               >
                 <div className="data-grid">
                   <div className="data-item">
@@ -740,15 +850,19 @@ function App() {
                     <span className="data-label">Arps Hyperbolic EUR</span>
                     <span className="data-value">{results.dcaRes.eurHyperbolicBscf.toFixed(2)} Bscf</span>
                   </div>
+                  <div className="data-item">
+                    <span className="data-label">Time to Economic Limit (ta)</span>
+                    <span className="data-value">{results.dcaRes.taHyperbolicMonths.toFixed(1)} months</span>
+                  </div>
                 </div>
               </CollapsibleSection>
 
               <CollapsibleSection
-                index={4}
+                index={5}
                 title="Material Balance: p/z vs Cumulative Gas Production"
-                isOpen={Boolean(openSections[4])}
+                isOpen={activeSection === 5}
                 onToggle={toggleSection}
-                delay={0.2}
+                delay={0.23}
               >
                 <p className="chart-desc">
                   Comparison of linear volumetric depletion against water-drive pressure support curvature.
@@ -795,11 +909,11 @@ function App() {
               </CollapsibleSection>
 
               <CollapsibleSection
-                index={5}
+                index={6}
                 title="Z-Factor Correlations Across Pressure"
-                isOpen={Boolean(openSections[5])}
+                isOpen={activeSection === 6}
                 onToggle={toggleSection}
-                delay={0.23}
+                delay={0.26}
               >
                 <p className="chart-desc">
                   Comparison of Hall-Yarborough, Brill and Beggs, and Dranchuk-Abou-Kassem Z-factor predictions across pressure.
@@ -855,11 +969,11 @@ function App() {
               </CollapsibleSection>
 
               <CollapsibleSection
-                index={6}
+                index={7}
                 title="Cole Diagnostic Plot: Apparent GIIP (F/Eg) vs Cumulative Gas Production"
-                isOpen={Boolean(openSections[6])}
+                isOpen={activeSection === 7}
                 onToggle={toggleSection}
-                delay={0.26}
+                delay={0.29}
               >
                 <p className="chart-desc">
                   For a volumetric reservoir, F/Eg remains flat at true gas in place. An upward trend indicates active water influx.
@@ -898,11 +1012,11 @@ function App() {
               </CollapsibleSection>
 
               <CollapsibleSection
-                index={7}
+                index={8}
                 title="Arps Decline Curve Analysis: Exponential, Hyperbolic, and Harmonic"
-                isOpen={Boolean(openSections[7])}
+                isOpen={activeSection === 8}
                 onToggle={toggleSection}
-                delay={0.29}
+                delay={0.32}
               >
                 <p className="chart-desc">
                   Production rate forecast over 36 months comparing Exponential (b=0), Hyperbolic (b={arpsB}), and Harmonic (b=1) models.
@@ -957,11 +1071,11 @@ function App() {
               </CollapsibleSection>
 
               <CollapsibleSection
-                index={8}
+                index={9}
                 title="PRMS Probabilistic Reserves Exceedance Curve"
-                isOpen={Boolean(openSections[8])}
+                isOpen={activeSection === 9}
                 onToggle={toggleSection}
-                delay={0.32}
+                delay={0.35}
               >
                 <p className="chart-desc">
                   Cumulative probability distribution from Monte Carlo simulation showing P90 (1P), P50 (2P), and P10 (3P) recoverable reserves.
@@ -1004,7 +1118,7 @@ function App() {
               className="bottom-action"
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.36 }}
+              transition={{ duration: 0.4, delay: 0.38 }}
             >
               <motion.button
                 type="button"
