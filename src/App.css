@@ -39,7 +39,7 @@
 }
 
 .results-header {
-  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
   text-align: left;
 }
 
@@ -161,9 +161,59 @@ label {
   background-color: #1f2937;
 }
 
-.section-block {
-  margin-bottom: clamp(3rem, 6vw, 4.5rem);
+.collapsible-list {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.4rem, 3vw, 2rem);
   width: 100%;
+  margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
+}
+
+.collapsible-block {
+  width: 100%;
+}
+
+.collapsible-trigger {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  background-color: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  padding: clamp(1.1rem, 2.5vw, 1.35rem) clamp(1.25rem, 3vw, 1.6rem);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  touch-action: manipulation;
+}
+
+.collapsible-trigger:hover {
+  background-color: #e5e7eb;
+}
+
+.collapsible-title {
+  font-size: clamp(1.05rem, 2.5vw, 1.2rem);
+  font-weight: 500;
+  color: #111827;
+  line-height: 1.35;
+}
+
+.collapsible-action {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.collapsible-panel {
+  overflow: hidden;
+  width: 100%;
+}
+
+.collapsible-inner {
+  padding: clamp(1.5rem, 3.5vw, 2.25rem) clamp(0.5rem, 1.5vw, 1rem) clamp(0.75rem, 2vw, 1.25rem);
 }
 
 .chart-desc {
@@ -183,7 +233,6 @@ label {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
   gap: clamp(1.2rem, 3vw, 2rem);
-  margin-top: 1.5rem;
 }
 
 .data-item {

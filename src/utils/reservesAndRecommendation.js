@@ -86,11 +86,11 @@ export function recommendMethodAndMechanism({
   const isCondensate = fluidType === 'Gas Condensate'
   const isWaterDrive = driveMechanism === 'water_drive'
 
-  let reservoirClass = 'Class I: Volumetric Dry / Wet Gas'
+  let reservoirClass = 'Class I: Volumetric Dry and Wet Gas'
   let spreadDescription = 'Narrowest 1P to 3P uncertainty spread'
 
   if (!isCondensate && isWaterDrive) {
-    reservoirClass = 'Class II: Water-Drive Dry / Wet Gas'
+    reservoirClass = 'Class II: Water-Drive Dry and Wet Gas'
     spreadDescription = 'Wider spread due to aquifer encroachment and residual trapping'
   } else if (isCondensate && !isWaterDrive) {
     reservoirClass = 'Class III: Volumetric Gas-Condensate'
@@ -100,18 +100,18 @@ export function recommendMethodAndMechanism({
     spreadDescription = 'Widest spread combining two-phase behavior and aquifer influx'
   }
 
-  let recommendedMethod = 'Volumetric Method (Eq. 3.11)'
+  let recommendedMethod = 'Volumetric Method'
   let evidence = 'Static reservoir rock and fluid parameters provided; best suited for initial appraisal.'
 
   if (fieldStage === 'producing') {
     recommendedMethod = isWaterDrive
-      ? 'Havlena-Odeh Material Balance with Aquifer Influx (Eq. 3.28)'
-      : 'Linear P/Z Material Balance Method (Eq. 3.17)'
+      ? 'Havlena-Odeh Material Balance with Aquifer Influx'
+      : 'Linear P/Z Material Balance Method'
     evidence = isWaterDrive
       ? 'Active aquifer support bends P/Z upward; Havlena-Odeh F/(Eg+Efw) corrects apparent GIIP.'
       : 'Linear P/Z depletion trend with dominant gas expansion index (IDD near 1.0).'
   } else if (fieldStage === 'mature') {
-    recommendedMethod = 'Arps Decline Curve Analysis (Eq. 3.66 - 3.80)'
+    recommendedMethod = 'Arps Decline Curve Analysis'
     evidence = 'Boundary-dominated late-life production rate trend extrapolated to economic limit qa.'
   }
 
@@ -122,3 +122,4 @@ export function recommendMethodAndMechanism({
     evidence,
   }
 }
+

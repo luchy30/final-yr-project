@@ -30,6 +30,42 @@ import {
 } from './utils/reservesAndRecommendation'
 import './App.css'
 
+function CollapsibleSection({ index, title, isOpen, onToggle, delay = 0, children }) {
+  return (
+    <motion.section
+      className="collapsible-block"
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay }}
+    >
+      <button
+        type="button"
+        onClick={() => onToggle(index)}
+        className="collapsible-trigger"
+        aria-expanded={isOpen}
+      >
+        <span className="collapsible-title">{title}</span>
+        <span className="collapsible-action">{isOpen ? 'Hide' : 'Show'}</span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.35, ease: 'easeInOut' }}
+            className="collapsible-panel"
+          >
+            <div className="collapsible-inner">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.section>
+  )
+}
+
 function App() {
   // Reservoir & Petrophysical Inputs
   const [area, setArea] = useState('640')
@@ -58,6 +94,14 @@ function App() {
 
   const [currentView, setCurrentView] = useState('form')
   const [results, setResults] = useState(null)
+  const [openSections, setOpenSections] = useState({ 0: true })
+
+  const toggleSection = (index) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }))
+  }
 
   const computeZByMethod = (pPsia, tempF, gg, selectedMethod) => {
     const { ppr, tpr } = calcPseudoReduced(pPsia, tempF, gg, 'chapter3')
@@ -85,7 +129,6 @@ function App() {
     const gorVal = parseFloat(gor) ? parseFloat(gor) : 120000
     const apiVal = parseFloat(apiGravity) ? parseFloat(apiGravity) : 55
 
-    // 1. Fluid classification (Section 3.1)
     const classification = classifyReservoirFluid({
       gorScfStb: gorVal,
       apiGravity: apiVal,
@@ -94,7 +137,6 @@ function App() {
       initialPressurePsia: pi,
     })
 
-    // 2. Pseudo-critical & Z-factor calculations at Pi and Pa (Section 3.2)
     const initialReduced = calcPseudoReduced(pi, tempF, gg, 'chapter3')
     const zBrillBeggsInitial = calcBrillBeggsZ(initialReduced.ppr, initialReduced.tpr)
     const zHallYarboroughInitial = calcHallYarboroughZ(initialReduced.ppr, initialReduced.tpr)
@@ -114,7 +156,6 @@ function App() {
       zFactor: za,
     })
 
-    // 3. Volumetric Reserves (Section 3.4)
     const volRes = calcVolumetricReserves({
       areaAcres: a,
       netPayFeet: h,
@@ -131,7 +172,6 @@ function App() {
       driveMechanism,
     })
 
-    // 4. Wet Gas & Condensate Equivalent Properties (Section 3.3)
     const wetProps = calcWetGasProperties({
       gorScfStb: gorVal,
       apiGravity: apiVal,
@@ -139,7 +179,6 @@ function App() {
       wellStreamGasInPlaceScf: volRes.giipScf,
     })
 
-    // 5. Water Influx & Material Balance (Sections 3.5, 3.6, 3.7)
     const reFt = Math.sqrt((a * 43560) / Math.PI)
     const aquiferProps = calcAquiferProperties({
       reservoirRadiusFt: reFt,
@@ -164,7 +203,6 @@ function App() {
       aquiferProps,
     })
 
-    // 6. Z-Factor vs Pressure Curve across all 3 correlations
     const zCurve = []
     const maxP = Math.max(pi, 4500)
     for (let testP = 500; testP <= maxP; testP += 500) {
@@ -177,7 +215,6 @@ function App() {
       })
     }
 
-    // 7. Arps Decline Curve Analysis (Section 3.8)
     const dcaRes = calcArpsDecline({
       initialRateMscfDay: initialRate,
       nominalDeclinePerMonth: declineRate,
@@ -186,7 +223,6 @@ function App() {
       forecastMonths: 36,
     })
 
-    // 8. PRMS 1P, 2P, 3P Monte Carlo & Method Recommendation (Sections 3.6 & 3.7)
     const prmsRes = calcPRMSReserves({
       areaAcres: a,
       netPayFeet: h,
@@ -222,6 +258,8 @@ function App() {
       recommendation,
     })
 
+    // First section expanded, all others collapsed
+    setOpenSections({ 0: true })
     setCurrentView('results')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -246,7 +284,7 @@ function App() {
             <header className="intro-block">
               <h1>Gas Reserves Estimation</h1>
               <p>
-                Enter reservoir, fluid, aquifer, and decline parameters to run the Chapter Three estimation models.
+                Enter reservoir, fluid, aquifer, and decline parameters to run the gas reserves estimation models.
               </p>
             </header>
 
@@ -547,424 +585,426 @@ function App() {
               <p>Complete fluid characterization, Z-factor correlations, volumetric, material balance, aquifer influx, and decline curve outputs.</p>
             </motion.header>
 
-            <motion.section
-              className="section-block"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.08 }}
-            >
-              <h2>Fluid Classification and Method Recommendation</h2>
-              <div className="data-grid">
-                <div className="data-item">
-                  <span className="data-label">Reservoir Fluid Type</span>
-                  <span className="data-value">{results.classification.fluidType}</span>
+            <div className="collapsible-list">
+              <CollapsibleSection
+                index={0}
+                title="Fluid Classification and Method Recommendation"
+                isOpen={Boolean(openSections[0])}
+                onToggle={toggleSection}
+                delay={0.08}
+              >
+                <div className="data-grid">
+                  <div className="data-item">
+                    <span className="data-label">Reservoir Fluid Type</span>
+                    <span className="data-value">{results.classification.fluidType}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Assigned Reservoir Class</span>
+                    <span className="data-value">{results.recommendation.reservoirClass}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Recommended Method</span>
+                    <span className="data-value">{results.recommendation.recommendedMethod}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Gas Equivalent of Condensate (GE)</span>
+                    <span className="data-value">{results.wetProps.gasEquivalentGE.toFixed(0)} scf/STB</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Well-Stream Specific Gravity</span>
+                    <span className="data-value">{results.wetProps.wellStreamGravity.toFixed(4)}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Initial Condensate in Place (Nc)</span>
+                    <span className="data-value">{(results.wetProps.initialCondensateInPlaceStb / 1e6).toFixed(2)} MMSTB</span>
+                  </div>
                 </div>
-                <div className="data-item">
-                  <span className="data-label">Assigned Reservoir Class</span>
-                  <span className="data-value">{results.recommendation.reservoirClass}</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Recommended Method</span>
-                  <span className="data-value">{results.recommendation.recommendedMethod}</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Gas Equivalent of Condensate (GE)</span>
-                  <span className="data-value">{results.wetProps.gasEquivalentGE.toFixed(0)} scf/STB</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Well-Stream Specific Gravity</span>
-                  <span className="data-value">{results.wetProps.wellStreamGravity.toFixed(4)}</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Initial Condensate in Place (Nc)</span>
-                  <span className="data-value">{(results.wetProps.initialCondensateInPlaceStb / 1e6).toFixed(2)} MMSTB</span>
-                </div>
-              </div>
-              <p className="diagnostic-note">{results.recommendation.evidence}</p>
-            </motion.section>
+                <p className="diagnostic-note">{results.recommendation.evidence}</p>
+              </CollapsibleSection>
 
-            <motion.section
-              className="section-block"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.12 }}
-            >
-              <h2>Gas Properties and Z-Factor Correlations at Initial Conditions</h2>
-              <div className="data-grid">
-                <div className="data-item">
-                  <span className="data-label">Pseudo-Reduced Pressure (Ppr)</span>
-                  <span className="data-value">{results.initialReduced.ppr.toFixed(3)}</span>
+              <CollapsibleSection
+                index={1}
+                title="Gas Properties and Z-Factor Correlations at Initial Conditions"
+                isOpen={Boolean(openSections[1])}
+                onToggle={toggleSection}
+                delay={0.11}
+              >
+                <div className="data-grid">
+                  <div className="data-item">
+                    <span className="data-label">Pseudo-Reduced Pressure (Ppr)</span>
+                    <span className="data-value">{results.initialReduced.ppr.toFixed(3)}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Pseudo-Reduced Temp (Tpr)</span>
+                    <span className="data-value">{results.initialReduced.tpr.toFixed(3)}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Hall-Yarborough Z (zi)</span>
+                    <span className="data-value">{results.zHallYarboroughInitial}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Brill and Beggs Z (zi)</span>
+                    <span className="data-value">{results.zBrillBeggsInitial}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Dranchuk-Abou-Kassem Z (zi)</span>
+                    <span className="data-value">{results.zDakInitial}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Initial Bgi (ft3/scf)</span>
+                    <span className="data-value">{results.bgiCuft} ft3/scf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Initial Bgi (rb/scf)</span>
+                    <span className="data-value">{results.bgiRb} rb/scf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Abandonment Bga</span>
+                    <span className="data-value">{results.bgaCuft} ft3/scf</span>
+                  </div>
                 </div>
-                <div className="data-item">
-                  <span className="data-label">Pseudo-Reduced Temp (Tpr)</span>
-                  <span className="data-value">{results.initialReduced.tpr.toFixed(3)}</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Hall-Yarborough Z (zi)</span>
-                  <span className="data-value">{results.zHallYarboroughInitial}</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Brill and Beggs Z (zi)</span>
-                  <span className="data-value">{results.zBrillBeggsInitial}</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Dranchuk-Abou-Kassem Z (zi)</span>
-                  <span className="data-value">{results.zDakInitial}</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Initial Bgi (Eq. 3.1)</span>
-                  <span className="data-value">{results.bgiCuft} ft3/scf</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Initial Bgi (Eq. 3.2)</span>
-                  <span className="data-value">{results.bgiRb} rb/scf</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Abandonment Bga</span>
-                  <span className="data-value">{results.bgaCuft} ft3/scf</span>
-                </div>
-              </div>
-            </motion.section>
+              </CollapsibleSection>
 
-            <motion.section
-              className="section-block"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.16 }}
-            >
-              <h2>Volumetric, Material Balance, and PRMS Reserves</h2>
-              <div className="data-grid">
-                <div className="data-item">
-                  <span className="data-label">Original Gas in Place (G)</span>
-                  <span className="data-value">{results.volRes.giipBscf.toFixed(2)} Bscf</span>
+              <CollapsibleSection
+                index={2}
+                title="Volumetric, Material Balance, and PRMS Reserves"
+                isOpen={Boolean(openSections[2])}
+                onToggle={toggleSection}
+                delay={0.14}
+              >
+                <div className="data-grid">
+                  <div className="data-item">
+                    <span className="data-label">Original Gas in Place (G)</span>
+                    <span className="data-value">{results.volRes.giipBscf.toFixed(2)} Bscf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Volumetric Recovery Factor</span>
+                    <span className="data-value">{(results.volRes.rfVolumetric * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Water-Drive Recovery Factor</span>
+                    <span className="data-value">{(results.volRes.rfWaterDrive * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Ultimate Recoverable Gas (EUR)</span>
+                    <span className="data-value">{results.volRes.ultimateRecoveryBscf.toFixed(2)} Bscf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">1P Proved Reserves (P90)</span>
+                    <span className="data-value">{results.prmsRes.reserve1P} Bscf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">2P Probable Reserves (P50)</span>
+                    <span className="data-value">{results.prmsRes.reserve2P} Bscf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">3P Possible Reserves (P10)</span>
+                    <span className="data-value">{results.prmsRes.reserve3P} Bscf</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Initial pi/zi Intercept</span>
+                    <span className="data-value">{results.volRes.piOverZi.toFixed(0)} psia</span>
+                  </div>
                 </div>
-                <div className="data-item">
-                  <span className="data-label">Volumetric Recovery Factor (Eq. 3.12)</span>
-                  <span className="data-value">{(results.volRes.rfVolumetric * 100).toFixed(1)}%</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Water-Drive Recovery Factor (Eq. 3.13)</span>
-                  <span className="data-value">{(results.volRes.rfWaterDrive * 100).toFixed(1)}%</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Ultimate Recoverable Gas (EUR)</span>
-                  <span className="data-value">{results.volRes.ultimateRecoveryBscf.toFixed(2)} Bscf</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">1P Proved Reserves (P90)</span>
-                  <span className="data-value">{results.prmsRes.reserve1P} Bscf</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">2P Probable Reserves (P50)</span>
-                  <span className="data-value">{results.prmsRes.reserve2P} Bscf</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">3P Possible Reserves (P10)</span>
-                  <span className="data-value">{results.prmsRes.reserve3P} Bscf</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Initial pi/zi Intercept</span>
-                  <span className="data-value">{results.volRes.piOverZi.toFixed(0)} psia</span>
-                </div>
-              </div>
-            </motion.section>
+              </CollapsibleSection>
 
-            <motion.section
-              className="section-block"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.2 }}
-            >
-              <h2>Reservoir Drive Energy Indices and Aquifer Influx (Sections 3.6 and 3.7)</h2>
-              <div className="data-grid">
-                <div className="data-item">
-                  <span className="data-label">Depletion Drive Index (IDD)</span>
-                  <span className="data-value">{results.mbeRes.IDD.toFixed(3)}</span>
+              <CollapsibleSection
+                index={3}
+                title="Reservoir Drive Energy Indices and Aquifer Influx"
+                isOpen={Boolean(openSections[3])}
+                onToggle={toggleSection}
+                delay={0.17}
+              >
+                <div className="data-grid">
+                  <div className="data-item">
+                    <span className="data-label">Depletion Drive Index (IDD)</span>
+                    <span className="data-value">{results.mbeRes.IDD.toFixed(3)}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Compaction Drive Index (ICD)</span>
+                    <span className="data-value">{results.mbeRes.ICD.toFixed(3)}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Water Drive Index (IWD)</span>
+                    <span className="data-value">{results.mbeRes.IWD.toFixed(3)}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Drive Index Sum Check</span>
+                    <span className="data-value">{results.mbeRes.driveSum.toFixed(3)}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Cumulative Water Influx (We)</span>
+                    <span className="data-value">{(results.mbeRes.cumulativeWeBbl / 1e6).toFixed(2)} MMbbl</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Arps Hyperbolic EUR</span>
+                    <span className="data-value">{results.dcaRes.eurHyperbolicBscf.toFixed(2)} Bscf</span>
+                  </div>
                 </div>
-                <div className="data-item">
-                  <span className="data-label">Compaction Drive Index (ICD)</span>
-                  <span className="data-value">{results.mbeRes.ICD.toFixed(3)}</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Water Drive Index (IWD)</span>
-                  <span className="data-value">{results.mbeRes.IWD.toFixed(3)}</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Drive Index Sum Check (Eq. 3.57)</span>
-                  <span className="data-value">{results.mbeRes.driveSum.toFixed(3)}</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Cumulative Water Influx (We)</span>
-                  <span className="data-value">{(results.mbeRes.cumulativeWeBbl / 1e6).toFixed(2)} MMbbl</span>
-                </div>
-                <div className="data-item">
-                  <span className="data-label">Arps Hyperbolic EUR (Eq. 3.73)</span>
-                  <span className="data-value">{results.dcaRes.eurHyperbolicBscf.toFixed(2)} Bscf</span>
-                </div>
-              </div>
-            </motion.section>
+              </CollapsibleSection>
 
-            <motion.section
-              className="section-block"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.24 }}
-            >
-              <h2>Material Balance: p/z vs Cumulative Gas Production (Figure 3.1)</h2>
-              <p className="chart-desc">
-                Comparison of linear volumetric depletion (Eq. 3.17) against water-drive pressure support curvature (Eq. 3.30).
-              </p>
-              <div className="chart-holder">
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={results.mbeRes.pzComparisonCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
-                    <XAxis
-                      dataKey="gp"
-                      stroke="#9ca3af"
-                      tickLine={false}
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      label={{ value: 'Cumulative Gas Gp (Bscf)', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
-                    />
-                    <YAxis
-                      stroke="#9ca3af"
-                      tickLine={false}
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      label={{ value: 'p/z (psia)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
-                    />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
-                    />
-                    <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12, paddingBottom: 10 }} />
-                    <Line
-                      type="monotone"
-                      dataKey="volumetricPz"
-                      name="Volumetric Depletion (Straight Line)"
-                      stroke="#111827"
-                      strokeWidth={2}
-                      dot={{ r: 3, fill: '#111827' }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="waterDrivePz"
-                      name="Water Drive (Aquifer Support)"
-                      stroke="#9ca3af"
-                      strokeWidth={2}
-                      dot={{ r: 3, fill: '#9ca3af' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </motion.section>
+              <CollapsibleSection
+                index={4}
+                title="Material Balance: p/z vs Cumulative Gas Production"
+                isOpen={Boolean(openSections[4])}
+                onToggle={toggleSection}
+                delay={0.2}
+              >
+                <p className="chart-desc">
+                  Comparison of linear volumetric depletion against water-drive pressure support curvature.
+                </p>
+                <div className="chart-holder">
+                  <ResponsiveContainer width="100%" height={260}>
+                    <LineChart data={results.mbeRes.pzComparisonCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
+                      <XAxis
+                        dataKey="gp"
+                        stroke="#9ca3af"
+                        tickLine={false}
+                        tick={{ fontSize: 11, fill: '#6b7280' }}
+                        label={{ value: 'Cumulative Gas Gp (Bscf)', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
+                      />
+                      <YAxis
+                        stroke="#9ca3af"
+                        tickLine={false}
+                        tick={{ fontSize: 11, fill: '#6b7280' }}
+                        label={{ value: 'p/z (psia)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
+                      />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
+                      />
+                      <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12, paddingBottom: 10 }} />
+                      <Line
+                        type="monotone"
+                        dataKey="volumetricPz"
+                        name="Volumetric Depletion (Straight Line)"
+                        stroke="#111827"
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: '#111827' }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="waterDrivePz"
+                        name="Water Drive (Aquifer Support)"
+                        stroke="#9ca3af"
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: '#9ca3af' }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CollapsibleSection>
 
-            <motion.section
-              className="section-block"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.28 }}
-            >
-              <h2>Z-Factor Correlations Across Pressure (Section 3.2.1 and 3.4.1)</h2>
-              <p className="chart-desc">
-                Comparison of Hall-Yarborough, Brill and Beggs, and Dranchuk-Abou-Kassem Z-factor predictions across pressure.
-              </p>
-              <div className="chart-holder">
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={results.zCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
-                    <XAxis
-                      dataKey="pressure"
-                      stroke="#9ca3af"
-                      tickLine={false}
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      label={{ value: 'Pressure (psia)', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
-                    />
-                    <YAxis
-                      domain={['auto', 'auto']}
-                      stroke="#9ca3af"
-                      tickLine={false}
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      label={{ value: 'Z-Factor', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
-                    />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
-                    />
-                    <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12, paddingBottom: 10 }} />
-                    <Line
-                      type="monotone"
-                      dataKey="hallYarborough"
-                      name="Hall-Yarborough"
-                      stroke="#111827"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="brillBeggs"
-                      name="Brill and Beggs"
-                      stroke="#6b7280"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="dak"
-                      name="Dranchuk-Abou-Kassem"
-                      stroke="#9ca3af"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </motion.section>
+              <CollapsibleSection
+                index={5}
+                title="Z-Factor Correlations Across Pressure"
+                isOpen={Boolean(openSections[5])}
+                onToggle={toggleSection}
+                delay={0.23}
+              >
+                <p className="chart-desc">
+                  Comparison of Hall-Yarborough, Brill and Beggs, and Dranchuk-Abou-Kassem Z-factor predictions across pressure.
+                </p>
+                <div className="chart-holder">
+                  <ResponsiveContainer width="100%" height={260}>
+                    <LineChart data={results.zCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
+                      <XAxis
+                        dataKey="pressure"
+                        stroke="#9ca3af"
+                        tickLine={false}
+                        tick={{ fontSize: 11, fill: '#6b7280' }}
+                        label={{ value: 'Pressure (psia)', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
+                      />
+                      <YAxis
+                        domain={['auto', 'auto']}
+                        stroke="#9ca3af"
+                        tickLine={false}
+                        tick={{ fontSize: 11, fill: '#6b7280' }}
+                        label={{ value: 'Z-Factor', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
+                      />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
+                      />
+                      <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12, paddingBottom: 10 }} />
+                      <Line
+                        type="monotone"
+                        dataKey="hallYarborough"
+                        name="Hall-Yarborough"
+                        stroke="#111827"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="brillBeggs"
+                        name="Brill and Beggs"
+                        stroke="#6b7280"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="dak"
+                        name="Dranchuk-Abou-Kassem"
+                        stroke="#9ca3af"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CollapsibleSection>
 
-            <motion.section
-              className="section-block"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.32 }}
-            >
-              <h2>Cole Diagnostic Plot: Apparent GIIP (F/Eg) vs Gp (Section 3.5.4)</h2>
-              <p className="chart-desc">
-                For a volumetric reservoir, F/Eg remains flat at true G. An upward trend indicates active water influx (Eq. 3.52).
-              </p>
-              <div className="chart-holder">
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={results.mbeRes.havlenaOdehPoints} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
-                    <XAxis
-                      dataKey="gpBscf"
-                      stroke="#9ca3af"
-                      tickLine={false}
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      label={{ value: 'Cumulative Gas Gp (Bscf)', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
-                    />
-                    <YAxis
-                      domain={['auto', 'auto']}
-                      stroke="#9ca3af"
-                      tickLine={false}
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      label={{ value: 'F/Eg Apparent G (Bscf)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
-                    />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="coleApparentGBscf"
-                      name="Apparent GIIP (F/Eg)"
-                      stroke="#111827"
-                      strokeWidth={2}
-                      dot={{ r: 3, fill: '#111827' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </motion.section>
+              <CollapsibleSection
+                index={6}
+                title="Cole Diagnostic Plot: Apparent GIIP (F/Eg) vs Cumulative Gas Production"
+                isOpen={Boolean(openSections[6])}
+                onToggle={toggleSection}
+                delay={0.26}
+              >
+                <p className="chart-desc">
+                  For a volumetric reservoir, F/Eg remains flat at true gas in place. An upward trend indicates active water influx.
+                </p>
+                <div className="chart-holder">
+                  <ResponsiveContainer width="100%" height={260}>
+                    <LineChart data={results.mbeRes.havlenaOdehPoints} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
+                      <XAxis
+                        dataKey="gpBscf"
+                        stroke="#9ca3af"
+                        tickLine={false}
+                        tick={{ fontSize: 11, fill: '#6b7280' }}
+                        label={{ value: 'Cumulative Gas Gp (Bscf)', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
+                      />
+                      <YAxis
+                        domain={['auto', 'auto']}
+                        stroke="#9ca3af"
+                        tickLine={false}
+                        tick={{ fontSize: 11, fill: '#6b7280' }}
+                        label={{ value: 'F/Eg Apparent G (Bscf)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
+                      />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="coleApparentGBscf"
+                        name="Apparent GIIP (F/Eg)"
+                        stroke="#111827"
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: '#111827' }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CollapsibleSection>
 
-            <motion.section
-              className="section-block"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.36 }}
-            >
-              <h2>Arps Decline Curve Analysis: Exponential, Hyperbolic, and Harmonic (Section 3.8)</h2>
-              <p className="chart-desc">
-                Production rate forecast over 36 months comparing Exponential (b=0), Hyperbolic (b={arpsB}), and Harmonic (b=1) models.
-              </p>
-              <div className="chart-holder">
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={results.dcaRes.dcaCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
-                    <XAxis
-                      dataKey="month"
-                      stroke="#9ca3af"
-                      tickLine={false}
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      label={{ value: 'Production Month', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
-                    />
-                    <YAxis
-                      stroke="#9ca3af"
-                      tickLine={false}
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      label={{ value: 'Rate (Mscf/day)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
-                    />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
-                    />
-                    <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12, paddingBottom: 10 }} />
-                    <Line
-                      type="monotone"
-                      dataKey="hyperbolicRate"
-                      name="Hyperbolic"
-                      stroke="#111827"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="exponentialRate"
-                      name="Exponential"
-                      stroke="#6b7280"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="harmonicRate"
-                      name="Harmonic"
-                      stroke="#9ca3af"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </motion.section>
+              <CollapsibleSection
+                index={7}
+                title="Arps Decline Curve Analysis: Exponential, Hyperbolic, and Harmonic"
+                isOpen={Boolean(openSections[7])}
+                onToggle={toggleSection}
+                delay={0.29}
+              >
+                <p className="chart-desc">
+                  Production rate forecast over 36 months comparing Exponential (b=0), Hyperbolic (b={arpsB}), and Harmonic (b=1) models.
+                </p>
+                <div className="chart-holder">
+                  <ResponsiveContainer width="100%" height={260}>
+                    <LineChart data={results.dcaRes.dcaCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
+                      <XAxis
+                        dataKey="month"
+                        stroke="#9ca3af"
+                        tickLine={false}
+                        tick={{ fontSize: 11, fill: '#6b7280' }}
+                        label={{ value: 'Production Month', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
+                      />
+                      <YAxis
+                        stroke="#9ca3af"
+                        tickLine={false}
+                        tick={{ fontSize: 11, fill: '#6b7280' }}
+                        label={{ value: 'Rate (Mscf/day)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
+                      />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
+                      />
+                      <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12, paddingBottom: 10 }} />
+                      <Line
+                        type="monotone"
+                        dataKey="hyperbolicRate"
+                        name="Hyperbolic"
+                        stroke="#111827"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="exponentialRate"
+                        name="Exponential"
+                        stroke="#6b7280"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="harmonicRate"
+                        name="Harmonic"
+                        stroke="#9ca3af"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CollapsibleSection>
 
-            <motion.section
-              className="section-block"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.4 }}
-            >
-              <h2>PRMS Probabilistic Reserves Exceedance Curve (Section 3.6)</h2>
-              <p className="chart-desc">
-                Cumulative probability distribution from Monte Carlo simulation showing P90 (1P), P50 (2P), and P10 (3P) recoverable reserves.
-              </p>
-              <div className="chart-holder">
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={results.prmsRes.probabilityCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
-                    <XAxis
-                      dataKey="exceedancePct"
-                      stroke="#9ca3af"
-                      tickLine={false}
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      label={{ value: 'Probability of Exceedance', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
-                    />
-                    <YAxis
-                      domain={['auto', 'auto']}
-                      stroke="#9ca3af"
-                      tickLine={false}
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      label={{ value: 'Reserves (Bscf)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
-                    />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="reservesBscf"
-                      name="Recoverable Reserves (Bscf)"
-                      stroke="#111827"
-                      strokeWidth={2}
-                      dot={{ r: 3, fill: '#111827' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </motion.section>
+              <CollapsibleSection
+                index={8}
+                title="PRMS Probabilistic Reserves Exceedance Curve"
+                isOpen={Boolean(openSections[8])}
+                onToggle={toggleSection}
+                delay={0.32}
+              >
+                <p className="chart-desc">
+                  Cumulative probability distribution from Monte Carlo simulation showing P90 (1P), P50 (2P), and P10 (3P) recoverable reserves.
+                </p>
+                <div className="chart-holder">
+                  <ResponsiveContainer width="100%" height={260}>
+                    <LineChart data={results.prmsRes.probabilityCurve} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
+                      <XAxis
+                        dataKey="exceedancePct"
+                        stroke="#9ca3af"
+                        tickLine={false}
+                        tick={{ fontSize: 11, fill: '#6b7280' }}
+                        label={{ value: 'Probability of Exceedance', position: 'insideBottom', offset: -10, fill: '#6b7280', fontSize: 11 }}
+                      />
+                      <YAxis
+                        domain={['auto', 'auto']}
+                        stroke="#9ca3af"
+                        tickLine={false}
+                        tick={{ fontSize: 11, fill: '#6b7280' }}
+                        label={{ value: 'Reserves (Bscf)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
+                      />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.6rem 1rem' }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="reservesBscf"
+                        name="Recoverable Reserves (Bscf)"
+                        stroke="#111827"
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: '#111827' }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CollapsibleSection>
+            </div>
 
             <motion.div
               className="bottom-action"
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.44 }}
+              transition={{ duration: 0.4, delay: 0.36 }}
             >
               <motion.button
                 type="button"

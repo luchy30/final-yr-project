@@ -226,3 +226,4 @@ export function calcWetGasProperties({ gorScfStb, apiGravity, surfaceGasGravity,
     initialCondensateInPlaceStb,
   }
 }
+
