@@ -1,52 +1,97 @@
-// Section 3.1 & 3.2: Fluid Classification and Gas Property Calculations
+// Fluid Classification and Gas Property Correlations
 
-export function classifyReservoirFluid({ gorScfStb, apiGravity, reservoirTempF, dewPointPsia, initialPressurePsia }) {
+export function classifyReservoirFluid({
+  gorScfStb,
+  apiGravity,
+  reservoirTempF,
+  dewPointPsia,
+  initialPressurePsia,
+  criterion = 'ahmed',
+}) {
   const gor = Number(gorScfStb)
   const api = Number(apiGravity)
   const pDew = Number(dewPointPsia)
   const pi = Number(initialPressurePsia)
 
-  if (pDew > 0 && pi >= pDew && gor >= 3000 && gor <= 70000) {
+  if (criterion === 'mccain') {
+    if (gor >= 3200 && gor <= 15000) {
+      return {
+        fluidType: 'Gas Condensate',
+        phaseRegime: 'Gas above the dew point; liquid drops out below it',
+        surfaceLiquid: 'Condensate (above 40 API)',
+        gorBehavior: 'Rises below the dew point',
+        tempRegime: 'Between critical temperature and cricondentherm',
+        requiresTwoPhaseZ: true,
+        criterionName: 'McCain (1990)',
+      }
+    }
+    if (gor > 15000 && gor <= 100000) {
+      return {
+        fluidType: 'Wet Gas',
+        phaseRegime: 'Single-phase gas in reservoir throughout depletion',
+        surfaceLiquid: 'Light, water-white condensate (up to 70 API)',
+        gorBehavior: 'Constant throughout depletion',
+        tempRegime: 'Above the cricondentherm',
+        requiresTwoPhaseZ: false,
+        criterionName: 'McCain (1990)',
+      }
+    }
     return {
-      fluidType: 'Gas Condensate',
-      phaseRegime: 'Two-phase below dew point (retrograde condensation)',
-      surfaceLiquid: 'Condensate (40 to 60 API)',
-      gorBehavior: 'Rises below the dew point',
-      requiresTwoPhaseZ: true,
+      fluidType: 'Dry Gas',
+      phaseRegime: 'Single-phase gas in reservoir throughout depletion',
+      surfaceLiquid: 'None (no liquid)',
+      gorBehavior: 'Not applicable',
+      tempRegime: 'Above the cricondentherm',
+      requiresTwoPhaseZ: false,
+      criterionName: 'McCain (1990)',
     }
   }
 
-  if (gor > 0 && gor < 15000) {
+  // Default: Ahmed (2019) from Table 3.1
+  let isCondensateAhmed = false
+  if (pDew > 0 && pi >= pDew && gor >= 8000 && gor <= 70000) {
+    isCondensateAhmed = true
+  }
+  if (gor > 0 && gor < 60000) {
+    isCondensateAhmed = true
+  }
+
+  if (isCondensateAhmed) {
     return {
       fluidType: 'Gas Condensate',
-      phaseRegime: 'Gas above dew point; liquid drops out below it',
+      phaseRegime: 'Gas above the dew point; liquid drops out below it',
       surfaceLiquid: 'Condensate (40 to 60 API)',
       gorBehavior: 'Rises below the dew point',
+      tempRegime: 'Between critical temperature and cricondentherm',
       requiresTwoPhaseZ: true,
+      criterionName: 'Ahmed (2019)',
     }
   }
 
-  if (gor >= 15000 && gor <= 100000) {
+  if (gor >= 60000 && gor <= 100000) {
     return {
       fluidType: 'Wet Gas',
       phaseRegime: 'Single-phase gas in reservoir throughout depletion',
-      surfaceLiquid: api >= 50 ? 'Light water-white condensate' : 'Surface separator liquid',
+      surfaceLiquid: api >= 60 ? 'Light, water-white condensate (above 60 API)' : 'Light surface condensate',
       gorBehavior: 'Constant throughout depletion',
+      tempRegime: 'Above the cricondentherm',
       requiresTwoPhaseZ: false,
+      criterionName: 'Ahmed (2019)',
     }
   }
 
   return {
     fluidType: 'Dry Gas',
-    phaseRegime: 'Single-phase gas in reservoir and at surface',
-    surfaceLiquid: 'None (negligible liquid yield)',
-    gorBehavior: 'Not applicable (dry gas)',
+    phaseRegime: 'Single-phase gas in reservoir throughout depletion',
+    surfaceLiquid: 'None',
+    gorBehavior: 'Not applicable',
+    tempRegime: 'Above the cricondentherm',
     requiresTwoPhaseZ: false,
+    criterionName: 'Ahmed (2019)',
   }
 }
 
-// Section 3.2.1: Pseudo-critical and Pseudo-reduced Properties
-export function calcPseudoCriticalProperties(gasGravity, method = 'chapter3') {
+export function calcPseudoCriticalProperties(gasGravity, method = 'linear') {
   const gg = Number(gasGravity) > 0 ? Number(gasGravity) : 0.65
 
   if (method === 'sutton') {
@@ -55,13 +100,13 @@ export function calcPseudoCriticalProperties(gasGravity, method = 'chapter3') {
     return { ppc, tpc }
   }
 
-  // Chapter 3 Section 3.2.1 linear correlation
+  // Standard linear correlation: Tpc = 170.491 + 307.344 * yg, Ppc = 709.604 - 58.718 * yg
   const tpc = 170.491 + 307.344 * gg
   const ppc = 709.604 - 58.718 * gg
   return { ppc, tpc }
 }
 
-export function calcPseudoReduced(pressurePsia, tempF, gasGravity, method = 'chapter3') {
+export function calcPseudoReduced(pressurePsia, tempF, gasGravity, method = 'linear') {
   const p = Number(pressurePsia) > 0 ? Number(pressurePsia) : 14.7
   const tempR = Number(tempF) + 459.67
   const { ppc, tpc } = calcPseudoCriticalProperties(gasGravity, method)
@@ -70,8 +115,8 @@ export function calcPseudoReduced(pressurePsia, tempF, gasGravity, method = 'cha
   return { ppc, tpc, ppr, tpr, tempR }
 }
 
-// Section 3.2.1: Brill and Beggs Z-Factor Correlation (Equations 3.2 - 3.3)
-export function calcBrillBeggsZ(ppr, tpr) {
+// Brill and Beggs Z-Factor Correlation with full intermediate coefficients A, B, C, D, E, F
+export function calcBrillBeggsDetails(ppr, tpr) {
   const safeTpr = Math.max(0.93, tpr)
   const A = 1.39 * Math.pow(safeTpr - 0.92, 0.5) - 0.36 * safeTpr - 0.10
   const E = 9 * (safeTpr - 1)
@@ -83,13 +128,18 @@ export function calcBrillBeggsZ(ppr, tpr) {
   const F = 0.3106 - 0.49 * safeTpr + 0.1824 * safeTpr * safeTpr
   const D = Math.pow(10, F)
 
-  const z = A + (1 - A) / Math.exp(B) + C * Math.pow(ppr, D)
-  if (!Number.isFinite(z)) return 0.9
-  return Math.max(0.3, Math.min(2.5, z))
+  const rawZ = A + (1 - A) / Math.exp(B) + C * Math.pow(ppr, D)
+  const z = Number.isFinite(rawZ) ? Math.max(0.3, Math.min(2.5, rawZ)) : 0.9
+
+  return { z, A, B, C, D, E, F }
 }
 
-// Section 3.2.1: Hall-Yarborough Iterative Z-Factor Correlation
-export function calcHallYarboroughZ(ppr, tpr) {
+export function calcBrillBeggsZ(ppr, tpr) {
+  return calcBrillBeggsDetails(ppr, tpr).z
+}
+
+// Hall and Yarborough Iterative Z-Factor Correlation with coefficients t, X1, X2, X3, X4, Y
+export function calcHallYarboroughDetails(ppr, tpr) {
   const t = tpr > 0 ? 1 / tpr : 1
   const X1 = -0.06125 * ppr * t * Math.exp(-1.2 * Math.pow(1 - t, 2))
   const X2 = 14.76 * t - 9.76 * t * t + 4.58 * t * t * t
@@ -121,13 +171,18 @@ export function calcHallYarboroughZ(ppr, tpr) {
     y = Math.max(1e-6, Math.min(0.95, nextY))
   }
 
-  const z = y > 0 ? -X1 / y : 1
-  if (!Number.isFinite(z)) return 0.9
-  return Math.max(0.3, Math.min(2.5, z))
+  const rawZ = y > 0 ? -X1 / y : 1
+  const z = Number.isFinite(rawZ) ? Math.max(0.3, Math.min(2.5, rawZ)) : 0.9
+
+  return { z, t, X1, X2, X3, X4, Y: y }
 }
 
-// Section 3.4.1: Dranchuk and Abou-Kassem (1975) 11-Constant Z-Factor Correlation
-export function calcDranchukAbouKassemZ(ppr, tpr) {
+export function calcHallYarboroughZ(ppr, tpr) {
+  return calcHallYarboroughDetails(ppr, tpr).z
+}
+
+// Dranchuk and Abou-Kassem 11-Constant Z-Factor Correlation with reduced density rhor
+export function calcDranchukAbouKassemDetails(ppr, tpr) {
   const A1 = 0.3265
   const A2 = -1.07
   const A3 = -0.5339
@@ -182,26 +237,38 @@ export function calcDranchukAbouKassemZ(ppr, tpr) {
     rhor = Math.max(1e-5, Math.min(3.0, nextRhor))
   }
 
-  const z = (0.27 * ppr) / (rhor * safeTpr)
-  if (!Number.isFinite(z)) return 0.9
-  return Math.max(0.3, Math.min(2.5, z))
+  const rawZ = (0.27 * ppr) / (rhor * safeTpr)
+  const z = Number.isFinite(rawZ) ? Math.max(0.3, Math.min(2.5, rawZ)) : 0.9
+
+  return { z, rhor }
 }
 
-// Section 3.2: Gas Formation Volume Factor Bg (Equations 3.1 and 3.2)
+export function calcDranchukAbouKassemZ(ppr, tpr) {
+  return calcDranchukAbouKassemDetails(ppr, tpr).z
+}
+
+// Papay Explicit Z-Factor Correlation
+export function calcPapayZ(ppr, tpr) {
+  const safeTpr = Math.max(1.0, tpr)
+  const term1 = (3.52 * ppr) / Math.pow(10, 0.9813 * safeTpr)
+  const term2 = (0.274 * ppr * ppr) / Math.pow(10, 0.8157 * safeTpr)
+  const rawZ = 1 - term1 + term2
+  return Number.isFinite(rawZ) ? Math.max(0.3, Math.min(2.5, rawZ)) : 0.9
+}
+
+// Gas Formation Volume Factor Bg (ft3/scf and rb/scf)
 export function calcBg({ pressurePsia, tempR, zFactor }) {
   const p = Number(pressurePsia) > 0 ? Number(pressurePsia) : 14.7
   const t = Number(tempR) > 0 ? Number(tempR) : 520
   const z = Number(zFactor) > 0 ? Number(zFactor) : 1.0
 
-  // Equation [3.1]: cuft/scf
   const bgCuftScf = (0.02827 * z * t) / p
-  // Equation [3.2]: rb/scf
   const bgRbScf = (0.005035 * z * t) / p
 
   return { bgCuftScf, bgRbScf }
 }
 
-// Section 3.3: Wet Gas and Condensate Equivalent Properties
+// Wet Gas and Condensate Equivalent Properties
 export function calcWetGasProperties({ gorScfStb, apiGravity, surfaceGasGravity, wellStreamGasInPlaceScf }) {
   const gor = Number(gorScfStb) > 0 ? Number(gorScfStb) : 50000
   const api = Number(apiGravity) > 10 ? Number(apiGravity) : 55
@@ -226,4 +293,3 @@ export function calcWetGasProperties({ gorScfStb, apiGravity, surfaceGasGravity,
     initialCondensateInPlaceStb,
   }
 }
-

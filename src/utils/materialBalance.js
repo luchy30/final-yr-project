@@ -54,6 +54,9 @@ export function calcAquiferProperties({
   const lnRaRe = Math.log(ra / re)
   const schilthuisC = lnRaRe > 0 ? (0.00708 * k * h * f) / (muw * lnRaRe) : 0
 
+  // Equation (3.39): Hurst modified steady-state constant C' (bbl/day/psi)
+  const hurstCPrime = (0.00708 * k * h * f) / muw
+
   // Equation (3.41): van Everdingen-Hurst water influx constant B (bbl/psi)
   const vehB = 1.119 * phi * ct * re * re * h * f
 
@@ -69,6 +72,7 @@ export function calcAquiferProperties({
     ct,
     Wi,
     schilthuisC,
+    hurstCPrime,
     vehB,
     fetkovichWei,
     fetkovichJ,
@@ -106,6 +110,15 @@ export function calcWaterInfluxStep({
   if (model === 'schilthuis') {
     // Equation (3.37)
     const stepWe = aquiferProps.schilthuisC * Math.max(0, pi - pBar) * deltaTimeDays
+    return { weBbl: prevWeBbl + stepWe, nextAquiferPressure: pi }
+  }
+
+  if (model === 'hurst') {
+    // Equation (3.39): Hurst modified steady-state
+    const aParam = 0.001
+    const safeDays = Math.max(1, totalTimeDays)
+    const lnTerm = Math.max(0.3, Math.log(aParam * safeDays + 1.1))
+    const stepWe = (aquiferProps.hurstCPrime * Math.max(0, pi - pBar) * deltaTimeDays) / lnTerm
     return { weBbl: prevWeBbl + stepWe, nextAquiferPressure: pi }
   }
 

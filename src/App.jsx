@@ -13,8 +13,12 @@ import {
   classifyReservoirFluid,
   calcPseudoReduced,
   calcBrillBeggsZ,
+  calcBrillBeggsDetails,
   calcHallYarboroughZ,
+  calcHallYarboroughDetails,
   calcDranchukAbouKassemZ,
+  calcDranchukAbouKassemDetails,
+  calcPapayZ,
   calcBg,
   calcWetGasProperties,
 } from './utils/fluidProperties'
@@ -67,25 +71,30 @@ function CollapsibleSection({ index, title, isOpen, onToggle, delay = 0, childre
 }
 
 function App() {
-  // Reservoir & Petrophysical Inputs
+  // Reservoir and Petrophysical Inputs
   const [area, setArea] = useState('640')
   const [thickness, setThickness] = useState('45')
   const [porosity, setPorosity] = useState('0.18')
   const [waterSat, setWaterSat] = useState('0.25')
   const [residualGasSat, setResidualGasSat] = useState('0.25')
 
-  // Fluid & Pressure Inputs
+  // Fluid and Pressure Inputs
   const [pressure, setPressure] = useState('3200')
   const [abandonmentPressure, setAbandonmentPressure] = useState('500')
   const [temperature, setTemperature] = useState('180')
   const [gasGravity, setGasGravity] = useState('0.65')
   const [gor, setGor] = useState('120000')
   const [apiGravity, setApiGravity] = useState('55')
-  const [zMethod, setZMethod] = useState('hall_yarborough')
 
-  // Drive Mechanism, Aquifer & Decline Inputs
+  // Correlation Choices (Form and Results Dropdowns)
+  const [zMethod, setZMethod] = useState('hall_yarborough')
+  const [pseudoMethod, setPseudoMethod] = useState('linear')
+  const [classificationCriterion, setClassificationCriterion] = useState('ahmed')
+
+  // Drive Mechanism, Aquifer and Decline Inputs
   const [driveMechanism, setDriveMechanism] = useState('volumetric')
   const [aquiferModel, setAquiferModel] = useState('fetkovich')
+  const [declineModel, setDeclineModel] = useState('hyperbolic')
   const [fieldStage, setFieldStage] = useState('producing')
   const [initialRate, setInitialRate] = useState('12000')
   const [declineRate, setDeclineRate] = useState('0.025')
@@ -100,13 +109,16 @@ function App() {
     setActiveSection((prev) => (prev === index ? -1 : index))
   }
 
-  const computeZByMethod = (pPsia, tempF, gg, selectedMethod) => {
-    const { ppr, tpr } = calcPseudoReduced(pPsia, tempF, gg, 'chapter3')
+  const computeZByMethod = (pPsia, tempF, gg, selectedMethod, selectedPseudoMethod) => {
+    const { ppr, tpr } = calcPseudoReduced(pPsia, tempF, gg, selectedPseudoMethod)
     if (selectedMethod === 'brill_beggs') {
       return calcBrillBeggsZ(ppr, tpr)
     }
     if (selectedMethod === 'dak') {
       return calcDranchukAbouKassemZ(ppr, tpr)
+    }
+    if (selectedMethod === 'papay') {
+      return calcPapayZ(ppr, tpr)
     }
     return calcHallYarboroughZ(ppr, tpr)
   }
@@ -118,31 +130,41 @@ function App() {
     if (selectedMethod === 'dak') {
       return 'Dranchuk and Abou-Kassem'
     }
+    if (selectedMethod === 'papay') {
+      return 'Papay'
+    }
     return 'Hall and Yarborough'
   }
 
-  const handleCalculate = (e) => {
-    e.preventDefault()
+  const computeCompleteResults = (config) => {
+    const a = parseFloat(config.area) ? parseFloat(config.area) : 640
+    const h = parseFloat(config.thickness) ? parseFloat(config.thickness) : 45
+    const phi = parseFloat(config.porosity) ? parseFloat(config.porosity) : 0.18
+    const swi = parseFloat(config.waterSat) ? parseFloat(config.waterSat) : 0.25
+    const sgr = parseFloat(config.residualGasSat) ? parseFloat(config.residualGasSat) : 0.25
+    const pi = parseFloat(config.pressure) ? parseFloat(config.pressure) : 3200
+    const pa = parseFloat(config.abandonmentPressure) ? parseFloat(config.abandonmentPressure) : 500
+    const tempF = parseFloat(config.temperature) ? parseFloat(config.temperature) : 180
+    const gg = parseFloat(config.gasGravity) ? parseFloat(config.gasGravity) : 0.65
+    const gorVal = parseFloat(config.gor) ? parseFloat(config.gor) : 120000
+    const apiVal = parseFloat(config.apiGravity) ? parseFloat(config.apiGravity) : 55
 
-    const a = parseFloat(area) ? parseFloat(area) : 640
-    const h = parseFloat(thickness) ? parseFloat(thickness) : 45
-    const phi = parseFloat(porosity) ? parseFloat(porosity) : 0.18
-    const swi = parseFloat(waterSat) ? parseFloat(waterSat) : 0.25
-    const sgr = parseFloat(residualGasSat) ? parseFloat(residualGasSat) : 0.25
-    const pi = parseFloat(pressure) ? parseFloat(pressure) : 3200
-    const pa = parseFloat(abandonmentPressure) ? parseFloat(abandonmentPressure) : 500
-    const tempF = parseFloat(temperature) ? parseFloat(temperature) : 180
-    const gg = parseFloat(gasGravity) ? parseFloat(gasGravity) : 0.65
-    const gorVal = parseFloat(gor) ? parseFloat(gor) : 120000
-    const apiVal = parseFloat(apiGravity) ? parseFloat(apiGravity) : 55
+    const activeZMethod = config.zMethod
+    const activePseudoMethod = config.pseudoMethod
+    const activeCriterion = config.classificationCriterion
+    const activeDriveMechanism = config.driveMechanism
+    const activeAquiferModel = config.aquiferModel
+    const activeDeclineModel = config.declineModel
+    const activeFieldStage = config.fieldStage
 
-    // Step 1: Fluid Classification & Preliminary Wet-Gas Gravity Link
+    // Step 1: Fluid Classification with selected standard (Ahmed 2019 vs McCain 1990)
     const classification = classifyReservoirFluid({
       gorScfStb: gorVal,
       apiGravity: apiVal,
       reservoirTempF: tempF,
       dewPointPsia: 0,
       initialPressurePsia: pi,
+      criterion: activeCriterion,
     })
 
     const prelimWetProps = calcWetGasProperties({
@@ -152,20 +174,39 @@ function App() {
       wellStreamGasInPlaceScf: 0,
     })
 
-    // Tie fluid type into effective gas gravity for Z-factor correlations
     const effectiveGasGravity =
       classification.fluidType === 'Dry Gas'
         ? gg
         : prelimWetProps.wellStreamGravity
 
-    // Step 2: Pseudo-Critical, Pseudo-Reduced, Z-Factor, and Bg
-    const initialReduced = calcPseudoReduced(pi, tempF, effectiveGasGravity, 'chapter3')
+    // Step 2: Pseudo-critical properties (Linear vs Sutton 1985)
+    const initialReduced = calcPseudoReduced(pi, tempF, effectiveGasGravity, activePseudoMethod)
+    const abandonmentReduced = calcPseudoReduced(pa, tempF, effectiveGasGravity, activePseudoMethod)
+
+    // Calculate all four correlations at initial conditions for comparative evaluation
     const zBrillBeggsInitial = calcBrillBeggsZ(initialReduced.ppr, initialReduced.tpr)
     const zHallYarboroughInitial = calcHallYarboroughZ(initialReduced.ppr, initialReduced.tpr)
     const zDakInitial = calcDranchukAbouKassemZ(initialReduced.ppr, initialReduced.tpr)
+    const zPapayInitial = calcPapayZ(initialReduced.ppr, initialReduced.tpr)
 
-    const zi = computeZByMethod(pi, tempF, effectiveGasGravity, zMethod)
-    const za = computeZByMethod(pa, tempF, effectiveGasGravity, zMethod)
+    // Active chosen correlation
+    const zi = computeZByMethod(pi, tempF, effectiveGasGravity, activeZMethod, activePseudoMethod)
+    const za = computeZByMethod(pa, tempF, effectiveGasGravity, activeZMethod, activePseudoMethod)
+
+    // Intermediate correlation details for the active correlation
+    let correlationDetails = {}
+    if (activeZMethod === 'brill_beggs') {
+      correlationDetails = calcBrillBeggsDetails(initialReduced.ppr, initialReduced.tpr)
+    } else if (activeZMethod === 'dak') {
+      correlationDetails = calcDranchukAbouKassemDetails(initialReduced.ppr, initialReduced.tpr)
+    } else if (activeZMethod === 'papay') {
+      correlationDetails = {
+        term1: ((3.52 * initialReduced.ppr) / Math.pow(10, 0.9813 * Math.max(1.0, initialReduced.tpr))).toFixed(4),
+        term2: ((0.274 * initialReduced.ppr * initialReduced.ppr) / Math.pow(10, 0.8157 * Math.max(1.0, initialReduced.tpr))).toFixed(4),
+      }
+    } else {
+      correlationDetails = calcHallYarboroughDetails(initialReduced.ppr, initialReduced.tpr)
+    }
 
     const { bgCuftScf: bgiCuft, bgRbScf: bgiRb } = calcBg({
       pressurePsia: pi,
@@ -178,7 +219,7 @@ function App() {
       zFactor: za,
     })
 
-    // Step 3: Volumetric Reserves & Wet-Gas Surface Gas / Condensate Split
+    // Step 3: Volumetric Reserves
     const volRes = calcVolumetricReserves({
       areaAcres: a,
       netPayFeet: h,
@@ -192,7 +233,7 @@ function App() {
       abandonmentZ: za,
       bgaCuftScf: bgaCuft,
       cumulativeGasProducedBscf: 0,
-      driveMechanism,
+      driveMechanism: activeDriveMechanism,
     })
 
     const wetProps = calcWetGasProperties({
@@ -202,7 +243,7 @@ function App() {
       wellStreamGasInPlaceScf: volRes.giipScf,
     })
 
-    // Step 4: Aquifer Influx, Havlena-Odeh Material Balance, and Drive Energy Indices
+    // Step 4: Water Influx, Material Balance, and Drive Energy Indices
     const reFt = Math.sqrt((a * 43560) / Math.PI)
     const aquiferProps = calcAquiferProperties({
       reservoirRadiusFt: reFt,
@@ -219,52 +260,61 @@ function App() {
       tempF,
       gasGravity: effectiveGasGravity,
       initialWaterSat: swi,
-      aquiferModel,
-      driveMechanism,
-      calcZFunc: (pVal) => computeZByMethod(pVal, tempF, effectiveGasGravity, zMethod),
+      aquiferModel: activeAquiferModel,
+      driveMechanism: activeDriveMechanism,
+      calcZFunc: (pVal) => computeZByMethod(pVal, tempF, effectiveGasGravity, activeZMethod, activePseudoMethod),
       calcBgFunc: (pVal, zVal) =>
         calcBg({ pressurePsia: pVal, tempR: initialReduced.tempR, zFactor: zVal }),
       aquiferProps,
     })
 
-    // Step 5: Z-Factor vs Pressure Curve across all 3 correlations
+    // Step 5: Comparative Z-Factor Curve across all four correlations
     const zCurve = []
     const maxP = Math.max(pi, 4500)
     for (let testP = 500; testP <= maxP; testP += 500) {
-      const red = calcPseudoReduced(testP, tempF, effectiveGasGravity, 'chapter3')
+      const red = calcPseudoReduced(testP, tempF, effectiveGasGravity, activePseudoMethod)
       zCurve.push({
         pressure: testP,
         brillBeggs: Number(calcBrillBeggsZ(red.ppr, red.tpr).toFixed(4)),
         hallYarborough: Number(calcHallYarboroughZ(red.ppr, red.tpr).toFixed(4)),
         dak: Number(calcDranchukAbouKassemZ(red.ppr, red.tpr).toFixed(4)),
+        papay: Number(calcPapayZ(red.ppr, red.tpr).toFixed(4)),
       })
     }
 
     // Step 6: Arps Decline Curve Analysis
     const dcaRes = calcArpsDecline({
-      initialRateMscfDay: initialRate,
-      nominalDeclinePerMonth: declineRate,
-      hyperbolicExponentB: arpsB,
-      economicLimitMscfDay: economicLimit,
+      initialRateMscfDay: config.initialRate,
+      nominalDeclinePerMonth: config.declineRate,
+      hyperbolicExponentB: config.arpsB,
+      economicLimitMscfDay: config.economicLimit,
       forecastMonths: 36,
     })
 
-    // Step 7: Reconcile Volumetric, Material Balance, and Decline Curve Reserves
+    let selectedDcaEur = dcaRes.eurHyperbolicBscf
+    if (activeDeclineModel === 'exponential') {
+      selectedDcaEur = dcaRes.eurExponentialBscf
+    }
+    if (activeDeclineModel === 'harmonic') {
+      selectedDcaEur = dcaRes.eurHarmonicBscf
+    }
+
+    // Step 7: Unified Reserves Reconciliation
     const recommendation = recommendMethodAndMechanism({
       fluidType: classification.fluidType,
-      driveMechanism,
-      fieldStage,
+      driveMechanism: activeDriveMechanism,
+      fieldStage: activeFieldStage,
       volumetricEurBscf: volRes.ultimateRecoveryBscf,
       mbeEurBscf: mbeRes.mbeEurBscf,
-      dcaEurBscf: dcaRes.eurHyperbolicBscf,
+      dcaEurBscf: selectedDcaEur,
       IDD: mbeRes.IDD,
       ICD: mbeRes.ICD,
       IWD: mbeRes.IWD,
-      zMethodLabel: getZMethodLabel(zMethod),
+      zMethodLabel: getZMethodLabel(activeZMethod),
       effectiveGasGravity,
     })
 
-    // Step 8: Tie PRMS 1P, 2P, 3P Monte Carlo to the Recommended Reserves and Class Spread
+    // Step 8: PRMS Monte Carlo Simulation tied to Recommended Reserves
     const prmsRes = calcPRMSReserves({
       areaAcres: a,
       netPayFeet: h,
@@ -276,15 +326,18 @@ function App() {
       uncertaintySpread: recommendation.uncertaintySpread,
     })
 
-    setResults({
+    return {
       classification,
       effectiveGasGravity: effectiveGasGravity.toFixed(4),
       initialReduced,
+      abandonmentReduced,
       zBrillBeggsInitial: zBrillBeggsInitial.toFixed(4),
       zHallYarboroughInitial: zHallYarboroughInitial.toFixed(4),
       zDakInitial: zDakInitial.toFixed(4),
+      zPapayInitial: zPapayInitial.toFixed(4),
       zi: zi.toFixed(4),
       za: za.toFixed(4),
+      correlationDetails,
       bgiCuft: bgiCuft.toFixed(5),
       bgiRb: bgiRb.toFixed(6),
       bgaCuft: bgaCuft.toFixed(5),
@@ -293,14 +346,136 @@ function App() {
       mbeRes,
       zCurve,
       dcaRes,
+      selectedDcaEur: Number(selectedDcaEur.toFixed(2)),
       prmsRes,
       recommendation,
+      activeZMethod,
+      activePseudoMethod,
+      activeCriterion,
+      activeAquiferModel,
+      activeDeclineModel,
+    }
+  }
+
+  const handleCalculate = (e) => {
+    e.preventDefault()
+
+    const evaluated = computeCompleteResults({
+      area,
+      thickness,
+      porosity,
+      waterSat,
+      residualGasSat,
+      pressure,
+      abandonmentPressure,
+      temperature,
+      gasGravity,
+      gor,
+      apiGravity,
+      zMethod,
+      pseudoMethod,
+      classificationCriterion,
+      driveMechanism,
+      aquiferModel,
+      declineModel,
+      fieldStage,
+      initialRate,
+      declineRate,
+      arpsB,
+      economicLimit,
     })
 
-    // First section expanded, all others collapsed in single-open accordion
+    setResults(evaluated)
     setActiveSection(0)
     setCurrentView('results')
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleCorrelationChangeOnResults = (newMethod) => {
+    setZMethod(newMethod)
+    const updated = computeCompleteResults({
+      area,
+      thickness,
+      porosity,
+      waterSat,
+      residualGasSat,
+      pressure,
+      abandonmentPressure,
+      temperature,
+      gasGravity,
+      gor,
+      apiGravity,
+      zMethod: newMethod,
+      pseudoMethod,
+      classificationCriterion,
+      driveMechanism,
+      aquiferModel,
+      declineModel,
+      fieldStage,
+      initialRate,
+      declineRate,
+      arpsB,
+      economicLimit,
+    })
+    setResults(updated)
+  }
+
+  const handleAquiferModelChangeOnResults = (newModel) => {
+    setAquiferModel(newModel)
+    const updated = computeCompleteResults({
+      area,
+      thickness,
+      porosity,
+      waterSat,
+      residualGasSat,
+      pressure,
+      abandonmentPressure,
+      temperature,
+      gasGravity,
+      gor,
+      apiGravity,
+      zMethod,
+      pseudoMethod,
+      classificationCriterion,
+      driveMechanism,
+      aquiferModel: newModel,
+      declineModel,
+      fieldStage,
+      initialRate,
+      declineRate,
+      arpsB,
+      economicLimit,
+    })
+    setResults(updated)
+  }
+
+  const handleDeclineModelChangeOnResults = (newModel) => {
+    setDeclineModel(newModel)
+    const updated = computeCompleteResults({
+      area,
+      thickness,
+      porosity,
+      waterSat,
+      residualGasSat,
+      pressure,
+      abandonmentPressure,
+      temperature,
+      gasGravity,
+      gor,
+      apiGravity,
+      zMethod,
+      pseudoMethod,
+      classificationCriterion,
+      driveMechanism,
+      aquiferModel,
+      declineModel: newModel,
+      fieldStage,
+      initialRate,
+      declineRate,
+      arpsB,
+      economicLimit,
+    })
+    setResults(updated)
   }
 
   const handleBackToForm = () => {
@@ -395,7 +570,7 @@ function App() {
                 />
               </div>
 
-              <h2 className="form-section-title">Fluid PVT and Z-Factor Correlation</h2>
+              <h2 className="form-section-title">Fluid PVT and Correlation Models</h2>
 
               <div className="field-group">
                 <label htmlFor="pressure">Initial Reservoir Pressure pi (psia)</label>
@@ -486,6 +661,33 @@ function App() {
                   <option value="hall_yarborough">Hall and Yarborough (Iterative EOS)</option>
                   <option value="brill_beggs">Brill and Beggs (Explicit)</option>
                   <option value="dak">Dranchuk and Abou-Kassem (11-Constant EOS)</option>
+                  <option value="papay">Papay (Explicit Empirical)</option>
+                </select>
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="pseudoMethod">Pseudocritical Property Correlation</label>
+                <select
+                  id="pseudoMethod"
+                  value={pseudoMethod}
+                  onChange={(e) => setPseudoMethod(e.target.value)}
+                  className="text-input"
+                >
+                  <option value="linear">Linear Correlation (Standard)</option>
+                  <option value="sutton">Sutton (1985) Quadratic Correlation</option>
+                </select>
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="classificationCriterion">Fluid Classification Standard</label>
+                <select
+                  id="classificationCriterion"
+                  value={classificationCriterion}
+                  onChange={(e) => setClassificationCriterion(e.target.value)}
+                  className="text-input"
+                >
+                  <option value="ahmed">Ahmed (2019) Criterion</option>
+                  <option value="mccain">McCain (1990) Criterion</option>
                 </select>
               </div>
 
@@ -514,9 +716,24 @@ function App() {
                 >
                   <option value="fetkovich">Fetkovich Finite Aquifer</option>
                   <option value="schilthuis">Schilthuis Steady-State</option>
+                  <option value="hurst">Hurst Modified Steady-State</option>
                   <option value="veh">van Everdingen and Hurst Unsteady-State</option>
                   <option value="carter_tracy">Carter and Tracy Recursion</option>
                   <option value="pot">Pot Aquifer</option>
+                </select>
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="declineModel">Primary Decline Curve Model</label>
+                <select
+                  id="declineModel"
+                  value={declineModel}
+                  onChange={(e) => setDeclineModel(e.target.value)}
+                  className="text-input"
+                >
+                  <option value="hyperbolic">Arps Hyperbolic Decline</option>
+                  <option value="exponential">Arps Exponential Decline</option>
+                  <option value="harmonic">Arps Harmonic Decline</option>
                 </select>
               </div>
 
@@ -624,6 +841,62 @@ function App() {
               <p>Complete fluid characterization, Z-factor correlations, volumetric, material balance, aquifer influx, and decline curve outputs.</p>
             </motion.header>
 
+            {/* Interactive Correlation Selector Bar on Results Page */}
+            <motion.div
+              className="correlation-selector-box"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.07 }}
+            >
+              <div className="selector-grid">
+                <div className="field-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="results-zMethod">Selected Z-Factor Correlation</label>
+                  <select
+                    id="results-zMethod"
+                    value={zMethod}
+                    onChange={(e) => handleCorrelationChangeOnResults(e.target.value)}
+                    className="text-input"
+                  >
+                    <option value="hall_yarborough">Hall and Yarborough (Iterative EOS)</option>
+                    <option value="brill_beggs">Brill and Beggs (Explicit)</option>
+                    <option value="dak">Dranchuk and Abou-Kassem (11-Constant EOS)</option>
+                    <option value="papay">Papay (Explicit Empirical)</option>
+                  </select>
+                </div>
+
+                <div className="field-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="results-aquiferModel">Selected Influx Model</label>
+                  <select
+                    id="results-aquiferModel"
+                    value={aquiferModel}
+                    onChange={(e) => handleAquiferModelChangeOnResults(e.target.value)}
+                    className="text-input"
+                  >
+                    <option value="fetkovich">Fetkovich Finite Aquifer</option>
+                    <option value="schilthuis">Schilthuis Steady-State</option>
+                    <option value="hurst">Hurst Modified Steady-State</option>
+                    <option value="veh">van Everdingen and Hurst Unsteady-State</option>
+                    <option value="carter_tracy">Carter and Tracy Recursion</option>
+                    <option value="pot">Pot Aquifer</option>
+                  </select>
+                </div>
+
+                <div className="field-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="results-declineModel">Selected Decline Model</label>
+                  <select
+                    id="results-declineModel"
+                    value={declineModel}
+                    onChange={(e) => handleDeclineModelChangeOnResults(e.target.value)}
+                    className="text-input"
+                  >
+                    <option value="hyperbolic">Arps Hyperbolic</option>
+                    <option value="exponential">Arps Exponential</option>
+                    <option value="harmonic">Arps Harmonic</option>
+                  </select>
+                </div>
+              </div>
+            </motion.div>
+
             <div className="collapsible-list">
               <CollapsibleSection
                 index={0}
@@ -655,7 +928,7 @@ function App() {
                   </div>
                   <div className="data-item">
                     <span className="data-label">Arps Decline Curve EUR</span>
-                    <span className="data-value">{results.recommendation.dcaEurBscf.toFixed(2)} Bscf</span>
+                    <span className="data-value">{results.selectedDcaEur.toFixed(2)} Bscf</span>
                   </div>
                   <div className="data-item">
                     <span className="data-label">1P Proved Reserves (P90)</span>
@@ -698,8 +971,16 @@ function App() {
                     <span className="data-value">{results.classification.fluidType}</span>
                   </div>
                   <div className="data-item">
+                    <span className="data-label">Classification Standard</span>
+                    <span className="data-value">{results.classification.criterionName}</span>
+                  </div>
+                  <div className="data-item">
                     <span className="data-label">Phase Regime</span>
                     <span className="data-value">{results.classification.phaseRegime}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Phase Diagram Temperature</span>
+                    <span className="data-value">{results.classification.tempRegime}</span>
                   </div>
                   <div className="data-item">
                     <span className="data-label">Effective Gravity for Z-Factor</span>
@@ -733,12 +1014,32 @@ function App() {
               >
                 <div className="data-grid">
                   <div className="data-item">
+                    <span className="data-label">Selected Z-Factor Correlation</span>
+                    <span className="data-value">{getZMethodLabel(results.activeZMethod)}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Active Initial Z (zi)</span>
+                    <span className="data-value">{results.zi}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Active Abandonment Z (za)</span>
+                    <span className="data-value">{results.za}</span>
+                  </div>
+                  <div className="data-item">
                     <span className="data-label">Pseudo-Reduced Pressure (Ppr)</span>
                     <span className="data-value">{results.initialReduced.ppr.toFixed(3)}</span>
                   </div>
                   <div className="data-item">
                     <span className="data-label">Pseudo-Reduced Temp (Tpr)</span>
                     <span className="data-value">{results.initialReduced.tpr.toFixed(3)}</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Pseudocritical Pressure (Ppc)</span>
+                    <span className="data-value">{results.initialReduced.ppc.toFixed(1)} psia</span>
+                  </div>
+                  <div className="data-item">
+                    <span className="data-label">Pseudocritical Temp (Tpc)</span>
+                    <span className="data-value">{results.initialReduced.tpc.toFixed(1)} R</span>
                   </div>
                   <div className="data-item">
                     <span className="data-label">Hall-Yarborough Z (zi)</span>
@@ -753,12 +1054,8 @@ function App() {
                     <span className="data-value">{results.zDakInitial}</span>
                   </div>
                   <div className="data-item">
-                    <span className="data-label">Active Initial Z (zi)</span>
-                    <span className="data-value">{results.zi}</span>
-                  </div>
-                  <div className="data-item">
-                    <span className="data-label">Active Abandonment Z (za)</span>
-                    <span className="data-value">{results.za}</span>
+                    <span className="data-label">Papay Z (zi)</span>
+                    <span className="data-value">{results.zPapayInitial}</span>
                   </div>
                   <div className="data-item">
                     <span className="data-label">Initial Bgi (ft3/scf)</span>
@@ -843,12 +1140,16 @@ function App() {
                     <span className="data-value">{results.mbeRes.driveSum.toFixed(3)}</span>
                   </div>
                   <div className="data-item">
+                    <span className="data-label">Active Water Influx Model</span>
+                    <span className="data-value">{results.activeAquiferModel}</span>
+                  </div>
+                  <div className="data-item">
                     <span className="data-label">Cumulative Water Influx (We)</span>
                     <span className="data-value">{(results.mbeRes.cumulativeWeBbl / 1e6).toFixed(2)} MMbbl</span>
                   </div>
                   <div className="data-item">
-                    <span className="data-label">Arps Hyperbolic EUR</span>
-                    <span className="data-value">{results.dcaRes.eurHyperbolicBscf.toFixed(2)} Bscf</span>
+                    <span className="data-label">Selected DCA EUR</span>
+                    <span className="data-value">{results.selectedDcaEur.toFixed(2)} Bscf</span>
                   </div>
                   <div className="data-item">
                     <span className="data-label">Time to Economic Limit (ta)</span>
@@ -916,7 +1217,7 @@ function App() {
                 delay={0.26}
               >
                 <p className="chart-desc">
-                  Comparison of Hall-Yarborough, Brill and Beggs, and Dranchuk-Abou-Kassem Z-factor predictions across pressure.
+                  Comparison of Hall-Yarborough, Brill and Beggs, Dranchuk-Abou-Kassem, and Papay Z-factor predictions across pressure.
                 </p>
                 <div className="chart-holder">
                   <ResponsiveContainer width="100%" height={260}>
@@ -951,7 +1252,7 @@ function App() {
                         type="monotone"
                         dataKey="brillBeggs"
                         name="Brill and Beggs"
-                        stroke="#6b7280"
+                        stroke="#4b5563"
                         strokeWidth={2}
                         dot={false}
                       />
@@ -960,6 +1261,14 @@ function App() {
                         dataKey="dak"
                         name="Dranchuk-Abou-Kassem"
                         stroke="#9ca3af"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="papay"
+                        name="Papay"
+                        stroke="#6b7280"
                         strokeWidth={2}
                         dot={false}
                       />
