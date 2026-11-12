@@ -13,12 +13,17 @@ import {
   Cell,
 } from 'recharts'
 import {
-  DashboardSquare01Icon,
-  SlidersHorizontalIcon,
-  ChartLineData01Icon,
+  Home01Icon,
+  Folder01Icon,
   Database01Icon,
+  Calculator01Icon,
+  ChartLineData01Icon,
+  File01Icon,
+  Settings01Icon,
+  SidebarLeft01Icon,
   Search01Icon,
   UserIcon,
+  SlidersHorizontalIcon,
 } from 'hugeicons-react'
 import {
   classifyReservoirFluid,
@@ -81,7 +86,10 @@ function CollapsibleSection({ index, title, isOpen, onToggle, delay = 0, childre
 }
 
 function App() {
-  // Navigation View: dashboard, parameters, evaluation, diagnostics
+  // Collapsible sidebar state
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+
+  // Navigation View: dashboard, projects, reservoir_data, calculations, results_analysis, reports, settings
   const [currentView, setCurrentView] = useState('dashboard')
 
   // Search input state
@@ -457,65 +465,45 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handleCorrelationChange = (newMethod) => {
-    setZMethod(newMethod)
-    const updated = computeCompleteResults({
-      area,
-      thickness,
-      porosity,
-      waterSat,
-      residualGasSat,
-      pressure,
-      abandonmentPressure,
-      temperature,
-      gasGravity,
-      gor,
-      apiGravity,
-      zMethod: newMethod,
-      pseudoMethod,
-      classificationCriterion,
-      driveMechanism,
-      aquiferModel,
-      declineModel,
-      fieldStage,
-      initialRate,
-      declineRate,
-      arpsB,
-      economicLimit,
-    })
-    setResults(updated)
-  }
-
   // Donut chart dataset for Reservoir Drive Indices
   const driveIndicesData = [
     {
       name: 'Gas Expansion (IDD)',
       value: Math.max(0.01, results.mbeRes.IDD),
-      color: '#2563eb',
+      color: '#059669',
       percentage: (results.mbeRes.IDD * 100).toFixed(1),
     },
     {
       name: 'Water Influx (IWD)',
       value: Math.max(0.01, results.mbeRes.IWD),
-      color: '#60a5fa',
+      color: '#34d399',
       percentage: (results.mbeRes.IWD * 100).toFixed(1),
     },
     {
       name: 'Rock and Fluid (ICD)',
       value: Math.max(0.01, results.mbeRes.ICD),
-      color: '#bfdbfe',
+      color: '#a7f3d0',
       percentage: (results.mbeRes.ICD * 100).toFixed(1),
     },
   ]
 
   return (
     <div className="dashboard-layout">
-      {/* Left Sidebar Navigation */}
-      <aside className="sidebar">
+      {/* Collapsible Left Sidebar (Matching exact links from the uploaded image) */}
+      <aside className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
         <div>
-          <div className="sidebar-brand">
-            <h2 className="brand-text">PetroReserves</h2>
-            <div className="brand-subtext">Gas Evaluation Platform</div>
+          <div className="sidebar-header-row">
+            {!isSidebarCollapsed && (
+              <h2 className="brand-text">PetroReserves</h2>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="sidebar-toggle-btn"
+              title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              <SidebarLeft01Icon size={18} />
+            </button>
           </div>
 
           <nav className="sidebar-nav">
@@ -523,60 +511,78 @@ function App() {
               type="button"
               onClick={() => setCurrentView('dashboard')}
               className={`nav-button ${currentView === 'dashboard' ? 'active' : ''}`}
+              title="Dashboard"
             >
-              <DashboardSquare01Icon size={20} />
-              <span>Dashboard</span>
+              <Home01Icon size={20} />
+              {!isSidebarCollapsed && <span className="nav-label-text">Dashboard</span>}
             </button>
 
             <button
               type="button"
-              onClick={() => setCurrentView('parameters')}
-              className={`nav-button ${currentView === 'parameters' ? 'active' : ''}`}
+              onClick={() => setCurrentView('projects')}
+              className={`nav-button ${currentView === 'projects' ? 'active' : ''}`}
+              title="Projects"
             >
-              <SlidersHorizontalIcon size={20} />
-              <span>Parameters</span>
+              <Folder01Icon size={20} />
+              {!isSidebarCollapsed && <span className="nav-label-text">Projects</span>}
             </button>
 
             <button
               type="button"
-              onClick={() => setCurrentView('evaluation')}
-              className={`nav-button ${currentView === 'evaluation' ? 'active' : ''}`}
+              onClick={() => setCurrentView('reservoir_data')}
+              className={`nav-button ${currentView === 'reservoir_data' ? 'active' : ''}`}
+              title="Reservoir Data"
             >
               <Database01Icon size={20} />
-              <span>Evaluation</span>
+              {!isSidebarCollapsed && <span className="nav-label-text">Reservoir Data</span>}
             </button>
 
             <button
               type="button"
-              onClick={() => setCurrentView('diagnostics')}
-              className={`nav-button ${currentView === 'diagnostics' ? 'active' : ''}`}
+              onClick={() => setCurrentView('calculations')}
+              className={`nav-button ${currentView === 'calculations' ? 'active' : ''}`}
+              title="Calculations"
             >
-              <ChartLineData01Icon size={20} />
-              <span>Diagnostics</span>
+              <Calculator01Icon size={20} />
+              {!isSidebarCollapsed && <span className="nav-label-text">Calculations</span>}
             </button>
 
-            <div className="nav-section-label">CORRELATION</div>
+            <button
+              type="button"
+              onClick={() => setCurrentView('results_analysis')}
+              className={`nav-button ${currentView === 'results_analysis' ? 'active' : ''}`}
+              title="Results & Analysis"
+            >
+              <ChartLineData01Icon size={20} />
+              {!isSidebarCollapsed && <span className="nav-label-text">Results & Analysis</span>}
+            </button>
 
-            <div style={{ padding: '0 0.5rem' }}>
-              <select
-                value={zMethod}
-                onChange={(e) => handleCorrelationChange(e.target.value)}
-                className="standard-input"
-                style={{ fontSize: '0.82rem', padding: '0.55rem 0.75rem' }}
-              >
-                <option value="hall_yarborough">Hall-Yarborough</option>
-                <option value="brill_beggs">Brill-Beggs</option>
-                <option value="dak">Dranchuk-Abou-Kassem</option>
-                <option value="papay">Papay</option>
-              </select>
-            </div>
+            <button
+              type="button"
+              onClick={() => setCurrentView('reports')}
+              className={`nav-button ${currentView === 'reports' ? 'active' : ''}`}
+              title="Reports"
+            >
+              <File01Icon size={20} />
+              {!isSidebarCollapsed && <span className="nav-label-text">Reports</span>}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCurrentView('settings')}
+              className={`nav-button ${currentView === 'settings' ? 'active' : ''}`}
+              title="Settings"
+            >
+              <Settings01Icon size={20} />
+              {!isSidebarCollapsed && <span className="nav-label-text">Settings</span>}
+            </button>
           </nav>
         </div>
 
         <div className="sidebar-footer">
           <div className="appearance-card">
             <span className="appearance-label">Appearance</span>
-            <span className="appearance-value">Light Clean</span>
+            <span className="appearance-value">Dark Teal</span>
           </div>
         </div>
       </aside>
@@ -587,10 +593,13 @@ function App() {
         <header className="topbar">
           <div className="topbar-title">
             <h1>
-              {currentView === 'dashboard' && 'Reservoir Overview'}
-              {currentView === 'parameters' && 'Reservoir Parameters'}
-              {currentView === 'evaluation' && 'Processed Evaluation'}
-              {currentView === 'diagnostics' && 'Diagnostic Charts'}
+              {currentView === 'dashboard' && 'Dashboard'}
+              {currentView === 'projects' && 'Projects'}
+              {currentView === 'reservoir_data' && 'Reservoir Data'}
+              {currentView === 'calculations' && 'Calculations'}
+              {currentView === 'results_analysis' && 'Results and Analysis'}
+              {currentView === 'reports' && 'Reports'}
+              {currentView === 'settings' && 'Settings'}
             </h1>
           </div>
 
@@ -601,7 +610,7 @@ function App() {
               </span>
               <input
                 type="text"
-                placeholder="Search methods, inputs..."
+                placeholder="Search here..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
@@ -613,12 +622,12 @@ function App() {
               onClick={() => handleCalculate()}
               className="top-action-btn"
             >
-              Recalculate
+              Run Calculation
             </button>
           </div>
         </header>
 
-        {/* View 1: Primary Dashboard Grid (Mirroring Uploaded UI) */}
+        {/* View 1: Primary Dashboard Grid (Mirroring Reference Image) */}
         {currentView === 'dashboard' && (
           <motion.div
             key="dashboard-view"
@@ -627,7 +636,7 @@ function App() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
           >
-            {/* Top Left Card: 2x2 Metric Grid */}
+            {/* Top Left Card: 2x2 KPI Matrix */}
             <div className="grid-card">
               <div className="card-header-row">
                 <h3 className="card-title">Reservoir Metrics</h3>
@@ -648,9 +657,9 @@ function App() {
                   <div className="kpi-icon-bubble">
                     <ChartLineData01Icon size={18} />
                   </div>
-                  <span className="kpi-label">Recoverable Reserves</span>
+                  <span className="kpi-label">Recoverable EUR</span>
                   <div className="kpi-number">{results.recommendation.finalRecommendedEurBscf.toFixed(2)} Bscf</div>
-                  <span className="kpi-context">Recommended EUR</span>
+                  <span className="kpi-context">Recommended reserves</span>
                 </div>
 
                 <div className="kpi-cell">
@@ -659,7 +668,7 @@ function App() {
                   </div>
                   <span className="kpi-label">Recovery Factor</span>
                   <div className="kpi-number">{(results.volRes.activeRf * 100).toFixed(1)}%</div>
-                  <span className="kpi-context">Based on {results.activeDriveMechanism === 'water_drive' ? 'water drive' : 'depletion'}</span>
+                  <span className="kpi-context">Drive mechanism efficiency</span>
                 </div>
 
                 <div className="kpi-cell">
@@ -673,7 +682,7 @@ function App() {
               </div>
             </div>
 
-            {/* Top Right Card: Correlation Heatmap / Comparison Matrix */}
+            {/* Top Right Card: Correlation Matrix Across Pressure */}
             <div className="grid-card">
               <div className="card-header-row">
                 <div>
@@ -712,7 +721,7 @@ function App() {
               </div>
 
               <div className="matrix-legend">
-                <span className="matrix-legend-item">Linear/Sutton Pseudocritical: {results.activePseudoMethod}</span>
+                <span className="matrix-legend-item">Pseudocritical: {results.activePseudoMethod}</span>
                 <span className="matrix-legend-item">Effective Gravity: {results.effectiveGasGravity}</span>
               </div>
             </div>
@@ -721,8 +730,8 @@ function App() {
             <div className="grid-card large-chart-card">
               <div className="card-header-row">
                 <div>
-                  <h3 className="card-title">Reservoir Trends</h3>
-                  <div className="card-subtitle">Depletion diagnostic and decline forecasts</div>
+                  <h3 className="card-title">Reservoir Depletion Curves</h3>
+                  <div className="card-subtitle">Material balance and decline trend monitoring</div>
                 </div>
 
                 <div className="tab-selector-bar">
@@ -773,7 +782,7 @@ function App() {
                       <Tooltip contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.5rem 0.8rem' }} />
                       <Legend verticalAlign="top" height={32} wrapperStyle={{ fontSize: 11 }} />
                       <Line type="monotone" dataKey="volumetricPz" name="Volumetric (Straight Line)" stroke="#111827" strokeWidth={2} dot={{ r: 2, fill: '#111827' }} />
-                      <Line type="monotone" dataKey="waterDrivePz" name="Water Drive (Aquifer Support)" stroke="#2563eb" strokeWidth={2} dot={{ r: 2, fill: '#2563eb' }} />
+                      <Line type="monotone" dataKey="waterDrivePz" name="Water Drive (Aquifer Support)" stroke="#059669" strokeWidth={2} dot={{ r: 2, fill: '#059669' }} />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -786,8 +795,8 @@ function App() {
                       <Tooltip contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.5rem 0.8rem' }} />
                       <Legend verticalAlign="top" height={32} wrapperStyle={{ fontSize: 11 }} />
                       <Line type="monotone" dataKey="hallYarborough" name="Hall-Yarborough" stroke="#111827" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="brillBeggs" name="Brill-Beggs" stroke="#2563eb" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="dak" name="Dranchuk-Abou-Kassem" stroke="#60a5fa" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="brillBeggs" name="Brill-Beggs" stroke="#059669" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="dak" name="Dranchuk-Abou-Kassem" stroke="#34d399" strokeWidth={2} dot={false} />
                       <Line type="monotone" dataKey="papay" name="Papay" stroke="#9ca3af" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
@@ -799,7 +808,7 @@ function App() {
                       <XAxis dataKey="gpBscf" stroke="#9ca3af" tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
                       <YAxis stroke="#9ca3af" tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
                       <Tooltip contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.5rem 0.8rem' }} />
-                      <Line type="monotone" dataKey="coleApparentGBscf" name="Apparent GIIP F/Eg (Bscf)" stroke="#2563eb" strokeWidth={2} dot={{ r: 3, fill: '#2563eb' }} />
+                      <Line type="monotone" dataKey="coleApparentGBscf" name="Apparent GIIP F/Eg (Bscf)" stroke="#059669" strokeWidth={2} dot={{ r: 3, fill: '#059669' }} />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -811,7 +820,7 @@ function App() {
                       <YAxis stroke="#9ca3af" tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
                       <Tooltip contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.5rem 0.8rem' }} />
                       <Legend verticalAlign="top" height={32} wrapperStyle={{ fontSize: 11 }} />
-                      <Line type="monotone" dataKey="hyperbolicRate" name="Hyperbolic" stroke="#2563eb" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="hyperbolicRate" name="Hyperbolic" stroke="#059669" strokeWidth={2} dot={false} />
                       <Line type="monotone" dataKey="exponentialRate" name="Exponential" stroke="#111827" strokeWidth={2} dot={false} />
                       <Line type="monotone" dataKey="harmonicRate" name="Harmonic" stroke="#9ca3af" strokeWidth={2} dot={false} />
                     </LineChart>
@@ -824,7 +833,7 @@ function App() {
                       <XAxis dataKey="exceedancePct" stroke="#9ca3af" tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
                       <YAxis stroke="#9ca3af" tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
                       <Tooltip contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.5rem 0.8rem' }} />
-                      <Line type="monotone" dataKey="reservesBscf" name="Recoverable Reserves (Bscf)" stroke="#2563eb" strokeWidth={2} dot={{ r: 3, fill: '#2563eb' }} />
+                      <Line type="monotone" dataKey="reservesBscf" name="Recoverable Reserves (Bscf)" stroke="#059669" strokeWidth={2} dot={{ r: 3, fill: '#059669' }} />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -878,17 +887,53 @@ function App() {
           </motion.div>
         )}
 
-        {/* View 2: Parameters Form */}
-        {currentView === 'parameters' && (
+        {/* View 2: Projects */}
+        {currentView === 'projects' && (
           <motion.div
-            key="parameters-view"
+            key="projects-view"
+            className="form-view-container"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+          >
+            <h2 className="form-block-heading" style={{ marginTop: 0 }}>Reservoir Evaluation Projects</h2>
+            <p style={{ color: '#6b7280', marginBottom: '2rem' }}>
+              Select a project scenario or start a new reservoir appraisal study.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
+              <div style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '12px' }}>
+                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', color: '#111827' }}>Niger Delta Gas Sand A</h3>
+                <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: '#6b7280' }}>Active Depletion with Fetkovich Aquifer</p>
+                <div style={{ fontSize: '0.85rem', color: '#059669', fontWeight: 600 }}>Active Project</div>
+              </div>
+
+              <div style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '12px' }}>
+                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', color: '#111827' }}>Deep Offshore Condensate B</h3>
+                <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: '#6b7280' }}>Class III Gas Condensate with Two-Phase Z</p>
+                <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Appraisal Phase</div>
+              </div>
+
+              <div style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '12px' }}>
+                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', color: '#111827' }}>Mature Field Decline C</h3>
+                <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: '#6b7280' }}>Late-life Arps Hyperbolic Production Forecast</p>
+                <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Production History</div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* View 3: Reservoir Data */}
+        {currentView === 'reservoir_data' && (
+          <motion.div
+            key="reservoir-data-view"
             className="form-view-container"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
           >
             <form onSubmit={handleCalculate}>
-              <h2 className="form-block-heading" style={{ marginTop: 0 }}>Reservoir Rock and Geometry</h2>
+              <h2 className="form-block-heading" style={{ marginTop: 0 }}>Petrophysical and Geometry Inputs</h2>
               <div className="form-columns-grid">
                 <div className="input-cell">
                   <label htmlFor="area">Drainage Area A (acres)</label>
@@ -956,7 +1001,7 @@ function App() {
                 </div>
               </div>
 
-              <h2 className="form-block-heading">Fluid PVT and Correlations</h2>
+              <h2 className="form-block-heading">Pressures, Temperature and Fluid Yield</h2>
               <div className="form-columns-grid">
                 <div className="input-cell">
                   <label htmlFor="pressure">Initial Pressure pi (psia)</label>
@@ -1035,55 +1080,72 @@ function App() {
                     required
                   />
                 </div>
+              </div>
 
+              <button type="submit" className="primary-submit-btn">
+                Save and Run Calculation
+              </button>
+            </form>
+          </motion.div>
+        )}
+
+        {/* View 4: Calculations Engine */}
+        {currentView === 'calculations' && (
+          <motion.div
+            key="calculations-view"
+            className="form-view-container"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+          >
+            <form onSubmit={handleCalculate}>
+              <h2 className="form-block-heading" style={{ marginTop: 0 }}>Correlation Models and Assumptions</h2>
+              <div className="form-columns-grid">
                 <div className="input-cell">
-                  <label htmlFor="zMethod">Primary Z-Factor Correlation</label>
+                  <label htmlFor="calc-zMethod">Primary Z-Factor Correlation</label>
                   <select
-                    id="zMethod"
+                    id="calc-zMethod"
                     value={zMethod}
                     onChange={(e) => setZMethod(e.target.value)}
                     className="standard-input"
                   >
-                    <option value="hall_yarborough">Hall and Yarborough</option>
-                    <option value="brill_beggs">Brill and Beggs</option>
-                    <option value="dak">Dranchuk and Abou-Kassem</option>
-                    <option value="papay">Papay</option>
+                    <option value="hall_yarborough">Hall and Yarborough (Iterative EOS)</option>
+                    <option value="brill_beggs">Brill and Beggs (Explicit)</option>
+                    <option value="dak">Dranchuk and Abou-Kassem (11-Constant EOS)</option>
+                    <option value="papay">Papay (Explicit Empirical)</option>
                   </select>
                 </div>
 
                 <div className="input-cell">
-                  <label htmlFor="pseudoMethod">Pseudocritical Property Model</label>
+                  <label htmlFor="calc-pseudoMethod">Pseudocritical Property Model</label>
                   <select
-                    id="pseudoMethod"
+                    id="calc-pseudoMethod"
                     value={pseudoMethod}
                     onChange={(e) => setPseudoMethod(e.target.value)}
                     className="standard-input"
                   >
-                    <option value="linear">Standard Linear</option>
-                    <option value="sutton">Sutton (1985)</option>
+                    <option value="linear">Standard Linear Correlation</option>
+                    <option value="sutton">Sutton (1985) Quadratic Correlation</option>
                   </select>
                 </div>
 
                 <div className="input-cell">
-                  <label htmlFor="classificationCriterion">Fluid Classification Standard</label>
+                  <label htmlFor="calc-classificationCriterion">Fluid Classification Standard</label>
                   <select
-                    id="classificationCriterion"
+                    id="calc-classificationCriterion"
                     value={classificationCriterion}
                     onChange={(e) => setClassificationCriterion(e.target.value)}
                     className="standard-input"
                   >
-                    <option value="ahmed">Ahmed (2019)</option>
-                    <option value="mccain">McCain (1990)</option>
+                    <option value="ahmed">Ahmed (2019) Standard</option>
+                    <option value="mccain">McCain (1990) Standard</option>
                   </select>
                 </div>
-              </div>
 
-              <h2 className="form-block-heading">Drive Mechanism, Aquifer and Decline</h2>
-              <div className="form-columns-grid">
                 <div className="input-cell">
-                  <label htmlFor="driveMechanism">Reservoir Drive Mechanism</label>
+                  <label htmlFor="calc-driveMechanism">Reservoir Drive Mechanism</label>
                   <select
-                    id="driveMechanism"
+                    id="calc-driveMechanism"
                     value={driveMechanism}
                     onChange={(e) => setDriveMechanism(e.target.value)}
                     className="standard-input"
@@ -1094,9 +1156,9 @@ function App() {
                 </div>
 
                 <div className="input-cell">
-                  <label htmlFor="aquiferModel">Aquifer Water Influx Model</label>
+                  <label htmlFor="calc-aquiferModel">Aquifer Influx Model</label>
                   <select
-                    id="aquiferModel"
+                    id="calc-aquiferModel"
                     value={aquiferModel}
                     onChange={(e) => setAquiferModel(e.target.value)}
                     className="standard-input"
@@ -1105,15 +1167,15 @@ function App() {
                     <option value="schilthuis">Schilthuis Steady-State</option>
                     <option value="hurst">Hurst Modified Steady-State</option>
                     <option value="veh">van Everdingen and Hurst</option>
-                    <option value="carter_tracy">Carter and Tracy</option>
+                    <option value="carter_tracy">Carter and Tracy Recursion</option>
                     <option value="pot">Pot Aquifer</option>
                   </select>
                 </div>
 
                 <div className="input-cell">
-                  <label htmlFor="declineModel">Primary Decline Curve Model</label>
+                  <label htmlFor="calc-declineModel">Arps Decline Model</label>
                   <select
-                    id="declineModel"
+                    id="calc-declineModel"
                     value={declineModel}
                     onChange={(e) => setDeclineModel(e.target.value)}
                     className="standard-input"
@@ -1123,25 +1185,14 @@ function App() {
                     <option value="harmonic">Arps Harmonic</option>
                   </select>
                 </div>
+              </div>
 
+              <h2 className="form-block-heading">Decline Forecast Settings</h2>
+              <div className="form-columns-grid">
                 <div className="input-cell">
-                  <label htmlFor="fieldStage">Field Maturity Stage</label>
-                  <select
-                    id="fieldStage"
-                    value={fieldStage}
-                    onChange={(e) => setFieldStage(e.target.value)}
-                    className="standard-input"
-                  >
-                    <option value="early">Early Appraisal</option>
-                    <option value="producing">Active Depletion</option>
-                    <option value="mature">Late Field Life</option>
-                  </select>
-                </div>
-
-                <div className="input-cell">
-                  <label htmlFor="initialRate">Initial Gas Rate qi (Mscf/day)</label>
+                  <label htmlFor="calc-initialRate">Initial Gas Rate qi (Mscf/day)</label>
                   <input
-                    id="initialRate"
+                    id="calc-initialRate"
                     type="number"
                     step="any"
                     value={initialRate}
@@ -1152,9 +1203,9 @@ function App() {
                 </div>
 
                 <div className="input-cell">
-                  <label htmlFor="declineRate">Nominal Decline Rate Di (1/month)</label>
+                  <label htmlFor="calc-declineRate">Nominal Decline Rate Di (1/month)</label>
                   <input
-                    id="declineRate"
+                    id="calc-declineRate"
                     type="number"
                     step="any"
                     value={declineRate}
@@ -1165,9 +1216,9 @@ function App() {
                 </div>
 
                 <div className="input-cell">
-                  <label htmlFor="arpsB">Arps Exponent b (0 to 1)</label>
+                  <label htmlFor="calc-arpsB">Arps Hyperbolic Exponent b</label>
                   <input
-                    id="arpsB"
+                    id="calc-arpsB"
                     type="number"
                     step="any"
                     value={arpsB}
@@ -1178,9 +1229,9 @@ function App() {
                 </div>
 
                 <div className="input-cell">
-                  <label htmlFor="economicLimit">Economic Limit qa (Mscf/day)</label>
+                  <label htmlFor="calc-economicLimit">Economic Limit qa (Mscf/day)</label>
                   <input
-                    id="economicLimit"
+                    id="calc-economicLimit"
                     type="number"
                     step="any"
                     value={economicLimit}
@@ -1192,30 +1243,30 @@ function App() {
               </div>
 
               <button type="submit" className="primary-submit-btn">
-                Run Reserves Estimation
+                Run Reserves Calculations
               </button>
             </form>
           </motion.div>
         )}
 
-        {/* View 3: Processed Evaluation (Accordion) */}
-        {currentView === 'evaluation' && (
+        {/* View 5: Results and Analysis (Accordion) */}
+        {currentView === 'results_analysis' && (
           <motion.div
-            key="evaluation-view"
+            key="results-analysis-view"
             className="evaluation-view-container"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
           >
             <div className="evaluation-header">
-              <h2>Detailed Reservoir Evaluation</h2>
-              <p>Reconciled reserves, fluid thermodynamics, material balance, and Arps decline forecasts.</p>
+              <h2>Results and Analytical Breakdown</h2>
+              <p>Reconciled gas reserves, material balance indices, and decline predictions.</p>
             </div>
 
             <div className="collapsible-list">
               <CollapsibleSection
                 index={0}
-                title="Unified Reserves Reconciliation and Final Recommendation"
+                title="Unified Reserves Reconciliation and Recommendation"
                 isOpen={activeSection === 0}
                 onToggle={toggleSection}
                 delay={0.05}
@@ -1228,10 +1279,6 @@ function App() {
                   <div className="data-item">
                     <span className="data-label">Recommended Method</span>
                     <span className="data-value">{results.recommendation.recommendedMethod}</span>
-                  </div>
-                  <div className="data-item">
-                    <span className="data-label">Reconciled Weighted Reserves</span>
-                    <span className="data-value">{results.recommendation.reconciledWeightedEurBscf.toFixed(2)} Bscf</span>
                   </div>
                   <div className="data-item">
                     <span className="data-label">Volumetric EUR</span>
@@ -1263,7 +1310,7 @@ function App() {
 
               <CollapsibleSection
                 index={1}
-                title="Fluid Classification and Wet-Gas Equivalence"
+                title="Fluid Classification and PVT Properties"
                 isOpen={activeSection === 1}
                 onToggle={toggleSection}
                 delay={0.08}
@@ -1298,7 +1345,7 @@ function App() {
 
               <CollapsibleSection
                 index={2}
-                title="Gas Properties and Z-Factor Correlations"
+                title="Gas Properties and Z-Factor Values"
                 isOpen={activeSection === 2}
                 onToggle={toggleSection}
                 delay={0.11}
@@ -1333,7 +1380,7 @@ function App() {
 
               <CollapsibleSection
                 index={3}
-                title="Volumetric and Material Balance Calculations"
+                title="Volumetric and Material Balance Indices"
                 isOpen={activeSection === 3}
                 onToggle={toggleSection}
                 delay={0.14}
@@ -1348,7 +1395,7 @@ function App() {
                     <span className="data-value">{results.mbeRes.mbeGiipBscf.toFixed(2)} Bscf</span>
                   </div>
                   <div className="data-item">
-                    <span className="data-label">Recovery Factor</span>
+                    <span className="data-label">Volumetric Recovery Factor</span>
                     <span className="data-value">{(results.volRes.activeRf * 100).toFixed(1)}%</span>
                   </div>
                   <div className="data-item">
@@ -1361,53 +1408,75 @@ function App() {
           </motion.div>
         )}
 
-        {/* View 4: Diagnostics Charts */}
-        {currentView === 'diagnostics' && (
+        {/* View 6: Reports */}
+        {currentView === 'reports' && (
           <motion.div
-            key="diagnostics-view"
-            className="evaluation-view-container"
+            key="reports-view"
+            className="form-view-container"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
           >
-            <div className="evaluation-header">
-              <h2>Diagnostic Analytical Charts</h2>
-              <p>Full-size diagnostic curves for depletion verification and pressure response.</p>
-            </div>
+            <h2 className="form-block-heading" style={{ marginTop: 0 }}>Executive Gas Reserves Report</h2>
+            <p style={{ color: '#6b7280', marginBottom: '2rem' }}>
+              Standard petroleum engineering audit report summarizing volumetric, material balance, and PRMS reserves.
+            </p>
 
-            <div className="collapsible-list">
-              <div className="grid-card" style={{ marginBottom: '1.5rem' }}>
-                <h3 className="card-title">Material Balance: p/z vs Cumulative Production</h3>
-                <div className="chart-holder">
-                  <ResponsiveContainer width="100%" height={280}>
-                    <LineChart data={results.mbeRes.pzComparisonCurve} margin={{ top: 10, right: 10, left: -10, bottom: 10 }}>
-                      <XAxis dataKey="gp" stroke="#9ca3af" tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
-                      <YAxis stroke="#9ca3af" tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
-                      <Tooltip contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.5rem 0.8rem' }} />
-                      <Legend verticalAlign="top" height={32} wrapperStyle={{ fontSize: 11 }} />
-                      <Line type="monotone" dataKey="volumetricPz" name="Volumetric Depletion" stroke="#111827" strokeWidth={2} dot={{ r: 2, fill: '#111827' }} />
-                      <Line type="monotone" dataKey="waterDrivePz" name="Water Drive Support" stroke="#2563eb" strokeWidth={2} dot={{ r: 2, fill: '#2563eb' }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+            <div style={{ backgroundColor: '#ffffff', padding: '1.75rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem' }}>
+                <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>Project Classification</span>
+                <span style={{ fontWeight: 600, color: '#111827' }}>{results.recommendation.reservoirClass}</span>
               </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem' }}>
+                <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>Original Gas in Place (G)</span>
+                <span style={{ fontWeight: 600, color: '#111827' }}>{results.volRes.giipBscf.toFixed(2)} Bscf</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem' }}>
+                <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>Estimated Ultimate Recovery (EUR)</span>
+                <span style={{ fontWeight: 600, color: '#059669' }}>{results.recommendation.finalRecommendedEurBscf.toFixed(2)} Bscf</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem' }}>
+                <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>PRMS 1P Proved Reserves</span>
+                <span style={{ fontWeight: 600, color: '#111827' }}>{results.prmsRes.reserve1P.toFixed(2)} Bscf</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem' }}>
+                <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>PRMS 2P Probable Reserves</span>
+                <span style={{ fontWeight: 600, color: '#111827' }}>{results.prmsRes.reserve2P.toFixed(2)} Bscf</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem' }}>
+                <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>PRMS 3P Possible Reserves</span>
+                <span style={{ fontWeight: 600, color: '#111827' }}>{results.prmsRes.reserve3P.toFixed(2)} Bscf</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem' }}>
+                <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>Primary Drive Mechanism</span>
+                <span style={{ fontWeight: 600, color: '#111827' }}>{results.recommendation.dominantDrive}</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
-              <div className="grid-card">
-                <h3 className="card-title">Z-Factor Correlations Across Pressure</h3>
-                <div className="chart-holder">
-                  <ResponsiveContainer width="100%" height={280}>
-                    <LineChart data={results.zCurve} margin={{ top: 10, right: 10, left: -10, bottom: 10 }}>
-                      <XAxis dataKey="pressure" stroke="#9ca3af" tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
-                      <YAxis domain={['auto', 'auto']} stroke="#9ca3af" tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
-                      <Tooltip contentStyle={{ backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.5rem 0.8rem' }} />
-                      <Legend verticalAlign="top" height={32} wrapperStyle={{ fontSize: 11 }} />
-                      <Line type="monotone" dataKey="hallYarborough" name="Hall-Yarborough" stroke="#111827" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="brillBeggs" name="Brill-Beggs" stroke="#2563eb" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="dak" name="Dranchuk-Abou-Kassem" stroke="#60a5fa" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="papay" name="Papay" stroke="#9ca3af" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+        {/* View 7: Settings */}
+        {currentView === 'settings' && (
+          <motion.div
+            key="settings-view"
+            className="form-view-container"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+          >
+            <h2 className="form-block-heading" style={{ marginTop: 0 }}>System Settings and Preferences</h2>
+            <div style={{ backgroundColor: '#ffffff', padding: '1.75rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem' }}>
+                <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>Measurement Units</span>
+                <span style={{ fontWeight: 600, color: '#111827' }}>Oilfield Standard (psia, deg F, acres, scf)</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem' }}>
+                <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>Standard Conditions</span>
+                <span style={{ fontWeight: 600, color: '#111827' }}>14.7 psia and 60 deg F</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem' }}>
+                <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>Monte Carlo Iterations</span>
+                <span style={{ fontWeight: 600, color: '#111827' }}>2,500 trials (seeded deterministic)</span>
               </div>
             </div>
           </motion.div>
