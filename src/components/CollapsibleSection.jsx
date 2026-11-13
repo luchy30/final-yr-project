@@ -34,3 +34,4 @@ export function CollapsibleSection({ index, title, isOpen, onToggle, delay = 0, 
     </motion.section>
   )
 }
+

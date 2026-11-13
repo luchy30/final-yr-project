@@ -8,3 +8,4 @@ export function Latex({ math, block = false }) {
   })
   return <span dangerouslySetInnerHTML={{ __html: html }} />
 }
+
