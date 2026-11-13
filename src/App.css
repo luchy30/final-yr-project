@@ -3,16 +3,33 @@
 :root {
   --bg-page: #f4f5f7;
   --bg-card: #ffffff;
-  --bg-sidebar: #ffffff;
+  --bg-sidebar: #061d1b;
   --bg-element: #f3f4f6;
   --bg-element-hover: #e5e7eb;
-  --bg-primary-soft: #eff6ff;
+  --bg-primary-soft: #ecfdf5;
   --text-main: #111827;
   --text-muted: #6b7280;
   --text-subtle: #9ca3af;
-  --accent-blue: #2563eb;
-  --accent-light: #60a5fa;
-  --accent-lighter: #bfdbfe;
+  --accent-primary: #059669;
+  --accent-light: #34d399;
+  --accent-lighter: #a7f3d0;
+  --chart-line-contrast: #111827;
+}
+
+.dashboard-layout.theme-dark {
+  --bg-page: #081614;
+  --bg-card: #0e2421;
+  --bg-sidebar: #061d1b;
+  --bg-element: #163632;
+  --bg-element-hover: #1f4943;
+  --bg-primary-soft: #064e3b;
+  --text-main: #f9fafb;
+  --text-muted: #94a3b8;
+  --text-subtle: #64748b;
+  --accent-primary: #10b981;
+  --accent-light: #34d399;
+  --accent-lighter: #6ee7b7;
+  --chart-line-contrast: #f9fafb;
 }
 
 body {
@@ -32,16 +49,17 @@ body {
   max-height: 100vh;
   width: 100%;
   background-color: var(--bg-page);
+  color: var(--text-main);
   box-sizing: border-box;
   overflow: hidden;
 }
 
-/* Sidebar Styles (Mirroring uploaded image) */
+/* Sidebar Styles (Matching uploaded image) */
 .sidebar {
   width: 240px;
   height: 100vh;
   max-height: 100vh;
-  background-color: #061d1b;
+  background-color: var(--bg-sidebar);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -121,6 +139,7 @@ body {
   touch-action: manipulation;
   transition: background-color 0.15s ease, color 0.15s ease;
   white-space: nowrap;
+  text-decoration: none;
 }
 
 .sidebar.collapsed .nav-button {
@@ -148,31 +167,74 @@ body {
 
 .sidebar-footer {
   margin-top: auto;
-  padding-top: 1.5rem;
+  padding-top: 1.25rem;
 }
 
-.sidebar.collapsed .sidebar-footer {
+/* Appearance Segmented Toggle in Sidebar */
+.appearance-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.appearance-section-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin: 0;
+  padding-left: 0.35rem;
+}
+
+.appearance-segmented-toggle {
+  background-color: #0b221f;
+  border-radius: 10px;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.appearance-toggle-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  font-family: inherit;
+  touch-action: manipulation;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.appearance-toggle-btn:hover {
+  color: #ffffff;
+}
+
+.appearance-toggle-btn.active {
+  background-color: #059669;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.sidebar.collapsed .appearance-section-title {
   display: none;
 }
 
-.appearance-card {
-  background-color: #0f2e2a;
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.sidebar.collapsed .appearance-segmented-toggle {
+  flex-direction: column;
+  padding: 0.25rem;
 }
 
-.appearance-label {
-  font-size: 0.85rem;
-  color: #94a3b8;
-}
-
-.appearance-value {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #ffffff;
+.sidebar.collapsed .appearance-toggle-btn span {
+  display: none;
 }
 
 /* Main Content Area */
@@ -187,6 +249,7 @@ body {
   overflow-x: hidden;
   padding: clamp(1.5rem, 3vw, 2.5rem);
   box-sizing: border-box;
+  background-color: var(--bg-page);
 }
 
 /* Top Bar */
@@ -232,7 +295,7 @@ body {
 
 .search-input:focus {
   outline: none;
-  background-color: #ffffff;
+  background-color: var(--bg-element);
 }
 
 .search-icon-holder {
@@ -245,20 +308,20 @@ body {
 }
 
 .top-action-btn {
-  background-color: var(--text-main);
+  background-color: var(--accent-primary);
   color: #ffffff;
   border: none;
   border-radius: 10px;
   padding: 0.65rem 1.15rem;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   font-family: inherit;
   touch-action: manipulation;
 }
 
 .top-action-btn:hover {
-  background-color: #1f2937;
+  background-color: #047857;
 }
 
 /* Dashboard Grid (Mirroring Reference Image Layout) */
@@ -320,7 +383,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent-blue);
+  color: var(--accent-primary);
   margin-bottom: 0.25rem;
 }
 
@@ -385,7 +448,7 @@ body {
 
 .matrix-cell.primary-match {
   background-color: var(--bg-primary-soft);
-  color: var(--accent-blue);
+  color: var(--accent-primary);
   font-weight: 600;
 }
 
@@ -432,7 +495,7 @@ body {
 }
 
 .tab-pill.active {
-  background-color: var(--text-main);
+  background-color: var(--accent-primary);
   color: #ffffff;
 }
 
@@ -512,7 +575,7 @@ body {
   color: var(--text-main);
 }
 
-/* Form View Container (Parameters Tab) */
+/* Form View Container (Parameters and Calculations) */
 .form-view-container {
   background-color: var(--bg-card);
   border-radius: 16px;
@@ -528,12 +591,6 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
-}
-
-.form-group-block {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
 }
 
 .form-block-heading {
@@ -577,7 +634,7 @@ body {
 
 .primary-submit-btn {
   width: 100%;
-  background-color: var(--text-main);
+  background-color: var(--accent-primary);
   color: #ffffff;
   border: none;
   border-radius: 10px;
@@ -591,7 +648,47 @@ body {
 }
 
 .primary-submit-btn:hover {
-  background-color: #1f2937;
+  background-color: #047857;
+}
+
+/* General Standard Card */
+.standard-card {
+  background-color: var(--bg-card);
+  border-radius: 14px;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.report-table-box {
+  background-color: var(--bg-card);
+  border-radius: 14px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-sizing: border-box;
+}
+
+.report-table-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.75rem;
+}
+
+.report-row-label {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.report-row-value {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 0.95rem;
+}
+
+.report-row-value.accent {
+  color: var(--accent-primary);
 }
 
 /* Detailed Evaluation Accordion Container */
