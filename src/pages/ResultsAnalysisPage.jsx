@@ -191,7 +191,6 @@ export function ResultsAnalysisPage() {
                   <Line type="monotone" dataKey="hallYarborough" name="Hall-Yarborough" stroke={chartThemeStyles.contrastLine} strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="brillBeggs" name="Brill-Beggs" stroke="#059669" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="dak" name="Dranchuk-Abou-Kassem" stroke="#34d399" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="papay" name="Papay" stroke="#9ca3af" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             )}

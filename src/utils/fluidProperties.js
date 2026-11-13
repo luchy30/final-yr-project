@@ -91,7 +91,7 @@ export function classifyReservoirFluid({
   }
 }
 
-export function calcPseudoCriticalProperties(gasGravity, method = 'linear') {
+export function calcPseudoCriticalProperties(gasGravity, method = 'chapter3') {
   const gg = Number(gasGravity) > 0 ? Number(gasGravity) : 0.65
 
   if (method === 'sutton') {
@@ -100,7 +100,13 @@ export function calcPseudoCriticalProperties(gasGravity, method = 'linear') {
     return { ppc, tpc }
   }
 
-  // Standard linear correlation: Tpc = 170.491 + 307.344 * yg, Ppc = 709.604 - 58.718 * yg
+  if (method === 'standing') {
+    const ppc = 677 + 15.0 * gg - 37.5 * gg * gg
+    const tpc = 168 + 325 * gg - 12.5 * gg * gg
+    return { ppc, tpc }
+  }
+
+  // Chapter 3 Section 3.2.1: Tpc = 170.491 + 307.344 * yg, Ppc = 709.604 - 58.718 * yg
   const tpc = 170.491 + 307.344 * gg
   const ppc = 709.604 - 58.718 * gg
   return { ppc, tpc }

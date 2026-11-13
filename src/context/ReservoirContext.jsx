@@ -5,7 +5,6 @@ import {
   calcBrillBeggsZ,
   calcHallYarboroughZ,
   calcDranchukAbouKassemZ,
-  calcPapayZ,
   calcBg,
   calcWetGasProperties,
 } from '../utils/fluidProperties'
@@ -43,7 +42,7 @@ export function ReservoirProvider({ children }) {
   // Search input query
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Chart selection tab on dashboard
+  // Chart selection tab
   const [activeChartTab, setActiveChartTab] = useState('pz')
 
   // Reservoir and Petrophysical Inputs
@@ -61,14 +60,14 @@ export function ReservoirProvider({ children }) {
   const [gor, setGor] = useState('120000')
   const [apiGravity, setApiGravity] = useState('55')
 
-  // Correlation Choices
+  // Correlation Choices (Matching Chapter 3 Methodology)
   const [zMethod, setZMethod] = useState('hall_yarborough')
-  const [pseudoMethod, setPseudoMethod] = useState('linear')
+  const [pseudoMethod, setPseudoMethod] = useState('chapter3')
   const [classificationCriterion, setClassificationCriterion] = useState('ahmed')
 
   // Drive Mechanism, Aquifer and Decline Inputs
   const [driveMechanism, setDriveMechanism] = useState('volumetric')
-  const [aquiferModel, setAquiferModel] = useState('fetkovich')
+  const [aquiferModel, setAquiferModel] = useState('pot')
   const [declineModel, setDeclineModel] = useState('hyperbolic')
   const [fieldStage, setFieldStage] = useState('producing')
   const [initialRate, setInitialRate] = useState('12000')
@@ -84,9 +83,6 @@ export function ReservoirProvider({ children }) {
     if (selectedMethod === 'dak') {
       return calcDranchukAbouKassemZ(ppr, tpr)
     }
-    if (selectedMethod === 'papay') {
-      return calcPapayZ(ppr, tpr)
-    }
     return calcHallYarboroughZ(ppr, tpr)
   }
 
@@ -96,9 +92,6 @@ export function ReservoirProvider({ children }) {
     }
     if (selectedMethod === 'dak') {
       return 'Dranchuk and Abou-Kassem'
-    }
-    if (selectedMethod === 'papay') {
-      return 'Papay'
     }
     return 'Hall and Yarborough'
   }
@@ -124,7 +117,7 @@ export function ReservoirProvider({ children }) {
     const activeDeclineModel = config.declineModel
     const activeFieldStage = config.fieldStage
 
-    // Step 1: Fluid Classification
+    // Step 1: Fluid Classification (Section 3.1 & Table 3.1)
     const classification = classifyReservoirFluid({
       gorScfStb: gorVal,
       apiGravity: apiVal,
@@ -146,19 +139,19 @@ export function ReservoirProvider({ children }) {
         ? gg
         : prelimWetProps.wellStreamGravity
 
-    // Step 2: Pseudo-critical properties
+    // Step 2: Pseudo-critical properties (Section 3.2.1)
     const initialReduced = calcPseudoReduced(pi, tempF, effectiveGasGravity, activePseudoMethod)
     const abandonmentReduced = calcPseudoReduced(pa, tempF, effectiveGasGravity, activePseudoMethod)
 
-    // Calculate all four correlations at initial conditions
+    // Calculate correlations at initial conditions (Hall-Yarborough, Brill-Beggs, DAK)
     const zBrillBeggsInitial = calcBrillBeggsZ(initialReduced.ppr, initialReduced.tpr)
     const zHallYarboroughInitial = calcHallYarboroughZ(initialReduced.ppr, initialReduced.tpr)
     const zDakInitial = calcDranchukAbouKassemZ(initialReduced.ppr, initialReduced.tpr)
-    const zPapayInitial = calcPapayZ(initialReduced.ppr, initialReduced.tpr)
 
     const zi = computeZByMethod(pi, tempF, effectiveGasGravity, activeZMethod, activePseudoMethod)
     const za = computeZByMethod(pa, tempF, effectiveGasGravity, activeZMethod, activePseudoMethod)
 
+    // Step 3: Gas Formation Volume Factor Bg (Section 3.2 Eq. 3.1 & 3.2)
     const { bgCuftScf: bgiCuft, bgRbScf: bgiRb } = calcBg({
       pressurePsia: pi,
       tempR: initialReduced.tempR,
@@ -170,7 +163,7 @@ export function ReservoirProvider({ children }) {
       zFactor: za,
     })
 
-    // Step 3: Volumetric Reserves
+    // Step 4: Volumetric Reserves (Section 3.3 Eq. 3.11, UR, RF)
     const volRes = calcVolumetricReserves({
       areaAcres: a,
       netPayFeet: h,
@@ -194,39 +187,32 @@ export function ReservoirProvider({ children }) {
       wellStreamGasInPlaceScf: volRes.giipScf,
     })
 
-    // Step 4: Aquifer and Material Balance
-    const aquiferRes = calcAquiferProperties({
-      model: activeAquiferModel,
-      aquiferRadiusFt: 40000,
-      reservoirRadiusFt: 6000,
-      permeabilityMd: 120,
+    // Step 5: Aquifer and Material Balance (Section 3.4, 3.5, 3.6)
+    const reFt = Math.sqrt((a * 43560) / Math.PI)
+    const aquiferProps = calcAquiferProperties({
+      reservoirRadiusFt: reFt,
+      aquiferRadiusFt: reFt * 5,
+      netPayFeet: h,
       porosity: phi,
-      thicknessFt: h,
-      viscosityCp: 0.55,
-      totalCompressibilityPsiInv: 7e-6,
       initialPressurePsia: pi,
-      currentPressurePsia: pi * 0.85,
-      flowTimeDays: 730,
     })
 
     const mbeRes = calcMaterialBalanceAndDriveIndices({
+      giipScf: volRes.giipScf,
       initialPressurePsia: pi,
       abandonmentPressurePsia: pa,
-      initialZ: zi,
-      abandonmentZ: za,
-      bgiCuftScf: bgiCuft,
-      bgaCuftScf: bgaCuft,
+      tempF,
+      gasGravity: effectiveGasGravity,
       initialWaterSat: swi,
-      volumetricGiipBscf: volRes.giipBscf,
-      waterInfluxBbl: aquiferRes.cumulativeWaterInfluxBbl,
-      producedWaterBbl: 45000,
-      waterBw: 1.025,
-      waterCompressibilityPsiInv: 3.2e-6,
-      formationCompressibilityPsiInv: 4.5e-6,
-      steps: 8,
+      aquiferModel: activeAquiferModel,
+      driveMechanism: activeDriveMechanism,
+      calcZFunc: (pVal) => computeZByMethod(pVal, tempF, effectiveGasGravity, activeZMethod, activePseudoMethod),
+      calcBgFunc: (pVal, zVal) =>
+        calcBg({ pressurePsia: pVal, tempR: initialReduced.tempR, zFactor: zVal }),
+      aquiferProps,
     })
 
-    // Step 5: Decline Curve Analysis
+    // Step 6: Decline Curve Analysis (Section 3.8)
     const qInit = parseFloat(config.initialRate) ? parseFloat(config.initialRate) : 12000
     const dNom = parseFloat(config.declineRate) ? parseFloat(config.declineRate) : 0.025
     const bExp = parseFloat(config.arpsB) ? parseFloat(config.arpsB) : 0.5
@@ -241,7 +227,7 @@ export function ReservoirProvider({ children }) {
       economicLimitMscfDay: qAband,
     })
 
-    // Step 6: PRMS Probabilistic Reserves
+    // Step 7: PRMS Probabilistic Reserves
     const prmsRes = calcPRMSReserves({
       areaAcres: a,
       netPayFeet: h,
@@ -252,7 +238,7 @@ export function ReservoirProvider({ children }) {
       iterations: 2500,
     })
 
-    // Step 7: Method and Mechanism Recommendation
+    // Step 8: Method and Mechanism Recommendation
     const recommendation = recommendMethodAndMechanism({
       fieldStage: activeFieldStage,
       hasProductionHistory: activeFieldStage === 'mature' ? true : activeFieldStage === 'producing',
@@ -266,7 +252,7 @@ export function ReservoirProvider({ children }) {
       prms2PBscf: prmsRes.reserve2P,
     })
 
-    // Step 8: Multi-point Z-factor curve across pressure depletion
+    // Step 9: Multi-point Z-factor curve across pressure depletion
     const zCurve = []
     const pSteps = 10
     const deltaP = (pi - pa) / pSteps
@@ -278,11 +264,10 @@ export function ReservoirProvider({ children }) {
         hallYarborough: parseFloat(calcHallYarboroughZ(pprCurr, tprCurr).toFixed(4)),
         brillBeggs: parseFloat(calcBrillBeggsZ(pprCurr, tprCurr).toFixed(4)),
         dak: parseFloat(calcDranchukAbouKassemZ(pprCurr, tprCurr).toFixed(4)),
-        papay: parseFloat(calcPapayZ(pprCurr, tprCurr).toFixed(4)),
       })
     }
 
-    // Step 9: Pressure stages comparison matrix (reference grid)
+    // Step 10: Pressure stages comparison matrix (reference grid)
     const matrixStages = [
       Math.round(pa),
       Math.round(pa + (pi - pa) * 0.33),
@@ -315,14 +300,6 @@ export function ReservoirProvider({ children }) {
           return calcDranchukAbouKassemZ(prVal, trVal).toFixed(4)
         }),
       },
-      {
-        name: 'Papay',
-        key: 'papay',
-        values: matrixStages.map((pVal) => {
-          const { ppr: prVal, tpr: trVal } = calcPseudoReduced(pVal, tempF, effectiveGasGravity, activePseudoMethod)
-          return calcPapayZ(prVal, trVal).toFixed(4)
-        }),
-      },
     ]
 
     return {
@@ -335,14 +312,13 @@ export function ReservoirProvider({ children }) {
       zBrillBeggsInitial: zBrillBeggsInitial.toFixed(4),
       zHallYarboroughInitial: zHallYarboroughInitial.toFixed(4),
       zDakInitial: zDakInitial.toFixed(4),
-      zPapayInitial: zPapayInitial.toFixed(4),
       zi: zi.toFixed(4),
       za: za.toFixed(4),
       bgiCuft: bgiCuft.toFixed(5),
       bgaCuft: bgaCuft.toFixed(5),
       bgiRb: bgiRb.toFixed(5),
       volRes,
-      aquiferRes,
+      aquiferRes: aquiferProps,
       mbeRes,
       dcaRes,
       prmsRes,
@@ -371,10 +347,10 @@ export function ReservoirProvider({ children }) {
       gor: '120000',
       apiGravity: '55',
       zMethod: 'hall_yarborough',
-      pseudoMethod: 'linear',
+      pseudoMethod: 'chapter3',
       classificationCriterion: 'ahmed',
       driveMechanism: 'volumetric',
-      aquiferModel: 'fetkovich',
+      aquiferModel: 'pot',
       declineModel: 'hyperbolic',
       fieldStage: 'producing',
       initialRate: '12000',
@@ -418,19 +394,19 @@ export function ReservoirProvider({ children }) {
   const driveIndicesData = useMemo(() => {
     return [
       {
-        name: 'Depletion Drive (IDD)',
+        name: 'Gas Expansion (GDI / IDD)',
         value: Math.max(0.01, results.mbeRes.IDD),
         color: '#059669',
         percentage: (results.mbeRes.IDD * 100).toFixed(1),
       },
       {
-        name: 'Water Influx (IWD)',
+        name: 'Water Influx (WDI / IWD)',
         value: Math.max(0.01, results.mbeRes.IWD),
         color: '#34d399',
         percentage: (results.mbeRes.IWD * 100).toFixed(1),
       },
       {
-        name: 'Rock and Fluid (ICD)',
+        name: 'Rock and Fluid (CDI / ICD)',
         value: Math.max(0.01, results.mbeRes.ICD),
         color: '#a7f3d0',
         percentage: (results.mbeRes.ICD * 100).toFixed(1),

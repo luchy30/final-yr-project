@@ -69,10 +69,10 @@ export function CalculationsPage() {
     setGor('120000')
     setApiGravity('55')
     setZMethod('hall_yarborough')
-    setPseudoMethod('linear')
+    setPseudoMethod('chapter3')
     setClassificationCriterion('ahmed')
     setDriveMechanism('volumetric')
-    setAquiferModel('fetkovich')
+    setAquiferModel('pot')
     setDeclineModel('hyperbolic')
     setInitialRate('12000')
     setDeclineRate('0.025')
@@ -275,7 +275,6 @@ export function CalculationsPage() {
                 <option value="hall_yarborough">Hall and Yarborough EOS</option>
                 <option value="brill_beggs">Brill and Beggs Empirical</option>
                 <option value="dak">Dranchuk and Abou-Kassem EOS</option>
-                <option value="papay">Papay Correlation</option>
               </select>
             </div>
 
@@ -287,8 +286,9 @@ export function CalculationsPage() {
                 onChange={(e) => setPseudoMethod(e.target.value)}
                 className="standard-select"
               >
-                <option value="linear">Standing Linear Correlation</option>
-                <option value="sutton">Sutton Correlation</option>
+                <option value="chapter3">Methodology Correlation (Tpc = 170.491 + 307.344 yg)</option>
+                <option value="standing">Standing Standard Correlation</option>
+                <option value="sutton">Sutton Extended Correlation</option>
               </select>
             </div>
 
@@ -300,8 +300,8 @@ export function CalculationsPage() {
                 onChange={(e) => setClassificationCriterion(e.target.value)}
                 className="standard-select"
               >
-                <option value="ahmed">Ahmed Criterion (GOR based)</option>
-                <option value="mccain">McCain Standard Criterion</option>
+                <option value="ahmed">Ahmed Criterion (2019 Table 3.1)</option>
+                <option value="mccain">McCain Criterion (1990 Table 3.1)</option>
               </select>
             </div>
           </div>
@@ -335,6 +335,7 @@ export function CalculationsPage() {
                 onChange={(e) => setAquiferModel(e.target.value)}
                 className="standard-select"
               >
+                <option value="pot">Pot Aquifer Model (Section 3.5.1)</option>
                 <option value="fetkovich">Fetkovich Radial Aquifer</option>
                 <option value="van_everdingen">Van Everdingen and Hurst</option>
               </select>

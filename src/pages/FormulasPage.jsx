@@ -15,31 +15,25 @@ export function FormulasPage() {
           Theoretical Petroleum Engineering Formulas
         </h2>
         <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0 0', fontSize: '0.95rem' }}>
-          Mathematical formulations implemented across fluid classification, gas deviation factor correlations, volumetric reserves, material balance, and Arps decline curve analysis.
+          Mathematical formulations implemented across fluid classification, gas compressibility correlations, volumetric reserves, material balance, water influx, and Arps decline curve analysis from Chapter Three Methodology.
         </p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-        {/* Section 1: Gas Deviation Factor Z Correlations */}
+        {/* Section 1: Gas Deviation Factor Z Correlations (Section 3.2.1) */}
         <div className="standard-card">
           <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem', color: 'var(--text-main)' }}>
-            1. Gas Compressibility Factor (Z-Factor) Correlations
+            1. Gas Compressibility Factor (Z-Factor) Correlations (Section 3.2.1)
           </h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
-            The deviation of real gas behaviour from the ideal gas law at elevated reservoir pressures and temperatures.
+            Empirical and equation of state correlations for determining real gas deviation Z at reservoir pressure and temperature.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {/* Hall-Yarborough EOS */}
             <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
               <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Hall and Yarborough Equation of State (1973)
-              </div>
-              <div style={{ overflowX: 'auto', padding: '0.5rem 0' }}>
-                <Latex
-                  block
-                  math="F(Y) = -0.06125 P_{pr} t e^{-1.2(1-t)^2} + \frac{Y + Y^2 + Y^3 - Y^4}{(1-Y)^3} - (14.76 t - 9.76 t^2 + 4.58 t^3) Y^2 + (90.7 t - 242.2 t^2 + 42.4 t^3) Y^{2.18 + 2.82 t} = 0"
-                />
+                Hall and Yarborough Correlation
               </div>
               <div style={{ overflowX: 'auto', padding: '0.5rem 0' }}>
                 <Latex
@@ -47,20 +41,38 @@ export function FormulasPage() {
                   math="Z = \frac{0.06125 P_{pr} t}{Y} \exp\left[-1.2 (1 - t)^2\right]"
                 />
               </div>
+              <div style={{ overflowX: 'auto', padding: '0.5rem 0' }}>
+                <Latex
+                  block
+                  math="F(Y) = X_1 + \frac{Y + Y^2 + Y^3 - Y^4}{(1 - Y)^3} - X_2 Y^2 + X_3 Y^{X_4} = 0"
+                />
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0.5rem 0' }}>
+                <Latex
+                  block
+                  math="X_1 = -0.06125 \cdot P_{pr} \cdot t \cdot \exp\left[-1.2 \cdot (1 - t)^2\right]"
+                />
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0.5rem 0' }}>
+                <Latex
+                  block
+                  math="X_2 = 14.76 t - 9.76 t^2 + 4.58 t^3, \quad X_3 = 90.7 t - 242.2 t^2 + 42.4 t^3, \quad X_4 = 2.18 + 2.82 t"
+                />
+              </div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.5rem 0 0 0' }}>
-                Where t = 1 / Tpr is reciprocal pseudo-reduced temperature, and Y is reduced gas density solved through Newton-Raphson iteration.
+                Where t = 1 / Tpr is reciprocal pseudo-reduced temperature, and reduced density parameter Y is determined numerically using the Newton-Raphson method.
               </p>
             </div>
 
             {/* Brill and Beggs */}
             <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
               <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Brill and Beggs Explicit Empirical Correlation (1974)
+                Brill and Beggs Correlation (Eq. 3.2 - 3.3)
               </div>
               <div style={{ overflowX: 'auto', padding: '0.5rem 0' }}>
                 <Latex
                   block
-                  math="Z = A + \frac{1 - A}{\exp(B)} + C \cdot P_{pr}^D"
+                  math="Z = A + \frac{1 - A}{e^B} + C \cdot P_{pr}^D"
                 />
               </div>
               <div style={{ overflowX: 'auto', padding: '0.5rem 0' }}>
@@ -72,13 +84,13 @@ export function FormulasPage() {
               <div style={{ overflowX: 'auto', padding: '0.5rem 0' }}>
                 <Latex
                   block
-                  math="B = (0.62 - 0.23 T_{pr}) P_{pr} + \left(\frac{0.066}{T_{pr} - 0.86} - 0.037\right) P_{pr}^2 + \frac{0.32 P_{pr}^6}{10^{9(T_{pr} - 1)}}"
+                  math="B = (0.62 - 0.23 T_{pr}) P_{pr} + \left(\frac{0.066}{T_{pr} - 0.86} - 0.037\right) P_{pr}^2 + \frac{0.32 P_{pr}^6}{10^E}"
                 />
               </div>
               <div style={{ overflowX: 'auto', padding: '0.5rem 0' }}>
                 <Latex
                   block
-                  math="C = 0.132 - 0.32 \log_{10}(T_{pr}), \quad D = 10^{(0.3106 - 0.49 T_{pr} + 0.1824 T_{pr}^2)}"
+                  math="C = 0.132 - 0.32 \log(T_{pr}), \quad D = 10^F, \quad E = 9 (T_{pr} - 1), \quad F = 0.3106 - 0.49 T_{pr} + 0.1824 T_{pr}^2"
                 />
               </div>
             </div>
@@ -86,280 +98,284 @@ export function FormulasPage() {
             {/* Dranchuk and Abou-Kassem */}
             <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
               <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Dranchuk and Abou-Kassem (DAK) 11-Constant EOS (1975)
+                Dranchuk and Abou-Kassem (DAK) Analytical Expression
               </div>
               <div style={{ overflowX: 'auto', padding: '0.5rem 0' }}>
                 <Latex
                   block
-                  math="Z = 1 + \left(A_1 + \frac{A_2}{T_{pr}} + \frac{A_3}{T_{pr}^3} + \frac{A_4}{T_{pr}^4} + \frac{A_5}{T_{pr}^5}\right) \rho_r + \left(A_6 + \frac{A_7}{T_{pr}} + \frac{A_8}{T_{pr}^2}\right) \rho_r^2 - A_9 \left(\frac{A_7}{T_{pr}} + \frac{A_8}{T_{pr}^2}\right) \rho_r^5 + A_{10} \left(1 + A_{11} \rho_r^2\right) \left(\frac{\rho_r^2}{T_{pr}^3}\right) e^{-A_{11} \rho_r^2}"
+                  math="Z = \frac{0.27 P_{pr}}{\rho_r T_{pr}}"
                 />
               </div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.5rem 0 0 0' }}>
-                Where reduced density rho_r = 0.27 Ppr / (Z Tpr), fitted to Standing-Katz chart data across 1500 data points.
-              </p>
-            </div>
-
-            {/* Papay */}
-            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
-              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Papay Correlation (1968)
-              </div>
-              <div style={{ overflowX: 'auto', padding: '0.5rem 0' }}>
-                <Latex
-                  block
-                  math="Z = 1 - \frac{3.52 P_{pr}}{10^{0.9813 T_{pr}}} + \frac{0.274 P_{pr}^2}{10^{0.8157 T_{pr}}}"
-                />
-              </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.5rem 0 0 0' }}>
-                Fast polynomial evaluation suitable for moderate pressures and temperature ranges.
+                Eleven constant analytical expression iteratively solved for reduced gas density rho_r in terms of pseudo-reduced pressure and temperature.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Section 2: Pseudo-Critical Properties */}
+        {/* Section 2: Pseudocritical Properties Estimation (Section 3.2.1) */}
         <div className="standard-card">
           <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem', color: 'var(--text-main)' }}>
-            2. Pseudo-Critical Properties Estimation
+            2. Pseudocritical Temperature and Pressure (Section 3.2.1)
           </h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
-            Critical temperature and critical pressure calculated from gas specific gravity.
+            Calculated from gas specific gravity to obtain dimensionless pseudo-reduced pressure Ppr and temperature Tpr.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
             <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
               <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Standing Linear Correlations
+                Methodology Formulation (Section 3.2.1)
               </div>
               <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="T_{pc} = 168 + 325 \gamma_g - 12.5 \gamma_g^2 \quad [^\circ\text{R}]" />
+                <Latex block math="T_{pc} = 170.491 + 307.344 \gamma_g \quad [^\circ\text{R}]" />
               </div>
               <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="P_{pc} = 677 + 15.0 \gamma_g - 37.5 \gamma_g^2 \quad [\text{psia}]" />
+                <Latex block math="P_{pc} = 709.604 - 58.718 \gamma_g \quad [\text{psia}]" />
               </div>
             </div>
 
             <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
               <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Sutton Quadratic Correlations
+                Pseudo-Reduced Parameters
               </div>
               <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="T_{pc} = 169.2 + 349.5 \gamma_g - 74.0 \gamma_g^2 \quad [^\circ\text{R}]" />
-              </div>
-              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="P_{pc} = 756.8 - 131.0 \gamma_g - 3.6 \gamma_g^2 \quad [\text{psia}]" />
+                <Latex block math="P_{pr} = \frac{P}{P_{pc}}, \quad T_{pr} = \frac{T}{T_{pc}}" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Section 3: Gas Formation Volume Factor */}
+        {/* Section 3: Gas Formation Volume Factor (Section 3.2 Eq. 3.1 & 3.2) */}
         <div className="standard-card">
           <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem', color: 'var(--text-main)' }}>
-            3. Gas Formation Volume Factor (Bg)
+            3. Gas Formation Volume Factor (Section 3.2 Eq. 3.1 - 3.2)
           </h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
-            Volume ratio of gas at reservoir temperature and pressure to standard surface conditions (14.7 psia, 60 deg F).
+            Relates the reservoir volume of gas to its surface volume at standard conditions (14.7 psia and 60 deg F).
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
             <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
               <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Cubic Feet per Standard Cubic Foot
+                Cubic Feet per Standard Cubic Foot [Eq. 3.1]
               </div>
               <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="B_g = 0.028279 \frac{Z T}{P} \quad \left[\frac{\text{ft}^3}{\text{scf}}\right]" />
+                <Latex block math="B_{gi} = 0.02827 \times \frac{Z \times T}{P} \quad \left[\frac{\text{cuft}}{\text{scf}}\right]" />
               </div>
             </div>
 
             <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
               <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Reservoir Barrels per Standard Cubic Foot
+                Reservoir Barrels per Standard Cubic Foot [Eq. 3.2]
               </div>
               <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="B_g = 0.005035 \frac{Z T}{P} \quad \left[\frac{\text{rb}}{\text{scf}}\right]" />
+                <Latex block math="B_g = 0.005035 \, \frac{z \, T}{p} \quad \left[\frac{\text{bbl}}{\text{scf}}\right]" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Section 4: Volumetric Reserves */}
+        {/* Section 4: Volumetric Method (Section 3.3) */}
         <div className="standard-card">
           <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem', color: 'var(--text-main)' }}>
-            4. Volumetric Gas Reserves and Recovery Factors
+            4. Volumetric Method (Section 3.3 Eq. 3.11)
           </h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
-            Bulk volumetric calculation of original gas in place and recovery under volumetric depletion or water drive.
+            Calculates original gas in place from reservoir pore volume and petrophysical rock properties.
           </p>
 
           <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', marginBottom: '1.25rem' }}>
             <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-              Original Gas in Place (GIIP)
+              Initial Gas in Place (Gi) [Eq. 3.11]
             </div>
             <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-              <Latex block math="G = \frac{7758 \, A \, h \, \phi (1 - S_{wi})}{B_{gi}} \quad [\text{scf}]" />
+              <Latex block math="G_i = \frac{43560 \, A \, h \, \phi (1 - S_{wi})}{B_{gi}} \quad [\text{scf}]" />
             </div>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.5rem 0 0 0' }}>
-              Where A is drainage area in acres, h is net pay in feet, phi is porosity fraction, Swi is connate water saturation, and Bgi is initial gas formation volume factor in ft3/scf.
+              Where A is drainage area in acres, h is net pay in feet, phi is porosity as a fraction, Swi is initial water saturation, and Bgi is in ft3/scf.
             </p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
             <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
               <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Volumetric Depletion Recovery Factor
+                Ultimate Recovery (UR)
               </div>
               <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="RF_{vol} = 1 - \frac{P_a / Z_a}{P_i / Z_i}" />
+                <Latex block math="UR = 43560 \, A \, h \, \phi (1 - S_{wi}) \left(\frac{1}{B_{gi}} - \frac{1}{B_{ga}}\right)" />
               </div>
             </div>
 
             <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
               <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Water Drive Displacement Recovery Factor
+                Recovery Factor (RF)
               </div>
               <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="RF_{wd} = \frac{1 - S_{wi} - S_{gr}}{1 - S_{wi}}" />
+                <Latex block math="RF = 1 - \frac{B_{gi}}{B_{ga}}" />
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.35rem 0 0 0' }}>
+                Where Bga is the gas formation volume factor at abandonment pressure.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 5: Material Balance Method (Section 3.4) */}
+        <div className="standard-card">
+          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem', color: 'var(--text-main)' }}>
+            5. Material Balance Method (Section 3.4)
+          </h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
+            General Havlena-Odeh material balance formulation for non-associated gas reservoirs.
+          </p>
+
+          <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', marginBottom: '1.25rem' }}>
+            <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+              General Material Balance Equation
+            </div>
+            <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+              <Latex
+                block
+                math="G (B_g - B_{gi}) + G B_{gi} \left(\frac{c_f + c_w S_{wi}}{1 - S_{wi}}\right) \Delta P + W_e = G_p B_g + W_p B_w"
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
+            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                Volumetric Gas Reservoir (Section 3.4.1) [Eq. 3.16 - 3.17]
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                <Latex block math="G = \frac{G_p B_g}{B_g - B_{gi}}, \quad \frac{p}{z} = \frac{p_i}{z_i} \left(1 - \frac{G_p}{G}\right)" />
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                Water Drive Gas Reservoir (Section 3.4.2)
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                <Latex block math="\frac{p}{z} = \frac{p_i}{z_i} - \frac{p_i}{z_i G} \left(G_p - \frac{W_e - B_w W_p}{B_g}\right)" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Section 5: Material Balance & Havlena-Odeh */}
+        {/* Section 6: Water Influx Theory (Section 3.5 & 3.5.1) */}
         <div className="standard-card">
           <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem', color: 'var(--text-main)' }}>
-            5. General Material Balance and Havlena-Odeh Formulation
+            6. Water Influx Theory and Pot Aquifer Equation (Section 3.5.1)
           </h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
-            Conservation of mass equating cumulative underground withdrawal to fluid expansion and water encroachment.
+            Aquifer water encroachment resulting from connate water expansion and rock pore volume compaction.
           </p>
 
           <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', marginBottom: '1.25rem' }}>
             <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-              General Gas Material Balance Equation
+              Pot Aquifer Influx Equation (Section 3.5.1)
             </div>
             <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-              <Latex
-                block
-                math="G (B_g - B_{gi}) + G B_{gi} \left(\frac{c_w S_{wi} + c_f}{1 - S_{wi}}\right) \Delta P + W_e = G_p B_g + B_w W_p"
-              />
+              <Latex block math="W_e = (C_r + C_w) \cdot \pi (r_e^2 - r_w^2) \cdot h \, \phi \cdot (P_i - P)" />
+            </div>
+            <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+              <Latex block math="C_t = C_w + C_f, \quad W_e = C_t \cdot V_w \cdot \Delta P" />
             </div>
           </div>
 
           <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
             <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-              Havlena-Odeh Linear Relationship (1963)
-            </div>
-            <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-              <Latex block math="F = G (E_g + E_{f,w}) + W_e" />
-            </div>
-            <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-              <Latex block math="F = G_p B_g + W_p B_w, \quad E_g = B_g - B_{gi}, \quad E_{f,w} = B_{gi} \left(\frac{c_w S_{wi} + c_f}{1 - S_{wi}}\right) \Delta P" />
-            </div>
-          </div>
-        </div>
-
-        {/* Section 6: Drive Energy Indices */}
-        <div className="standard-card">
-          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem', color: 'var(--text-main)' }}>
-            6. Reservoir Drive Energy Indices
-          </h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
-            Proportion of cumulative fluid withdrawal supported by gas expansion, water influx, and rock/connate fluid compression.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1rem' }}>
-            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
-              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Depletion Drive Index (IDD)
-              </div>
-              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="I_{DD} = \frac{G E_g}{F}" />
-              </div>
-            </div>
-
-            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
-              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Water Influx Drive Index (IWD)
-              </div>
-              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="I_{WD} = \frac{W_e - B_w W_p}{F}" />
-              </div>
-            </div>
-
-            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
-              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Rock and Fluid Index (ICD)
-              </div>
-              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="I_{CD} = \frac{G E_{f,w}}{F}" />
-              </div>
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'center', padding: '0.5rem', color: 'var(--text-main)', fontWeight: 600 }}>
-            <Latex math="I_{DD} + I_{WD} + I_{CD} = 1.0" />
-          </div>
-        </div>
-
-        {/* Section 7: Fetkovich Aquifer Water Influx */}
-        <div className="standard-card">
-          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem', color: 'var(--text-main)' }}>
-            7. Fetkovich Radial Aquifer Water Influx Model (1971)
-          </h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
-            Semi-steady state approximation for encroachable water volume and aquifer influx rate into gas sands.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
-            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
-              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Maximum Encroachable Water (Wei)
-              </div>
-              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="W_{ei} = c_t W_i P_i \quad [\text{bbl}]" />
-              </div>
-            </div>
-
-            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
-              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Aquifer Productivity Index (J)
-              </div>
-              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="J = \frac{7.08 \times 10^{-3} k h}{\mu \left(\ln(r_a / r_0) - 0.75\right)}" />
-              </div>
-            </div>
-          </div>
-
-          <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', marginTop: '1.25rem' }}>
-            <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-              Incremental Water Influx
+              Fetkovich Radial Aquifer Influx
             </div>
             <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
               <Latex block math="\Delta W_e = \frac{W_{ei}}{P_i} \left(1 - \exp\left[-\frac{J P_i \Delta t}{W_{ei}}\right]\right) (P_{aq} - P_{res})" />
             </div>
+            <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+              <Latex block math="W_{ei} = c_t W_i P_i, \quad J = \frac{7.08 \times 10^{-3} k h}{\mu \left(\ln(r_a / r_0) - 0.75\right)}" />
+            </div>
           </div>
         </div>
 
-        {/* Section 8: Arps Decline Curve Analysis */}
+        {/* Section 7: Reservoir Drive Indices (Section 3.6) */}
         <div className="standard-card">
           <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem', color: 'var(--text-main)' }}>
-            8. Arps Production Decline Curve Analysis (1945)
+            7. Reservoir Drive Indices (Section 3.6)
           </h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
-            Empirical rate-time and cumulative production formulations representing depletion stages.
+            Relative fractional energy contribution of gas expansion, rock/connate compaction, and water drive to reservoir depletion.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                Gas Expansion Index (GDI / IDD)
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                <Latex block math="GDI = \frac{G E_g}{F^*}" />
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                Water Drive Index (WDI / IWD)
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                <Latex block math="WDI = \frac{W_e - B_w W_p}{F^*}" />
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                Compaction Drive Index (CDI / ICD)
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                <Latex block math="CDI = \frac{G E_{fw}}{F^*}" />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: 'var(--bg-element)', padding: '1rem', borderRadius: '10px', textAlign: 'center' }}>
+            <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+              <Latex math="GDI + CDI + WDI = 1.0" />
+            </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.35rem 0 0 0' }}>
+              Because there is no black-oil phase expansion, the oil depletion index ODI is zero.
+            </p>
+          </div>
+        </div>
+
+        {/* Section 8: Arps Decline Curve Analysis (Section 3.8 & 3.8.1) */}
+        <div className="standard-card">
+          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem', color: 'var(--text-main)' }}>
+            8. Arps Production Decline Curve Analysis (Section 3.8)
+          </h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
+            Rate-time and cumulative production formulations fitted to production history and extrapolated to economic abandonment.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                Hyperbolic Decline (0 &lt; b &lt; 1)
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                <Latex block math="q(t) = \frac{q_i}{(1 + b D_i t)^{1/b}}" />
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                <Latex block math="G_p = \frac{q_i^b}{(1 - b) D_i} \left(q_i^{1-b} - q^{1-b}\right)" />
+              </div>
+            </div>
+
             <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
               <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                 Exponential Decline (b = 0)
               </div>
               <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="q(t) = q_i e^{-D t}" />
+                <Latex block math="q(t) = q_i e^{-D_i t}" />
               </div>
               <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="G_p(t) = \frac{q_i - q(t)}{D}" />
+                <Latex block math="G_p = \frac{q_i - q}{D_i}" />
               </div>
             </div>
 
@@ -371,58 +387,33 @@ export function FormulasPage() {
                 <Latex block math="q(t) = \frac{q_i}{1 + D_i t}" />
               </div>
               <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="G_p(t) = \frac{q_i}{D_i} \ln\left(\frac{q_i}{q(t)}\right)" />
-              </div>
-            </div>
-
-            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
-              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                Hyperbolic Decline (0 &lt; b &lt; 1)
-              </div>
-              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="q(t) = \frac{q_i}{(1 + b D_i t)^{1/b}}" />
-              </div>
-              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="G_p(t) = \frac{q_i^b}{D_i (1 - b)} \left(q_i^{1-b} - q(t)^{1-b}\right)" />
+                <Latex block math="G_p = \frac{q_i}{D_i} \ln\left(\frac{q_i}{q}\right)" />
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Section 9: SPE-PRMS Reserves Classification */}
-        <div className="standard-card">
-          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem', color: 'var(--text-main)' }}>
-            9. SPE-PRMS Probabilistic Reserves Methodology
-          </h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
-            International petroleum resources management system standards based on cumulative probability distributions.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
             <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
               <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                1P Proved Reserves (P90)
+                Economic Limit Time (ta)
               </div>
               <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="1P = P_{90} \quad (90\% \text{ exceedance probability})" />
+                <Latex block math="t_a = \frac{(q_i / q_a)^b - 1}{b D_i} \quad (\text{hyperbolic})" />
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                <Latex block math="t_a = \frac{\ln(q_i / q_a)}{D_i} \quad (\text{exponential})" />
               </div>
             </div>
 
             <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
               <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                2P Proved plus Probable (P50)
+                Remaining Reserves & Switch Time
               </div>
               <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="2P = P_{50} \quad (50\% \text{ median expectation})" />
-              </div>
-            </div>
-
-            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
-              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                3P Proved plus Probable plus Possible
+                <Latex block math="R_g = G_p(q_a) - G_p(q_{now})" />
               </div>
               <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                <Latex block math="3P = P_{10} \quad (10\% \text{ high estimate})" />
+                <Latex block math="t_{sw} = \frac{(D_i / D_{lim})^b - 1}{b D_i} \quad [\text{Eq. 3.81}]" />
               </div>
             </div>
           </div>
