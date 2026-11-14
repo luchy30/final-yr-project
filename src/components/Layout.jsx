@@ -12,6 +12,7 @@ import {
   Moon01Icon,
 } from 'hugeicons-react'
 import { useReservoir } from '../context/useReservoir'
+import CustomSelect from './CustomSelect'
 
 export function Layout() {
   const {
@@ -84,18 +85,16 @@ export function Layout() {
               <label htmlFor="sidebar-workspace-select" className="sidebar-workspace-label">
                 ACTIVE FIELD WORKSPACE
               </label>
-              <select
+              <CustomSelect
                 id="sidebar-workspace-select"
+                variant="sidebar"
                 value={activeProject.id}
-                onChange={(e) => switchProject(e.target.value)}
-                className="sidebar-workspace-select"
-              >
-                {projects.map((proj) => (
-                  <option key={proj.id} value={proj.id}>
-                    {proj.name}
-                  </option>
-                ))}
-              </select>
+                onChange={switchProject}
+                options={projects.map((proj) => ({
+                  value: proj.id,
+                  label: proj.name,
+                }))}
+              />
             </div>
           )}
 

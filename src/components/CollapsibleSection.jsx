@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
+import { ArrowDown01Icon } from 'hugeicons-react'
 
 export function CollapsibleSection({ index, title, isOpen, onToggle, delay = 0, children }) {
   return (
@@ -15,7 +16,9 @@ export function CollapsibleSection({ index, title, isOpen, onToggle, delay = 0, 
         aria-expanded={isOpen}
       >
         <span className="collapsible-title">{title}</span>
-        <span className="collapsible-action">{isOpen ? 'Hide' : 'Show'}</span>
+        <span className={`collapsible-caret ${isOpen ? 'open' : ''}`} aria-hidden="true">
+          <ArrowDown01Icon size={18} />
+        </span>
       </button>
 
       <AnimatePresence initial={false}>

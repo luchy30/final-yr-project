@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useReservoir } from '../context/useReservoir'
+import CustomSelect from '../components/CustomSelect'
 
 export function CalculationsPage() {
   const navigate = useNavigate()
@@ -245,43 +246,43 @@ export function CalculationsPage() {
           <div className="form-columns-grid">
             <div className="input-cell">
               <label htmlFor="zMethod">Gas Deviation Z Factor Correlation</label>
-              <select
+              <CustomSelect
                 id="zMethod"
                 value={zMethod}
-                onChange={(e) => setZMethod(e.target.value)}
-                className="standard-select"
-              >
-                <option value="hall_yarborough">Hall and Yarborough EOS</option>
-                <option value="brill_beggs">Brill and Beggs Empirical</option>
-                <option value="dak">Dranchuk and Abou-Kassem EOS</option>
-              </select>
+                onChange={setZMethod}
+                options={[
+                  { value: 'hall_yarborough', label: 'Hall and Yarborough EOS' },
+                  { value: 'brill_beggs', label: 'Brill and Beggs Empirical' },
+                  { value: 'dak', label: 'Dranchuk and Abou-Kassem EOS' },
+                ]}
+              />
             </div>
 
             <div className="input-cell">
               <label htmlFor="pseudoMethod">Pseudo-Critical Properties Method</label>
-              <select
+              <CustomSelect
                 id="pseudoMethod"
                 value={pseudoMethod}
-                onChange={(e) => setPseudoMethod(e.target.value)}
-                className="standard-select"
-              >
-                <option value="chapter3">Methodology Correlation (Tpc = 170.491 + 307.344 yg)</option>
-                <option value="standing">Standing Standard Correlation</option>
-                <option value="sutton">Sutton Extended Correlation</option>
-              </select>
+                onChange={setPseudoMethod}
+                options={[
+                  { value: 'chapter3', label: 'Methodology Correlation (Tpc = 170.491 + 307.344 yg)' },
+                  { value: 'standing', label: 'Standing Standard Correlation' },
+                  { value: 'sutton', label: 'Sutton Extended Correlation' },
+                ]}
+              />
             </div>
 
             <div className="input-cell">
               <label htmlFor="classificationCriterion">Fluid Classification Criterion</label>
-              <select
+              <CustomSelect
                 id="classificationCriterion"
                 value={classificationCriterion}
-                onChange={(e) => setClassificationCriterion(e.target.value)}
-                className="standard-select"
-              >
-                <option value="ahmed">Ahmed Criterion (2019 Table 3.1)</option>
-                <option value="mccain">McCain Criterion (1990 Table 3.1)</option>
-              </select>
+                onChange={setClassificationCriterion}
+                options={[
+                  { value: 'ahmed', label: 'Ahmed Criterion (2019 Table 3.1)' },
+                  { value: 'mccain', label: 'McCain Criterion (1990 Table 3.1)' },
+                ]}
+              />
             </div>
           </div>
         </div>
@@ -294,57 +295,57 @@ export function CalculationsPage() {
           <div className="form-columns-grid">
             <div className="input-cell">
               <label htmlFor="fieldStage">Field Development Stage</label>
-              <select
+              <CustomSelect
                 id="fieldStage"
                 value={fieldStage}
-                onChange={(e) => setFieldStage(e.target.value)}
-                className="standard-select"
-              >
-                <option value="early">Early Appraisal (Volumetric EUR)</option>
-                <option value="producing">Producing Field (Material Balance EUR)</option>
-                <option value="mature">Mature Field (Decline Curve EUR)</option>
-              </select>
+                onChange={setFieldStage}
+                options={[
+                  { value: 'early', label: 'Early Appraisal (Volumetric EUR)' },
+                  { value: 'producing', label: 'Producing Field (Material Balance EUR)' },
+                  { value: 'mature', label: 'Mature Field (Decline Curve EUR)' },
+                ]}
+              />
             </div>
 
             <div className="input-cell">
               <label htmlFor="driveMechanism">Primary Drive Mechanism</label>
-              <select
+              <CustomSelect
                 id="driveMechanism"
                 value={driveMechanism}
-                onChange={(e) => setDriveMechanism(e.target.value)}
-                className="standard-select"
-              >
-                <option value="volumetric">Volumetric Depletion</option>
-                <option value="water_drive">Water Drive</option>
-                <option value="combination">Combination Drive</option>
-              </select>
+                onChange={setDriveMechanism}
+                options={[
+                  { value: 'volumetric', label: 'Volumetric Depletion' },
+                  { value: 'water_drive', label: 'Water Drive' },
+                  { value: 'combination', label: 'Combination Drive' },
+                ]}
+              />
             </div>
 
             <div className="input-cell">
               <label htmlFor="aquiferModel">Aquifer Influx Model</label>
-              <select
+              <CustomSelect
                 id="aquiferModel"
                 value={aquiferModel}
-                onChange={(e) => setAquiferModel(e.target.value)}
-                className="standard-select"
-              >
-                <option value="pot">Pot Aquifer Model</option>
-                <option value="schilthuis">Schilthuis Steady-State Model</option>
-              </select>
+                onChange={setAquiferModel}
+                options={[
+                  { value: 'pot', label: 'Pot Aquifer Model' },
+                  { value: 'schilthuis', label: 'Schilthuis Steady-State Model' },
+                ]}
+              />
             </div>
 
             <div className="input-cell">
               <label htmlFor="declineModel">Arps Decline Model</label>
-              <select
+              <CustomSelect
                 id="declineModel"
                 value={declineModel}
-                onChange={(e) => setDeclineModel(e.target.value)}
-                className="standard-select"
-              >
-                <option value="hyperbolic">Hyperbolic Decline</option>
-                <option value="exponential">Exponential Decline</option>
-                <option value="harmonic">Harmonic Decline</option>
-              </select>
+                onChange={setDeclineModel}
+                options={[
+                  { value: 'hyperbolic', label: 'Hyperbolic Decline' },
+                  { value: 'exponential', label: 'Exponential Decline' },
+                  { value: 'harmonic', label: 'Harmonic Decline' },
+                ]}
+              />
             </div>
 
             <div className="input-cell">
