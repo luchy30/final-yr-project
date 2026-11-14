@@ -2,7 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Cancel01Icon } from 'hugeicons-react'
+import {
+  Add01Icon,
+  ArrowLeftRightIcon,
+  Calculator01Icon,
+  Cancel01Icon,
+  ChartLineData01Icon,
+  Delete02Icon,
+  Tick02Icon,
+} from 'hugeicons-react'
 import { useReservoir } from '../context/useReservoir'
 import { PROJECT_TEMPLATES } from '../utils/reservoirEngine'
 import CustomSelect from '../components/CustomSelect'
@@ -101,7 +109,8 @@ export function ProjectsPage() {
           onClick={() => setIsCreating(true)}
           className="top-action-btn"
         >
-          Create Project
+          <Add01Icon size={16} />
+          <span>Create Project</span>
         </button>
       </div>
 
@@ -223,17 +232,20 @@ export function ProjectsPage() {
                       onClick={closeModal}
                       className="secondary-action-btn"
                     >
-                      Cancel
+                      <Cancel01Icon size={16} />
+                      <span>Cancel</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleCreate(false)}
                       className="secondary-action-btn"
                     >
-                      Create and Stay Here
+                      <Add01Icon size={16} />
+                      <span>Create and Stay Here</span>
                     </button>
                     <button type="submit" className="top-action-btn">
-                      Create and Open Calculations
+                      <Calculator01Icon size={16} />
+                      <span>Create and Open Calculations</span>
                     </button>
                   </div>
                 </form>
@@ -260,11 +272,11 @@ export function ProjectsPage() {
               className={`standard-card project-workspace-card ${isActive ? 'active-workspace' : ''}`}
             >
               <div className="project-card-top">
-                <div>
+                <div style={{ flex: '1 1 320px', minWidth: 0 }}>
                   <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: 'var(--text-main)' }}>
                     {project.name}
                   </h3>
-                  <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+                  <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
                     {project.description}
                   </p>
                 </div>
@@ -274,7 +286,7 @@ export function ProjectsPage() {
                     fontSize: '0.82rem',
                     fontWeight: 600,
                     color: isActive ? 'var(--accent-primary)' : 'var(--text-muted)',
-                    marginBottom: '1.25rem',
+                    flexShrink: 0,
                   }}
                 >
                   {isActive ? 'Active Workspace' : 'Inactive Workspace'}
@@ -300,7 +312,7 @@ export function ProjectsPage() {
                 </div>
               </div>
 
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '1rem', marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '1.25rem', marginBottom: '1.35rem' }}>
                 Aquifer Model: {aquiferLabel}
               </div>
 
@@ -311,7 +323,8 @@ export function ProjectsPage() {
                     onClick={() => switchProject(project.id)}
                     className="top-action-btn"
                   >
-                    Switch Workspace
+                    <ArrowLeftRightIcon size={16} />
+                    <span>Switch Workspace</span>
                   </button>
                 )}
 
@@ -323,7 +336,8 @@ export function ProjectsPage() {
                   }}
                   className="secondary-action-btn"
                 >
-                  Open Inputs
+                  <Calculator01Icon size={16} />
+                  <span>Open Inputs</span>
                 </button>
 
                 <button
@@ -334,7 +348,8 @@ export function ProjectsPage() {
                   }}
                   className="secondary-action-btn"
                 >
-                  View Results
+                  <ChartLineData01Icon size={16} />
+                  <span>View Results</span>
                 </button>
 
                 {projects.length > 1 && confirmDeleteId !== project.id && (
@@ -343,7 +358,8 @@ export function ProjectsPage() {
                     onClick={() => setConfirmDeleteId(project.id)}
                     className="secondary-action-btn"
                   >
-                    Remove
+                    <Delete02Icon size={16} />
+                    <span>Remove</span>
                   </button>
                 )}
 
@@ -358,14 +374,16 @@ export function ProjectsPage() {
                       className="secondary-action-btn"
                       style={{ color: '#dc2626' }}
                     >
-                      Confirm Remove
+                      <Tick02Icon size={16} />
+                      <span>Confirm Remove</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirmDeleteId(null)}
                       className="secondary-action-btn"
                     >
-                      Cancel
+                      <Cancel01Icon size={16} />
+                      <span>Cancel</span>
                     </button>
                   </>
                 )}
