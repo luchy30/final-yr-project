@@ -171,6 +171,7 @@ export function calcMaterialBalanceAndDriveIndices({
   initialPressurePsia,
   abandonmentPressurePsia,
   initialWaterSat,
+  residualGasSat = 0.25,
   waterCompressibilityPsi = 3e-6,
   rockCompressibilityPsi = 4e-6,
   aquiferModel = 'fetkovich',
@@ -183,6 +184,7 @@ export function calcMaterialBalanceAndDriveIndices({
   const pi = Number(initialPressurePsia) > 0 ? Number(initialPressurePsia) : 3200
   const pa = Number(abandonmentPressurePsia) > 0 ? Number(abandonmentPressurePsia) : 500
   const swi = Number(initialWaterSat) >= 0 ? Number(initialWaterSat) : 0.25
+  const sgr = Number(residualGasSat) >= 0 ? Number(residualGasSat) : 0.25
   const cw = Number(waterCompressibilityPsi) > 0 ? Number(waterCompressibilityPsi) : 3e-6
   const cf = Number(rockCompressibilityPsi) > 0 ? Number(rockCompressibilityPsi) : 4e-6
 
@@ -303,7 +305,7 @@ export function calcMaterialBalanceAndDriveIndices({
   const baseMbeRecBscf = bgaRb > 0 ? (G * (ega + efwa)) / bgaRb / 1e9 : 0
   const hasWaterDriveFinal = driveMechanism === 'water_drive' || driveMechanism === 'combination'
   const activeWeFinal = hasWaterDriveFinal ? weBbl : 0
-  const trappedByWaterScf = bgaRb > 0 ? (activeWeFinal * 0.25) / bgaRb : 0
+  const trappedByWaterScf = bgaRb > 0 ? (activeWeFinal * sgr) / bgaRb : 0
   const mbeEurBscf = Math.max(0, baseMbeRecBscf - trappedByWaterScf / 1e9)
 
   return {

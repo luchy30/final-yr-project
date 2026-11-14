@@ -60,6 +60,9 @@ export function classifyReservoirFluid({
   if (gor > 0 && gor < 60000) {
     isCondensateAhmed = true
   }
+  if (gor >= 60000 && gor <= 70000 && api > 0 && api <= 60) {
+    isCondensateAhmed = true
+  }
 
   if (isCondensateAhmed) {
     return {
@@ -123,7 +126,7 @@ export function calcPseudoCriticalProperties(gasGravity, method = 'chapter3') {
   return { ppc, tpc }
 }
 
-export function calcPseudoReduced(pressurePsia, tempF, gasGravity, method = 'linear') {
+export function calcPseudoReduced(pressurePsia, tempF, gasGravity, method = 'chapter3') {
   const p = Number(pressurePsia) > 0 ? Number(pressurePsia) : 14.7
   const tempR = Number(tempF) + 459.67
   const { ppc, tpc } = calcPseudoCriticalProperties(gasGravity, method)

@@ -288,6 +288,7 @@ export function computeCompleteResults(rawConfig) {
     tempF,
     gasGravity: effectiveGasGravity,
     initialWaterSat: swi,
+    residualGasSat: sgr,
     aquiferModel: activeAquiferModel,
     driveMechanism: activeDriveMechanism,
     calcZFunc: (pVal) =>

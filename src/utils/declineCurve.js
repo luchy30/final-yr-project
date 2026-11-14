@@ -171,7 +171,17 @@ export function calcProductionForecast({
   const monthsToDeplete = totalDays / daysPerMonth
   const constantRateYears = vRecMscf / (qi * daysPerYear)
   const impliedDeclinePerMonth = declinePerDay * daysPerMonth
-  const impliedAnnualDeclinePct = (1 - Math.exp(-declinePerDay * daysPerYear)) * 100
+  let impliedAnnualDeclineFraction = 0
+  if (declineModel === 'exponential') {
+    // Chapter 3 Eq. (3.75) evaluated over 1 year (365.25 days)
+    impliedAnnualDeclineFraction = 1 - Math.exp(-declinePerDay * daysPerYear)
+  } else if (declineModel === 'harmonic') {
+    impliedAnnualDeclineFraction = 1 - 1 / (1 + declinePerDay * daysPerYear)
+  } else {
+    // Chapter 3 Eq. (3.76) evaluated over 1 year (365.25 days)
+    impliedAnnualDeclineFraction = 1 - Math.pow(1 + b * declinePerDay * daysPerYear, -1 / b)
+  }
+  const impliedAnnualDeclinePct = impliedAnnualDeclineFraction * 100
 
   const evalAtDay = (day) => {
     const d = Math.max(0, Math.min(day, totalDays))

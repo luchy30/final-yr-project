@@ -268,6 +268,9 @@ export function FormulasPage() {
                   Water Drive Gas Reservoir
                 </div>
                 <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                  <Latex block math="G = \frac{B_g G_p}{B_g - B_{gi}} - \frac{W_e - B_w W_p}{B_g - B_{gi}}" />
+                </div>
+                <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
                   <Latex block math="\frac{p}{z} = \frac{p_i}{z_i} - \frac{p_i}{z_i G} \left(G_p - \frac{W_e - B_w W_p}{B_g}\right)" />
                 </div>
               </div>
@@ -409,7 +412,19 @@ export function FormulasPage() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+                <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                  Nominal and Effective Decline Rates
+                </div>
+                <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                  <Latex block math="D = -\frac{1}{q}\frac{dq}{dt} = D_i \left(\frac{q}{q_i}\right)^b" />
+                </div>
+                <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                  <Latex block math="D_e = 1 - e^{-D_i} \quad (\text{exp.}), \quad D_e = 1 - (1 + b D_i)^{-1/b} \quad (\text{hyp.})" />
+                </div>
+              </div>
+
               <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Economic Limit Time (ta)
@@ -418,20 +433,17 @@ export function FormulasPage() {
                   <Latex block math="t_a = \frac{(q_i / q_a)^b - 1}{b D_i} \quad (\text{hyperbolic})" />
                 </div>
                 <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                  <Latex block math="t_a = \frac{\ln(q_i / q_a)}{D_i} \quad (\text{exponential})" />
+                  <Latex block math="t_a = \frac{\ln(q_i / q_a)}{D_i} \quad (\text{exp.}), \quad t_a = \frac{q_i / q_a - 1}{D_i} \quad (\text{harm.})" />
                 </div>
               </div>
+            </div>
 
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
-                <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                  Remaining Reserves and Switch Time
-                </div>
-                <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                  <Latex block math="R_g = G_p(q_a) - G_p(q_{now})" />
-                </div>
-                <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                  <Latex block math="t_{sw} = \frac{D_i / D_{lim} - 1}{b D_i}" />
-                </div>
+            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                Remaining Reserves and Switch Time
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                <Latex block math="R_g = G_p(q_a) - G_p(q_{now}), \quad t_{sw} = \frac{D_i / D_{lim} - 1}{b D_i}" />
               </div>
             </div>
           </div>
@@ -450,10 +462,13 @@ export function FormulasPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
               <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                  Volume-Matched Decline Rate (Hyperbolic)
+                  Volume-Matched Decline Rate (1/day)
                 </div>
                 <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                  <Latex block math="D_{res} = \frac{q_i^b \left(q_i^{1-b} - q_a^{1-b}\right)}{(1 - b) \, EUR}" />
+                  <Latex block math="D_{res} = \frac{q_i^b \left(q_i^{1-b} - q_a^{1-b}\right)}{(1 - b) \, V_{rec}} \quad (\text{hyp.}), \quad V_{rec} = 10^6 \, EUR_{\text{Bscf}}" />
+                </div>
+                <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                  <Latex block math="D_{res} = \frac{q_i - q_a}{V_{rec}} \quad (\text{exp.}), \quad D_{res} = \frac{q_i \ln(q_i / q_a)}{V_{rec}} \quad (\text{harm.})" />
                 </div>
               </div>
 
@@ -462,7 +477,10 @@ export function FormulasPage() {
                   Years to Deplete (tdeplete)
                 </div>
                 <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                  <Latex block math="t_{\text{deplete}} = \frac{(q_i / q_a)^b - 1}{365.25 \, b \, D_{res}} \quad [\text{years}]" />
+                  <Latex block math="t_{\text{deplete}} = \frac{(q_i / q_a)^b - 1}{365.25 \, b \, D_{res}} \quad [\text{years, hyp.}]" />
+                </div>
+                <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                  <Latex block math="t_{\text{deplete}} = \frac{\ln(q_i / q_a)}{365.25 \, D_{res}} \quad (\text{exp.}), \quad t_{\text{deplete}} = \frac{q_i / q_a - 1}{365.25 \, D_{res}} \quad (\text{harm.})" />
                 </div>
               </div>
             </div>
