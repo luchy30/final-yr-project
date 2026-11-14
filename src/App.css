@@ -301,44 +301,6 @@ body {
   font-weight: 500;
 }
 
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.search-field {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-input {
-  background-color: var(--bg-card);
-  border: none;
-  border-radius: 10px;
-  padding: 0.65rem 1rem 0.65rem 2.4rem;
-  font-size: 0.9rem;
-  color: var(--text-main);
-  font-family: inherit;
-  width: 220px;
-  box-sizing: border-box;
-}
-
-.search-input:focus {
-  outline: none;
-  background-color: var(--bg-element);
-}
-
-.search-icon-holder {
-  position: absolute;
-  left: 0.8rem;
-  display: flex;
-  align-items: center;
-  pointer-events: none;
-  color: var(--text-subtle);
-}
-
 .top-action-btn {
   background-color: var(--accent-primary);
   color: #ffffff;
@@ -1248,13 +1210,6 @@ body {
   .topbar {
     flex-direction: column;
     align-items: flex-start;
-  }
-  .topbar-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .search-input {
-    width: 100%;
   }
   .matrix-row {
     grid-template-columns: 120px repeat(4, 1fr);

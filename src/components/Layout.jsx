@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import {
   Folder01Icon,
   Calculator01Icon,
@@ -7,7 +7,6 @@ import {
   File01Icon,
   Settings01Icon,
   SidebarLeft01Icon,
-  Search01Icon,
   Sun01Icon,
   Moon01Icon,
 } from 'hugeicons-react'
@@ -20,16 +19,12 @@ export function Layout() {
     handleThemeChange,
     isSidebarCollapsed,
     setIsSidebarCollapsed,
-    searchQuery,
-    setSearchQuery,
-    handleCalculate,
     projects,
     activeProject,
     switchProject,
   } = useReservoir()
 
   const location = useLocation()
-  const navigate = useNavigate()
   const pathname = location.pathname
 
   const getPageTitle = (path) => {
@@ -52,13 +47,6 @@ export function Layout() {
       return 'Settings'
     }
     return 'PetroReserves'
-  }
-
-  const onRunClick = () => {
-    handleCalculate()
-    if (!pathname.startsWith('/results')) {
-      navigate('/results')
-    }
   }
 
   return (
@@ -193,29 +181,6 @@ export function Layout() {
             <div className="topbar-project-subtitle">
               Workspace: {activeProject.name}
             </div>
-          </div>
-
-          <div className="topbar-actions">
-            <div className="search-field">
-              <span className="search-icon-holder">
-                <Search01Icon size={16} />
-              </span>
-              <input
-                type="text"
-                placeholder="Search here..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="search-input"
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={onRunClick}
-              className="top-action-btn"
-            >
-              Run Calculation
-            </button>
           </div>
         </header>
 
