@@ -61,7 +61,7 @@ body {
 
 /* Sidebar Styles */
 .sidebar {
-  width: 240px;
+  width: 272px;
   height: 100vh;
   max-height: 100vh;
   background-color: var(--bg-sidebar);
