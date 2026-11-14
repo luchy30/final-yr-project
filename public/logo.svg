@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <style>
+    .logo-stroke { stroke: #000000; }
+    @media (prefers-color-scheme: dark) {
+      .logo-stroke { stroke: #FFFFFF; }
+    }
+  </style>
+  <rect
+    class="logo-stroke"
+    x="7"
+    y="7"
+    width="50"
+    height="50"
+    rx="11"
+    stroke-width="4.5"
+  />
+  <path
+    class="logo-stroke"
+    d="M17.25 42.5L26.75 30.5L34.75 37L46.75 21.5"
+    stroke-width="4.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    class="logo-stroke"
+    d="M39.75 21.5H46.75V28.5"
+    stroke-width="4.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

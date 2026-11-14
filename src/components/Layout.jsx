@@ -88,7 +88,16 @@ export function Layout() {
         className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}
       >
         <div className="sidebar-header-row">
-          <h2 className="brand-text">PetroReserves</h2>
+          <div className="sidebar-brand-group">
+            <img
+              src="/logo-white.svg"
+              alt="PetroReserves logo"
+              className="sidebar-brand-logo"
+              width={26}
+              height={26}
+            />
+            <h2 className="brand-text">PetroReserves</h2>
+          </div>
           <button
             type="button"
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
