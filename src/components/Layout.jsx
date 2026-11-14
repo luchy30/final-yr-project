@@ -11,7 +11,7 @@ import {
   Sun01Icon,
   Moon01Icon,
 } from 'hugeicons-react'
-import { useReservoir } from '../context/ReservoirContext'
+import { useReservoir } from '../context/useReservoir'
 
 export function Layout() {
   const {
@@ -22,6 +22,9 @@ export function Layout() {
     searchQuery,
     setSearchQuery,
     handleCalculate,
+    projects,
+    activeProject,
+    switchProject,
   } = useReservoir()
 
   const location = useLocation()
@@ -32,19 +35,13 @@ export function Layout() {
     if (path.startsWith('/projects')) {
       return 'Projects'
     }
-    if (path.startsWith('/calculations')) {
-      return 'Calculations'
-    }
-    if (path.startsWith('/calculation')) {
+    if (path.startsWith('/calculations') || path.startsWith('/calculation')) {
       return 'Calculations'
     }
     if (path.startsWith('/results')) {
       return 'Results and Analysis'
     }
-    if (path.startsWith('/formulas')) {
-      return 'Methodology Formulas'
-    }
-    if (path.startsWith('/formula')) {
+    if (path.startsWith('/formulas') || path.startsWith('/formula')) {
       return 'Methodology Formulas'
     }
     if (path.startsWith('/reports')) {
@@ -82,6 +79,26 @@ export function Layout() {
             </button>
           </div>
 
+          {!isSidebarCollapsed && (
+            <div className="sidebar-workspace-box">
+              <label htmlFor="sidebar-workspace-select" className="sidebar-workspace-label">
+                ACTIVE FIELD WORKSPACE
+              </label>
+              <select
+                id="sidebar-workspace-select"
+                value={activeProject.id}
+                onChange={(e) => switchProject(e.target.value)}
+                className="sidebar-workspace-select"
+              >
+                {projects.map((proj) => (
+                  <option key={proj.id} value={proj.id}>
+                    {proj.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <nav className="sidebar-nav">
             <NavLink
               to="/projects"
@@ -104,10 +121,10 @@ export function Layout() {
             <NavLink
               to="/results"
               className={({ isActive }) => (isActive ? 'nav-button active' : 'nav-button')}
-              title="Results & Analysis"
+              title="Results and Analysis"
             >
               <ChartLineData01Icon size={20} />
-              {!isSidebarCollapsed && <span className="nav-label-text">Results & Analysis</span>}
+              {!isSidebarCollapsed && <span className="nav-label-text">Results and Analysis</span>}
             </NavLink>
 
             <NavLink
@@ -174,6 +191,9 @@ export function Layout() {
         <header className="topbar">
           <div className="topbar-title">
             <h1>{getPageTitle(pathname)}</h1>
+            <div className="topbar-project-subtitle">
+              Workspace: {activeProject.name}
+            </div>
           </div>
 
           <div className="topbar-actions">

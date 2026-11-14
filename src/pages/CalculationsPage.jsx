@@ -1,10 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { useReservoir } from '../context/ReservoirContext'
+import { useReservoir } from '../context/useReservoir'
 
 export function CalculationsPage() {
   const navigate = useNavigate()
   const {
+    activeProject,
     area,
     setArea,
     thickness,
@@ -39,6 +40,8 @@ export function CalculationsPage() {
     setAquiferModel,
     declineModel,
     setDeclineModel,
+    fieldStage,
+    setFieldStage,
     initialRate,
     setInitialRate,
     declineRate,
@@ -48,6 +51,7 @@ export function CalculationsPage() {
     economicLimit,
     setEconomicLimit,
     handleCalculate,
+    resetProjectDefaults,
   } = useReservoir()
 
   const onSubmit = (e) => {
@@ -56,51 +60,26 @@ export function CalculationsPage() {
     navigate('/results')
   }
 
-  const resetDefaults = () => {
-    setArea('640')
-    setThickness('45')
-    setPorosity('0.18')
-    setWaterSat('0.25')
-    setResidualGasSat('0.25')
-    setPressure('3200')
-    setAbandonmentPressure('500')
-    setTemperature('180')
-    setGasGravity('0.65')
-    setGor('120000')
-    setApiGravity('55')
-    setZMethod('hall_yarborough')
-    setPseudoMethod('chapter3')
-    setClassificationCriterion('ahmed')
-    setDriveMechanism('volumetric')
-    setAquiferModel('pot')
-    setDeclineModel('hyperbolic')
-    setInitialRate('12000')
-    setDeclineRate('0.025')
-    setArpsB('0.5')
-    setEconomicLimit('500')
-    handleCalculate()
-  }
-
   return (
     <motion.div
-      key="calculations-page"
+      key={`calculations-page-${activeProject.id}`}
       className="form-view-container"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
     >
-      <div style={{ marginBottom: '2rem' }}>
+      <div style={{ marginBottom: '2.25rem' }}>
         <h2 className="form-block-heading" style={{ marginTop: 0 }}>
           Reservoir Parameters and Calculation Setup
         </h2>
         <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0 0', fontSize: '0.95rem' }}>
-          Input petrophysical values, fluid properties, and select correlations to compute gas reserves.
+          Editing workspace inputs for {activeProject.name}. Changes are saved per project.
         </p>
       </div>
 
       <form onSubmit={onSubmit}>
         {/* Section 1: Petrophysics and Reservoir Geometry */}
-        <div style={{ marginBottom: '2.5rem' }}>
+        <div style={{ marginBottom: '2.75rem' }}>
           <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', margin: '0 0 1.25rem 0' }}>
             Petrophysical and Geometry Inputs
           </h3>
@@ -173,7 +152,7 @@ export function CalculationsPage() {
         </div>
 
         {/* Section 2: Fluid Properties and Reservoir Pressures */}
-        <div style={{ marginBottom: '2.5rem' }}>
+        <div style={{ marginBottom: '2.75rem' }}>
           <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', margin: '0 0 1.25rem 0' }}>
             Fluid and Pressure Inputs
           </h3>
@@ -259,7 +238,7 @@ export function CalculationsPage() {
         </div>
 
         {/* Section 3: Correlation Choices */}
-        <div style={{ marginBottom: '2.5rem' }}>
+        <div style={{ marginBottom: '2.75rem' }}>
           <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', margin: '0 0 1.25rem 0' }}>
             Empirical Correlations and Fluid Classification
           </h3>
@@ -308,11 +287,25 @@ export function CalculationsPage() {
         </div>
 
         {/* Section 4: Drive Mechanism, Aquifer and Decline Settings */}
-        <div style={{ marginBottom: '2.5rem' }}>
+        <div style={{ marginBottom: '2.75rem' }}>
           <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', margin: '0 0 1.25rem 0' }}>
-            Reservoir Drive and Production Decline Models
+            Reservoir Drive, Aquifer, and Production Forecast
           </h3>
           <div className="form-columns-grid">
+            <div className="input-cell">
+              <label htmlFor="fieldStage">Field Development Stage</label>
+              <select
+                id="fieldStage"
+                value={fieldStage}
+                onChange={(e) => setFieldStage(e.target.value)}
+                className="standard-select"
+              >
+                <option value="early">Early Appraisal (Volumetric EUR)</option>
+                <option value="producing">Producing Field (Material Balance EUR)</option>
+                <option value="mature">Mature Field (Decline Curve EUR)</option>
+              </select>
+            </div>
+
             <div className="input-cell">
               <label htmlFor="driveMechanism">Primary Drive Mechanism</label>
               <select
@@ -335,9 +328,8 @@ export function CalculationsPage() {
                 onChange={(e) => setAquiferModel(e.target.value)}
                 className="standard-select"
               >
-                <option value="pot">Pot Aquifer Model (Section 3.5.1)</option>
-                <option value="fetkovich">Fetkovich Radial Aquifer</option>
-                <option value="van_everdingen">Van Everdingen and Hurst</option>
+                <option value="pot">Pot Aquifer Model</option>
+                <option value="schilthuis">Schilthuis Steady-State Model</option>
               </select>
             </div>
 
@@ -414,15 +406,15 @@ export function CalculationsPage() {
           <button
             type="submit"
             className="primary-submit-btn"
-            style={{ flex: 2 }}
+            style={{ flex: 2, marginTop: 0 }}
           >
             Compute Reserves and View Analysis
           </button>
           <button
             type="button"
-            onClick={resetDefaults}
-            className="top-action-btn"
-            style={{ flex: 1, backgroundColor: 'var(--bg-element)', color: 'var(--text-main)' }}
+            onClick={resetProjectDefaults}
+            className="secondary-action-btn"
+            style={{ flex: 1 }}
           >
             Reset Defaults
           </button>

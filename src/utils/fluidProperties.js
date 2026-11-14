@@ -3,7 +3,6 @@
 export function classifyReservoirFluid({
   gorScfStb,
   apiGravity,
-  reservoirTempF,
   dewPointPsia,
   initialPressurePsia,
   criterion = 'ahmed',
@@ -17,6 +16,8 @@ export function classifyReservoirFluid({
     if (gor >= 3200 && gor <= 15000) {
       return {
         fluidType: 'Gas Condensate',
+        gorScfStb: gor,
+        apiGravity: api,
         phaseRegime: 'Gas above the dew point; liquid drops out below it',
         surfaceLiquid: 'Condensate (above 40 API)',
         gorBehavior: 'Rises below the dew point',
@@ -28,6 +29,8 @@ export function classifyReservoirFluid({
     if (gor > 15000 && gor <= 100000) {
       return {
         fluidType: 'Wet Gas',
+        gorScfStb: gor,
+        apiGravity: api,
         phaseRegime: 'Single-phase gas in reservoir throughout depletion',
         surfaceLiquid: 'Light, water-white condensate (up to 70 API)',
         gorBehavior: 'Constant throughout depletion',
@@ -38,6 +41,8 @@ export function classifyReservoirFluid({
     }
     return {
       fluidType: 'Dry Gas',
+      gorScfStb: gor,
+      apiGravity: api,
       phaseRegime: 'Single-phase gas in reservoir throughout depletion',
       surfaceLiquid: 'None (no liquid)',
       gorBehavior: 'Not applicable',
@@ -59,6 +64,8 @@ export function classifyReservoirFluid({
   if (isCondensateAhmed) {
     return {
       fluidType: 'Gas Condensate',
+      gorScfStb: gor,
+      apiGravity: api,
       phaseRegime: 'Gas above the dew point; liquid drops out below it',
       surfaceLiquid: 'Condensate (40 to 60 API)',
       gorBehavior: 'Rises below the dew point',
@@ -71,6 +78,8 @@ export function classifyReservoirFluid({
   if (gor >= 60000 && gor <= 100000) {
     return {
       fluidType: 'Wet Gas',
+      gorScfStb: gor,
+      apiGravity: api,
       phaseRegime: 'Single-phase gas in reservoir throughout depletion',
       surfaceLiquid: api >= 60 ? 'Light, water-white condensate (above 60 API)' : 'Light surface condensate',
       gorBehavior: 'Constant throughout depletion',
@@ -82,6 +91,8 @@ export function classifyReservoirFluid({
 
   return {
     fluidType: 'Dry Gas',
+    gorScfStb: gor,
+    apiGravity: api,
     phaseRegime: 'Single-phase gas in reservoir throughout depletion',
     surfaceLiquid: 'None',
     gorBehavior: 'Not applicable',
@@ -288,6 +299,7 @@ export function calcWetGasProperties({ gorScfStb, apiGravity, surfaceGasGravity,
   const dryGasFraction = gor / (gor + gasEquivalentGE)
   const surfaceGasInPlaceScf = dryGasFraction * gt
   const initialCondensateInPlaceStb = gt / (gor + gasEquivalentGE)
+  const condensateYieldStbMmscf = gor > 0 ? 1e6 / gor : 0
 
   return {
     gammaO,
@@ -297,5 +309,6 @@ export function calcWetGasProperties({ gorScfStb, apiGravity, surfaceGasGravity,
     dryGasFraction,
     surfaceGasInPlaceScf,
     initialCondensateInPlaceStb,
+    condensateYieldStbMmscf,
   }
 }

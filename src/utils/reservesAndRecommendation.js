@@ -31,7 +31,7 @@ export function recommendMethodAndMechanism({
   effectiveGasGravity = 0.65,
 }) {
   const isCondensate = fluidType === 'Gas Condensate'
-  let isWaterDrive = driveMechanism === 'water_drive'
+  let isWaterDrive = driveMechanism === 'water_drive' || driveMechanism === 'combination'
   if (IWD > 0.15) {
     isWaterDrive = true
   }
@@ -70,6 +70,7 @@ export function recommendMethodAndMechanism({
   let recommendedMethod = 'Volumetric Method'
   let finalRecommendedEurBscf = volEur
   let reconciledWeightedEurBscf = volEur * 0.6 + mbeEur * 0.3 + dcaEur * 0.1
+  let confidence = 'Moderate (Appraisal Volumetric)'
   let stageExplanation =
     'Field is in early appraisal, so Volumetric EUR serves as the primary tied reserves figure.'
 
@@ -79,6 +80,7 @@ export function recommendMethodAndMechanism({
       : 'Linear P/Z Material Balance Method'
     finalRecommendedEurBscf = mbeEur
     reconciledWeightedEurBscf = mbeEur * 0.55 + volEur * 0.3 + dcaEur * 0.15
+    confidence = 'High (Material Balance Matched)'
     stageExplanation = isWaterDrive
       ? 'Active aquifer support bends P/Z upward, so Havlena-Odeh Material Balance EUR is selected as the primary tied reserves figure.'
       : 'Active pressure and production history with dominant gas expansion makes Linear P/Z Material Balance EUR the primary tied reserves figure.'
@@ -86,6 +88,7 @@ export function recommendMethodAndMechanism({
     recommendedMethod = 'Arps Decline Curve Analysis'
     finalRecommendedEurBscf = dcaEur
     reconciledWeightedEurBscf = dcaEur * 0.55 + mbeEur * 0.3 + volEur * 0.15
+    confidence = 'High (Decline Curve History)'
     stageExplanation =
       'Boundary-dominated late-life production trend makes Arps Decline Curve EUR the primary tied reserves figure.'
   }
@@ -98,6 +101,7 @@ export function recommendMethodAndMechanism({
     uncertaintySpread,
     dominantDrive,
     recommendedMethod,
+    confidence,
     finalRecommendedEurBscf: Number(finalRecommendedEurBscf.toFixed(2)),
     reconciledWeightedEurBscf: Number(reconciledWeightedEurBscf.toFixed(2)),
     volumetricEurBscf: Number(volEur.toFixed(2)),

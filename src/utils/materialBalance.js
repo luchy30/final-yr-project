@@ -170,8 +170,6 @@ export function calcMaterialBalanceAndDriveIndices({
   giipScf,
   initialPressurePsia,
   abandonmentPressurePsia,
-  tempF,
-  gasGravity,
   initialWaterSat,
   waterCompressibilityPsi = 3e-6,
   rockCompressibilityPsi = 4e-6,
@@ -235,7 +233,8 @@ export function calcMaterialBalanceAndDriveIndices({
     }
     pPrev = pCurr
 
-    const activeWe = driveMechanism === 'water_drive' ? weBbl : 0
+    const hasWaterDrive = driveMechanism === 'water_drive' || driveMechanism === 'combination'
+    const activeWe = hasWaterDrive ? weBbl : 0
 
     // Volumetric Gp at this P/Z (Equation 3.17)
     const pzVal = zCurr > 0 ? pCurr / zCurr : 0
@@ -302,7 +301,8 @@ export function calcMaterialBalanceAndDriveIndices({
   const ega = Math.max(0, bgaRb - bgiRb)
   const efwa = bgiRb * Ce * Math.max(0, pi - pa)
   const baseMbeRecBscf = bgaRb > 0 ? (G * (ega + efwa)) / bgaRb / 1e9 : 0
-  const activeWeFinal = driveMechanism === 'water_drive' ? weBbl : 0
+  const hasWaterDriveFinal = driveMechanism === 'water_drive' || driveMechanism === 'combination'
+  const activeWeFinal = hasWaterDriveFinal ? weBbl : 0
   const trappedByWaterScf = bgaRb > 0 ? (activeWeFinal * 0.25) / bgaRb : 0
   const mbeEurBscf = Math.max(0, baseMbeRecBscf - trappedByWaterScf / 1e9)
 
