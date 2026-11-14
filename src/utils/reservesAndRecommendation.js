@@ -180,10 +180,20 @@ export function calcPRMSReserves({
     })
   }
 
+  const r1P = Number(reserve1P.toFixed(2))
+  const r2P = Number(reserve2P.toFixed(2))
+  const r3P = Number(reserve3P.toFixed(2))
+  const probableIncrementalBscf = Number(Math.max(0, r2P - r1P).toFixed(2))
+  const possibleIncrementalBscf = Number(Math.max(0, r3P - r2P).toFixed(2))
+  const uncertaintySpanBscf = Number(Math.max(0, r3P - r1P).toFixed(2))
+
   return {
-    reserve1P: Number(reserve1P.toFixed(2)),
-    reserve2P: Number(reserve2P.toFixed(2)),
-    reserve3P: Number(reserve3P.toFixed(2)),
+    reserve1P: r1P,
+    reserve2P: r2P,
+    reserve3P: r3P,
+    probableIncrementalBscf,
+    possibleIncrementalBscf,
+    uncertaintySpanBscf,
     probabilityCurve,
   }
 }

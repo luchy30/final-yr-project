@@ -21,9 +21,11 @@ export function ReportsPage() {
       ['Original Gas in Place (Bscf)', results.volRes.giipBscf.toFixed(2)],
       ['Estimated Ultimate Recovery (Bscf)', results.recommendation.finalRecommendedEurBscf.toFixed(2)],
       ['Estimated Depletion Time (Years)', results.forecastRes.yearsToDeplete.toFixed(2)],
-      ['PRMS 1P Reserves (Bscf)', results.prmsRes.reserve1P.toFixed(2)],
-      ['PRMS 2P Reserves (Bscf)', results.prmsRes.reserve2P.toFixed(2)],
-      ['PRMS 3P Reserves (Bscf)', results.prmsRes.reserve3P.toFixed(2)],
+      ['PRMS 1P Proved Reserves (Bscf)', results.prmsRes.reserve1P.toFixed(2)],
+      ['PRMS Incremental Probable Reserves (Bscf)', results.prmsRes.probableIncrementalBscf.toFixed(2)],
+      ['PRMS 2P Proved plus Probable Reserves (Bscf)', results.prmsRes.reserve2P.toFixed(2)],
+      ['PRMS Incremental Possible Reserves (Bscf)', results.prmsRes.possibleIncrementalBscf.toFixed(2)],
+      ['PRMS 3P Proved, Probable and Possible Reserves (Bscf)', results.prmsRes.reserve3P.toFixed(2)],
       ['Primary Drive Mechanism', results.recommendation.dominantDrive],
       [],
       [
@@ -126,15 +128,23 @@ export function ReportsPage() {
           </span>
         </div>
         <div className="report-table-row">
-          <span className="report-row-label">PRMS 1P Proved Reserves</span>
+          <span className="report-row-label">PRMS 1P Proved Reserves (P90)</span>
           <span className="report-row-value">{results.prmsRes.reserve1P.toFixed(2)} Bscf</span>
         </div>
         <div className="report-table-row">
-          <span className="report-row-label">PRMS 2P Probable Reserves</span>
+          <span className="report-row-label">PRMS Incremental Probable Reserves</span>
+          <span className="report-row-value">+{results.prmsRes.probableIncrementalBscf.toFixed(2)} Bscf</span>
+        </div>
+        <div className="report-table-row">
+          <span className="report-row-label">PRMS 2P Proved plus Probable (P50)</span>
           <span className="report-row-value">{results.prmsRes.reserve2P.toFixed(2)} Bscf</span>
         </div>
         <div className="report-table-row">
-          <span className="report-row-label">PRMS 3P Possible Reserves</span>
+          <span className="report-row-label">PRMS Incremental Possible Reserves</span>
+          <span className="report-row-value">+{results.prmsRes.possibleIncrementalBscf.toFixed(2)} Bscf</span>
+        </div>
+        <div className="report-table-row">
+          <span className="report-row-label">PRMS 3P Proved, Probable and Possible (P10)</span>
           <span className="report-row-value">{results.prmsRes.reserve3P.toFixed(2)} Bscf</span>
         </div>
         <div className="report-table-row">

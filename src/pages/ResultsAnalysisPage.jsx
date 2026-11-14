@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   ResponsiveContainer,
   LineChart,
@@ -15,6 +15,12 @@ import {
 import { useReservoir } from '../context/useReservoir'
 import { CollapsibleSection } from '../components/CollapsibleSection'
 
+const RESERVE_CLASS_TABS = [
+  { id: 'proved', label: 'Proved (1P)' },
+  { id: 'probable', label: 'Probable (2P)' },
+  { id: 'possible', label: 'Possible (3P)' },
+]
+
 export function ResultsAnalysisPage() {
   const {
     activeProject,
@@ -28,6 +34,7 @@ export function ResultsAnalysisPage() {
   } = useReservoir()
 
   const [activeSection, setActiveSection] = useState(0)
+  const [activeReserveClass, setActiveReserveClass] = useState('proved')
 
   const toggleSection = (index) => {
     setActiveSection((prev) => (prev === index ? -1 : index))
@@ -44,6 +51,89 @@ export function ResultsAnalysisPage() {
     return text.toLowerCase().includes(normalizedQuery)
   }
 
+  const giip = results.volRes.giipBscf
+  const pctOfGiip = (val) => (giip > 0 ? ((val / giip) * 100).toFixed(1) : '0.0')
+
+  const reserveClassViews = {
+    proved: {
+      subtitle: 'P90 high-certainty proved recoverable gas estimate (1P)',
+      metrics: [
+        {
+          label: 'Proved Reserves (1P)',
+          value: `${results.prmsRes.reserve1P.toFixed(2)} Bscf`,
+          context: 'Conservative threshold with reasonable certainty',
+        },
+        {
+          label: 'Probability Threshold',
+          value: 'P90 (90%)',
+          context: '90% probability recovered volume equals or exceeds 1P',
+        },
+        {
+          label: 'Recovery of Initial GIIP',
+          value: `${pctOfGiip(results.prmsRes.reserve1P)}%`,
+          context: `Share of ${giip.toFixed(2)} Bscf original gas in place`,
+        },
+        {
+          label: 'Evaluation Basis',
+          value: results.recommendation.reservoirClass.split(':')[0],
+          context: results.recommendation.confidence,
+        },
+      ],
+    },
+    probable: {
+      subtitle: 'Unrisked probable upside and P50 best estimate cumulative reserves (2P)',
+      metrics: [
+        {
+          label: 'Incremental Probable',
+          value: `+${results.prmsRes.probableIncrementalBscf.toFixed(2)} Bscf`,
+          context: 'Additional probable volume above 1P Proved',
+        },
+        {
+          label: 'Cumulative 2P Reserves (P50)',
+          value: `${results.prmsRes.reserve2P.toFixed(2)} Bscf`,
+          context: `Proved + Probable matched to ${results.recommendation.recommendedMethod}`,
+        },
+        {
+          label: 'Probability Threshold',
+          value: 'P50 (50%)',
+          context: `${pctOfGiip(results.prmsRes.reserve2P)}% of initial GIIP recovered`,
+        },
+        {
+          label: 'Uncertainty Parameter Spread',
+          value: `+/- ${(results.recommendation.uncertaintySpread * 100).toFixed(0)}%`,
+          context: `${results.classification.fluidType} volumetric spread`,
+        },
+      ],
+    },
+    possible: {
+      subtitle: 'High-side possible upside and P10 total resource envelope (3P)',
+      metrics: [
+        {
+          label: 'Incremental Possible',
+          value: `+${results.prmsRes.possibleIncrementalBscf.toFixed(2)} Bscf`,
+          context: 'Upside possible volume above 2P Probable',
+        },
+        {
+          label: 'Cumulative 3P Reserves (P10)',
+          value: `${results.prmsRes.reserve3P.toFixed(2)} Bscf`,
+          context: 'Proved + Probable + Possible high estimate',
+        },
+        {
+          label: 'Probability Threshold',
+          value: 'P10 (10%)',
+          context: `${pctOfGiip(results.prmsRes.reserve3P)}% of initial GIIP recovered`,
+        },
+        {
+          label: 'Total 1P to 3P Span',
+          value: `${results.prmsRes.uncertaintySpanBscf.toFixed(2)} Bscf`,
+          context: results.recommendation.spreadDescription,
+        },
+      ],
+    },
+  }
+
+  const activeReserveView = reserveClassViews[activeReserveClass]
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       {/* Visual Result Cards Grid */}
@@ -55,7 +145,7 @@ export function ResultsAnalysisPage() {
         transition={{ duration: 0.35 }}
       >
         {/* Top Left Card: Primary Engineering KPI Matrix */}
-        <div className="grid-card">
+        <div className="grid-card overview-kpi-card">
           <div className="card-header-row">
             <div>
               <h3 className="card-title">Reserves Overview</h3>
@@ -95,7 +185,7 @@ export function ResultsAnalysisPage() {
         </div>
 
         {/* Top Right Card: Correlation Comparison Matrix Across Pressure Stages */}
-        <div className="grid-card">
+        <div className="grid-card z-matrix-card">
           <div className="card-header-row">
             <div>
               <h3 className="card-title">Z Factor by Pressure</h3>
@@ -135,6 +225,52 @@ export function ResultsAnalysisPage() {
             <span className="matrix-legend-item">Pseudocritical: {results.activePseudoMethod}</span>
             <span className="matrix-legend-item">Effective Gravity: {results.effectiveGasGravity}</span>
           </div>
+        </div>
+
+        {/* Switched PRMS Reserve Classification Card */}
+        <div className="grid-card reserve-classification-card">
+          <div className="card-header-row">
+            <div>
+              <h3 className="card-title">PRMS Reserve Classification</h3>
+              <div className="card-subtitle">{activeReserveView.subtitle}</div>
+            </div>
+
+            <div className="reserve-switch-group" role="tablist" aria-label="PRMS Reserve Classification">
+              {RESERVE_CLASS_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeReserveClass === tab.id}
+                  onClick={() => setActiveReserveClass(tab.id)}
+                  className={
+                    activeReserveClass === tab.id ? 'reserve-switch-btn active' : 'reserve-switch-btn'
+                  }
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeReserveClass}
+              className="reserve-classification-kpis"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.18 }}
+            >
+              {activeReserveView.metrics.map((metric) => (
+                <div key={metric.label} className="kpi-cell">
+                  <span className="kpi-label">{metric.label}</span>
+                  <div className="kpi-number">{metric.value}</div>
+                  <span className="kpi-context">{metric.context}</span>
+                </div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Bottom Left Card: Main Chart with Tab Switcher */}
@@ -505,11 +641,19 @@ export function ResultsAnalysisPage() {
                   <span className="data-value">{results.prmsRes.reserve1P.toFixed(2)} Bscf</span>
                 </div>
                 <div className="data-item">
+                  <span className="data-label">Incremental Probable Reserves</span>
+                  <span className="data-value">+{results.prmsRes.probableIncrementalBscf.toFixed(2)} Bscf</span>
+                </div>
+                <div className="data-item">
                   <span className="data-label">2P Proved plus Probable (P50)</span>
                   <span className="data-value highlight">{results.prmsRes.reserve2P.toFixed(2)} Bscf</span>
                 </div>
                 <div className="data-item">
-                  <span className="data-label">3P Possible Reserves (P10)</span>
+                  <span className="data-label">Incremental Possible Reserves</span>
+                  <span className="data-value">+{results.prmsRes.possibleIncrementalBscf.toFixed(2)} Bscf</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">3P Proved, Probable and Possible (P10)</span>
                   <span className="data-value">{results.prmsRes.reserve3P.toFixed(2)} Bscf</span>
                 </div>
                 <div className="data-item">
