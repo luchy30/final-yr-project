@@ -36,7 +36,7 @@ export function FormulasPage() {
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Hall and Yarborough Correlation
                 </div>
@@ -69,7 +69,7 @@ export function FormulasPage() {
                 </p>
               </div>
 
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Brill and Beggs Correlation
                 </div>
@@ -99,7 +99,7 @@ export function FormulasPage() {
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Dranchuk and Abou-Kassem (DAK) Analytical Expression
                 </div>
@@ -127,8 +127,8 @@ export function FormulasPage() {
               Calculated from gas specific gravity to obtain dimensionless pseudo-reduced pressure Ppr and temperature Tpr.
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.25rem' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Methodology Linear Formulation
                 </div>
@@ -140,7 +140,7 @@ export function FormulasPage() {
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Pseudo-Reduced Parameters
                 </div>
@@ -162,8 +162,8 @@ export function FormulasPage() {
               Relates the reservoir volume of gas to its surface volume at standard conditions (14.7 psia and 60 deg F).
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.25rem' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Cubic Feet per Standard Cubic Foot
                 </div>
@@ -172,7 +172,7 @@ export function FormulasPage() {
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Reservoir Barrels per Standard Cubic Foot
                 </div>
@@ -206,8 +206,8 @@ export function FormulasPage() {
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.25rem' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Ultimate Recovery (UR)
                 </div>
@@ -216,7 +216,7 @@ export function FormulasPage() {
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Recovery Factor (RF)
                 </div>
@@ -253,8 +253,8 @@ export function FormulasPage() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.25rem' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Volumetric Gas Reservoir
                 </div>
@@ -263,7 +263,7 @@ export function FormulasPage() {
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Water Drive Gas Reservoir
                 </div>
@@ -300,7 +300,7 @@ export function FormulasPage() {
               </div>
             </div>
 
-            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
               <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                 Schilthuis Steady-State Aquifer Model
               </div>
@@ -324,8 +324,8 @@ export function FormulasPage() {
               Relative fractional energy contribution of gas expansion, rock/connate compaction, and water drive to reservoir depletion.
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Gas Expansion Index (GDI and IDD)
                 </div>
@@ -334,7 +334,7 @@ export function FormulasPage() {
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Water Drive Index (WDI and IWD)
                 </div>
@@ -343,7 +343,7 @@ export function FormulasPage() {
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Compaction Drive Index (CDI and ICD)
                 </div>
@@ -374,8 +374,8 @@ export function FormulasPage() {
               Rate-time and cumulative production formulations fitted to production history and extrapolated to economic abandonment.
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Hyperbolic Decline (0 &lt; b &lt; 1)
                 </div>
@@ -387,7 +387,7 @@ export function FormulasPage() {
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Exponential Decline (b = 0)
                 </div>
@@ -399,7 +399,7 @@ export function FormulasPage() {
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Harmonic Decline (b = 1)
                 </div>
@@ -412,8 +412,8 @@ export function FormulasPage() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Nominal and Effective Decline Rates
                 </div>
@@ -425,7 +425,7 @@ export function FormulasPage() {
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Economic Limit Time (ta)
                 </div>
@@ -438,7 +438,7 @@ export function FormulasPage() {
               </div>
             </div>
 
-            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+            <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
               <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                 Remaining Reserves and Switch Time
               </div>
@@ -459,8 +459,8 @@ export function FormulasPage() {
               Couples the estimated recoverable gas volume (EUR) with initial field rate and economic abandonment limit to compute the years required to deplete the reservoir.
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.25rem' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Volume-Matched Decline Rate (1/day)
                 </div>
@@ -472,7 +472,7 @@ export function FormulasPage() {
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   Years to Deplete (tdeplete)
                 </div>

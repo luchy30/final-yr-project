@@ -403,11 +403,10 @@ export function CalculationsPage() {
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+        <div className="form-actions-row">
           <button
             type="submit"
             className="primary-submit-btn"
-            style={{ flex: 2, marginTop: 0 }}
           >
             Compute Reserves and View Analysis
           </button>
@@ -415,7 +414,6 @@ export function CalculationsPage() {
             type="button"
             onClick={resetProjectDefaults}
             className="secondary-action-btn"
-            style={{ flex: 1 }}
           >
             Reset Defaults
           </button>

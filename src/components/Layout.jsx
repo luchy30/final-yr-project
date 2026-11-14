@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import {
   Folder01Icon,
@@ -7,6 +8,8 @@ import {
   File01Icon,
   Settings01Icon,
   SidebarLeft01Icon,
+  Menu01Icon,
+  Cancel01Icon,
   Sun01Icon,
   Moon01Icon,
 } from 'hugeicons-react'
@@ -23,6 +26,34 @@ export function Layout() {
     activeProject,
     switchProject,
   } = useReservoir()
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const sidebarRef = useRef(null)
+
+  const closeMobileMenu = () => setIsMobileMenuOpen(false)
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return undefined
+
+    const handlePointerDown = (event) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isMobileMenuOpen])
 
   const location = useLocation()
   const pathname = location.pathname
@@ -51,122 +82,136 @@ export function Layout() {
 
   return (
     <div className={`dashboard-layout theme-${theme}`} data-theme={theme}>
-      {/* Collapsible Left Sidebar */}
-      <aside className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-        <div>
-          <div className="sidebar-header-row">
-            {!isSidebarCollapsed && (
-              <h2 className="brand-text">PetroReserves</h2>
-            )}
-            <button
-              type="button"
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="sidebar-toggle-btn"
-              title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              <SidebarLeft01Icon size={18} />
-            </button>
-          </div>
+      {/* Collapsible Navigation Sidebar / Mobile Header Drawer */}
+      <aside
+        ref={sidebarRef}
+        className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}
+      >
+        <div className="sidebar-header-row">
+          <h2 className="brand-text">PetroReserves</h2>
+          <button
+            type="button"
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="sidebar-toggle-btn desktop-sidebar-toggle"
+            title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <SidebarLeft01Icon size={18} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            className="sidebar-toggle-btn mobile-menu-toggle"
+            title={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isMobileMenuOpen}
+            aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          >
+            {isMobileMenuOpen ? <Cancel01Icon size={20} /> : <Menu01Icon size={20} />}
+          </button>
+        </div>
 
-          {!isSidebarCollapsed && (
-            <div className="sidebar-workspace-box">
-              <label htmlFor="sidebar-workspace-select" className="sidebar-workspace-label">
-                ACTIVE FIELD WORKSPACE
-              </label>
-              <CustomSelect
-                id="sidebar-workspace-select"
-                variant="sidebar"
-                value={activeProject.id}
-                onChange={switchProject}
-                options={projects.map((proj) => ({
-                  value: proj.id,
-                  label: proj.name,
-                }))}
-              />
-            </div>
-          )}
+        <div className="sidebar-menu-body">
+          <div className="sidebar-workspace-box">
+            <label htmlFor="sidebar-workspace-select" className="sidebar-workspace-label">
+              ACTIVE FIELD WORKSPACE
+            </label>
+            <CustomSelect
+              id="sidebar-workspace-select"
+              variant="sidebar"
+              value={activeProject.id}
+              onChange={switchProject}
+              options={projects.map((proj) => ({
+                value: proj.id,
+                label: proj.name,
+              }))}
+            />
+          </div>
 
           <nav className="sidebar-nav">
             <NavLink
               to="/projects"
+              onClick={closeMobileMenu}
               className={({ isActive }) => (isActive ? 'nav-button active' : 'nav-button')}
               title="Projects"
             >
               <Folder01Icon size={20} />
-              {!isSidebarCollapsed && <span className="nav-label-text">Projects</span>}
+              <span className="nav-label-text">Projects</span>
             </NavLink>
 
             <NavLink
               to="/calculations"
+              onClick={closeMobileMenu}
               className={({ isActive }) => (isActive ? 'nav-button active' : 'nav-button')}
               title="Calculations"
             >
               <Calculator01Icon size={20} />
-              {!isSidebarCollapsed && <span className="nav-label-text">Calculations</span>}
+              <span className="nav-label-text">Calculations</span>
             </NavLink>
 
             <NavLink
               to="/results"
+              onClick={closeMobileMenu}
               className={({ isActive }) => (isActive ? 'nav-button active' : 'nav-button')}
               title="Results and Analysis"
             >
               <ChartLineData01Icon size={20} />
-              {!isSidebarCollapsed && <span className="nav-label-text">Results and Analysis</span>}
+              <span className="nav-label-text">Results and Analysis</span>
             </NavLink>
 
             <NavLink
               to="/formulas"
+              onClick={closeMobileMenu}
               className={({ isActive }) => (isActive ? 'nav-button active' : 'nav-button')}
               title="Formulas"
             >
               <MathIcon size={20} />
-              {!isSidebarCollapsed && <span className="nav-label-text">Formulas</span>}
+              <span className="nav-label-text">Formulas</span>
             </NavLink>
 
             <NavLink
               to="/reports"
+              onClick={closeMobileMenu}
               className={({ isActive }) => (isActive ? 'nav-button active' : 'nav-button')}
               title="Reports"
             >
               <File01Icon size={20} />
-              {!isSidebarCollapsed && <span className="nav-label-text">Reports</span>}
+              <span className="nav-label-text">Reports</span>
             </NavLink>
 
             <NavLink
               to="/settings"
+              onClick={closeMobileMenu}
               className={({ isActive }) => (isActive ? 'nav-button active' : 'nav-button')}
               title="Settings"
             >
               <Settings01Icon size={20} />
-              {!isSidebarCollapsed && <span className="nav-label-text">Settings</span>}
+              <span className="nav-label-text">Settings</span>
             </NavLink>
           </nav>
-        </div>
 
-        <div className="sidebar-footer">
-          <div className="appearance-section">
-            {!isSidebarCollapsed && (
+          <div className="sidebar-footer">
+            <div className="appearance-section">
               <span className="appearance-section-title">APPEARANCE</span>
-            )}
-            <div className="appearance-segmented-toggle">
-              <button
-                type="button"
-                className={`appearance-toggle-btn ${theme === 'light' ? 'active' : ''}`}
-                onClick={() => handleThemeChange('light')}
-                title="Light mode"
-              >
-                <Sun01Icon size={16} />
-                <span>Light</span>
-              </button>
-              <button
-                type="button"
-                className={`appearance-toggle-btn ${theme === 'dark' ? 'active' : ''}`}
-                onClick={() => handleThemeChange('dark')}
-                title="Dark mode"
-              >
-                <Moon01Icon size={16} />
-                <span>Dark</span>
-              </button>
+              <div className="appearance-segmented-toggle">
+                <button
+                  type="button"
+                  className={`appearance-toggle-btn ${theme === 'light' ? 'active' : ''}`}
+                  onClick={() => handleThemeChange('light')}
+                  title="Light mode"
+                >
+                  <Sun01Icon size={16} />
+                  <span>Light</span>
+                </button>
+                <button
+                  type="button"
+                  className={`appearance-toggle-btn ${theme === 'dark' ? 'active' : ''}`}
+                  onClick={() => handleThemeChange('dark')}
+                  title="Dark mode"
+                >
+                  <Moon01Icon size={16} />
+                  <span>Dark</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
