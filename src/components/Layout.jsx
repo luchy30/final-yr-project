@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { motion, LayoutGroup } from 'framer-motion'
 import {
   Folder01Icon,
   Calculator01Icon,
@@ -15,6 +16,15 @@ import {
 } from 'hugeicons-react'
 import { useReservoir } from '../context/useReservoir'
 import CustomSelect from './CustomSelect'
+
+const NAV_ITEMS = [
+  { to: '/projects', label: 'Projects', icon: Folder01Icon },
+  { to: '/calculations', label: 'Calculations', icon: Calculator01Icon },
+  { to: '/results', label: 'Results and Analysis', icon: ChartLineData01Icon },
+  { to: '/formulas', label: 'Formulas', icon: MathIcon },
+  { to: '/reports', label: 'Reports', icon: File01Icon },
+  { to: '/settings', label: 'Settings', icon: Settings01Icon },
+]
 
 export function Layout() {
   const {
@@ -136,67 +146,45 @@ export function Layout() {
             />
           </div>
 
-          <nav className="sidebar-nav">
-            <NavLink
-              to="/projects"
-              onClick={closeMobileMenu}
-              className={({ isActive }) => (isActive ? 'nav-button active' : 'nav-button')}
-              title="Projects"
-            >
-              <Folder01Icon size={20} />
-              <span className="nav-label-text">Projects</span>
-            </NavLink>
-
-            <NavLink
-              to="/calculations"
-              onClick={closeMobileMenu}
-              className={({ isActive }) => (isActive ? 'nav-button active' : 'nav-button')}
-              title="Calculations"
-            >
-              <Calculator01Icon size={20} />
-              <span className="nav-label-text">Calculations</span>
-            </NavLink>
-
-            <NavLink
-              to="/results"
-              onClick={closeMobileMenu}
-              className={({ isActive }) => (isActive ? 'nav-button active' : 'nav-button')}
-              title="Results and Analysis"
-            >
-              <ChartLineData01Icon size={20} />
-              <span className="nav-label-text">Results and Analysis</span>
-            </NavLink>
-
-            <NavLink
-              to="/formulas"
-              onClick={closeMobileMenu}
-              className={({ isActive }) => (isActive ? 'nav-button active' : 'nav-button')}
-              title="Formulas"
-            >
-              <MathIcon size={20} />
-              <span className="nav-label-text">Formulas</span>
-            </NavLink>
-
-            <NavLink
-              to="/reports"
-              onClick={closeMobileMenu}
-              className={({ isActive }) => (isActive ? 'nav-button active' : 'nav-button')}
-              title="Reports"
-            >
-              <File01Icon size={20} />
-              <span className="nav-label-text">Reports</span>
-            </NavLink>
-
-            <NavLink
-              to="/settings"
-              onClick={closeMobileMenu}
-              className={({ isActive }) => (isActive ? 'nav-button active' : 'nav-button')}
-              title="Settings"
-            >
-              <Settings01Icon size={20} />
-              <span className="nav-label-text">Settings</span>
-            </NavLink>
-          </nav>
+          <LayoutGroup id="sidebar-nav">
+            <nav className="sidebar-nav">
+              {NAV_ITEMS.map((item) => {
+                const Icon = item.icon
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={closeMobileMenu}
+                    className={({ isActive }) => (isActive ? 'nav-button active' : 'nav-button')}
+                    title={item.label}
+                  >
+                    {({ isActive }) => (
+                      <>
+                        {isActive && (
+                          <motion.span
+                            layout="position"
+                            layoutId="sidebar-active-nav"
+                            className="nav-active-pill"
+                            aria-hidden="true"
+                            transition={{
+                              type: 'spring',
+                              stiffness: 420,
+                              damping: 34,
+                              mass: 0.8,
+                            }}
+                          />
+                        )}
+                        <span className="nav-button-content">
+                          <Icon size={20} />
+                          <span className="nav-label-text">{item.label}</span>
+                        </span>
+                      </>
+                    )}
+                  </NavLink>
+                )
+              })}
+            </nav>
+          </LayoutGroup>
 
           <div className="sidebar-footer">
             <div className="appearance-section">

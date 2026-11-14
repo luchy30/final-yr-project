@@ -187,9 +187,9 @@ body {
 }
 
 .nav-button {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.85rem;
   width: 100%;
   background-color: transparent;
   border: none;
@@ -202,25 +202,52 @@ body {
   font-family: inherit;
   text-align: left;
   touch-action: manipulation;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.18s ease;
   white-space: nowrap;
   text-decoration: none;
   box-sizing: border-box;
 }
 
+.nav-button-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.nav-button-content svg {
+  flex-shrink: 0;
+}
+
+.nav-active-pill {
+  position: absolute;
+  inset: 0;
+  background-color: #059669;
+  border-radius: 10px;
+  z-index: 0;
+  pointer-events: none;
+}
+
 .sidebar.collapsed .nav-button {
   justify-content: center;
   padding: 0.75rem 0;
+}
+
+.sidebar.collapsed .nav-button-content {
+  justify-content: center;
   gap: 0;
 }
 
-.nav-button:hover {
+.nav-button:not(.active):hover {
   background-color: #0f2e2a;
   color: #ffffff;
 }
 
 .nav-button.active {
-  background-color: #059669;
+  background-color: transparent;
   color: #ffffff;
   font-weight: 600;
 }
@@ -1316,6 +1343,17 @@ body {
   padding: 0.25rem 0;
 }
 
+@keyframes mobileDrawerReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Responsive Breakpoints */
 @media (max-width: 1180px) {
   .dashboard-grid,
@@ -1438,6 +1476,7 @@ body {
 
   .sidebar.mobile-open .sidebar-menu-body {
     display: flex;
+    animation: mobileDrawerReveal 0.18s ease-out;
   }
 
   .sidebar.collapsed .sidebar-workspace-box {
@@ -1449,6 +1488,11 @@ body {
   .sidebar.collapsed .nav-button {
     justify-content: flex-start;
     padding: 0.75rem 0.9rem;
+  }
+
+  .sidebar.collapsed .nav-button-content {
+    justify-content: flex-start;
+    gap: 0.85rem;
   }
 
   .sidebar.collapsed .nav-label-text {
