@@ -1,4 +1,5 @@
-import { encryptedSessionStorage } from './encryptedStorage'
+import { supabase, isSupabaseConfigured } from './supabaseClient'
+import { encryptedLocalStorage, encryptedSessionStorage } from './encryptedStorage'
 
 const EMAIL_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i
 
@@ -39,6 +40,7 @@ const ACADEMIC_HOST_PATTERNS = [
 ]
 
 const GUEST_SESSION_KEY = 'petroreserves-guest-session-v1'
+const REMEMBERED_LOGIN_KEY = 'petroreserves-remembered-login-v1'
 
 export const GUEST_USER = {
   id: 'guest-preview',
@@ -133,4 +135,69 @@ export async function saveGuestSessionFlag() {
 
 export async function clearGuestSessionFlag() {
   await encryptedSessionStorage.removeItem(GUEST_SESSION_KEY)
+}
+
+export async function loadRememberedLoginInfo() {
+  const raw = await encryptedLocalStorage.getItem(REMEMBERED_LOGIN_KEY)
+  if (!raw) return { rememberMe: true, email: '' }
+  try {
+    const parsed = JSON.parse(raw)
+    return {
+      rememberMe: parsed.rememberMe !== false,
+      email: typeof parsed.email === 'string' ? parsed.email : '',
+    }
+  } catch {
+    return { rememberMe: true, email: '' }
+  }
+}
+
+export async function saveRememberedLoginInfo(email) {
+  await encryptedLocalStorage.setItem(
+    REMEMBERED_LOGIN_KEY,
+    JSON.stringify({
+      rememberMe: true,
+      email: String(email || '').trim().toLowerCase(),
+    })
+  )
+}
+
+export async function clearRememberedLoginInfo() {
+  await encryptedLocalStorage.removeItem(REMEMBERED_LOGIN_KEY)
+}
+
+export async function recordStudentLoginProfile({ fullName = '', institution = '' } = {}) {
+  if (!isSupabaseConfigured || !supabase) return null
+  try {
+    await supabase.rpc('record_student_login', {
+      p_full_name: fullName || null,
+      p_institution: institution || null,
+    })
+  } catch {
+    return null
+  }
+  return true
+}
+
+export async function fetchStudentLoginProfile(userId) {
+  if (!isSupabaseConfigured || !supabase || !userId) return null
+  try {
+    const { data, error } = await supabase
+      .from('student_profiles')
+      .select('id, email, full_name, institution, login_count, last_login_at, created_at')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (error || !data) return null
+    return {
+      id: data.id,
+      email: data.email,
+      fullName: data.full_name || '',
+      institution: data.institution || '',
+      loginCount: data.login_count || 1,
+      lastLoginAt: data.last_login_at,
+      createdAt: data.created_at,
+    }
+  } catch {
+    return null
+  }
 }

@@ -4,7 +4,7 @@ import { useAuth } from '../context/useAuth'
 
 export function SettingsPage() {
   const { activeProject, storageStatus } = useReservoir()
-  const { user, isGuest, signOut } = useAuth()
+  const { user, studentProfile, isGuest, signOut } = useAuth()
 
   const syncModeLabel = isGuest
     ? 'Guest Preview Session (In-Memory Only, Not Saved)'
@@ -52,6 +52,17 @@ export function SettingsPage() {
           <div className="report-table-row">
             <span className="report-row-label">Institution</span>
             <span className="report-row-value">{user.institution}</span>
+          </div>
+        )}
+        {!isGuest && studentProfile && (
+          <div className="report-table-row">
+            <span className="report-row-label">Saved Student Login Record</span>
+            <span className="report-row-value">
+              {studentProfile.loginCount} {studentProfile.loginCount === 1 ? 'sign-in' : 'sign-ins'} recorded
+              {studentProfile.lastLoginAt
+                ? ` (${new Date(studentProfile.lastLoginAt).toLocaleString()})`
+                : ''}
+            </span>
           </div>
         )}
         <div className="report-table-row">

@@ -4,15 +4,16 @@ import { Sun01Icon, Moon01Icon } from 'hugeicons-react'
 import { useAuth } from '../context/useAuth'
 
 export function LoginPage() {
-  const { theme, handleThemeChange, signIn, signUp, enterGuestMode } = useAuth()
+  const { theme, handleThemeChange, rememberedLogin, signIn, signUp, enterGuestMode } = useAuth()
   const navigate = useNavigate()
 
   const [mode, setMode] = useState('signin')
   const [fullName, setFullName] = useState('')
   const [institution, setInstitution] = useState('')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => rememberedLogin?.email || '')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(() => rememberedLogin?.rememberMe !== false)
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -37,7 +38,7 @@ export function LoginPage() {
 
     try {
       if (mode === 'signin') {
-        const res = await signIn({ email, password })
+        const res = await signIn({ email, password, rememberMe })
         if (!res.ok) {
           setErrorMessage(res.error || 'Could not sign in.')
           return
@@ -52,6 +53,7 @@ export function LoginPage() {
         confirmPassword,
         fullName,
         institution,
+        rememberMe,
       })
 
       if (!res.ok) {
@@ -150,6 +152,7 @@ export function LoginPage() {
                   <label htmlFor="auth-full-name">Full Name (Optional)</label>
                   <input
                     id="auth-full-name"
+                    name="fullName"
                     type="text"
                     className="standard-input"
                     value={fullName}
@@ -163,6 +166,7 @@ export function LoginPage() {
                   <label htmlFor="auth-institution">University or Institution (Optional)</label>
                   <input
                     id="auth-institution"
+                    name="institution"
                     type="text"
                     className="standard-input"
                     value={institution}
@@ -178,12 +182,13 @@ export function LoginPage() {
               <label htmlFor="auth-email">Student Email</label>
               <input
                 id="auth-email"
+                name="email"
                 type="email"
                 className="standard-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="student@university.edu.ng"
-                autoComplete="email"
+                autoComplete="username"
                 required
               />
               <span className="auth-field-hint">
@@ -196,6 +201,7 @@ export function LoginPage() {
               <div className="auth-password-row">
                 <input
                   id="auth-password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
                   className="standard-input"
                   value={password}
@@ -220,6 +226,7 @@ export function LoginPage() {
                 <label htmlFor="auth-confirm-password">Confirm Password</label>
                 <input
                   id="auth-confirm-password"
+                  name="confirmPassword"
                   type={showPassword ? 'text' : 'password'}
                   className="standard-input"
                   value={confirmPassword}
@@ -230,6 +237,22 @@ export function LoginPage() {
                 />
               </div>
             )}
+
+            <label className="auth-remember-row">
+              <input
+                type="checkbox"
+                name="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="auth-remember-checkbox"
+              />
+              <span className="auth-remember-copy">
+                <span className="auth-remember-title">Save login info on this device</span>
+                <span className="auth-remember-hint">
+                  Stays signed in and remembers your student email with encrypted browser storage.
+                </span>
+              </span>
+            </label>
 
             {errorMessage && (
               <div className="auth-feedback-error" role="alert">
