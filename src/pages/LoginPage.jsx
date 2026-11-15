@@ -147,7 +147,7 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit} className="auth-form" noValidate>
             {mode === 'signup' && (
-              <>
+              <div className="auth-optional-grid">
                 <div className="input-cell">
                   <label htmlFor="auth-full-name">Full Name (Optional)</label>
                   <input
@@ -175,7 +175,7 @@ export function LoginPage() {
                     autoComplete="organization"
                   />
                 </div>
-              </>
+              </div>
             )}
 
             <div className="input-cell">
