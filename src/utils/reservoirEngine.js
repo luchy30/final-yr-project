@@ -42,6 +42,7 @@ export const DEFAULT_INPUTS = {
   arpsB: '0.5',
   economicLimit: '500',
   providedZi: '',
+  providedZa: '',
   targetDepletionYears: '',
 }
 
@@ -271,7 +272,9 @@ export function computeCompleteResults(rawConfig) {
   const zDakInitial = calcDranchukAbouKassemZ(initialReduced.ppr, initialReduced.tpr)
 
   const ziCustom = parseNumeric(config.providedZi, 0)
-  const zaResolved = calcHallYarboroughZ(abandonmentReduced.ppr, abandonmentReduced.tpr)
+  const zaCustom = parseNumeric(config.providedZa, 0)
+  const zaFallback = calcHallYarboroughZ(abandonmentReduced.ppr, abandonmentReduced.tpr)
+  const zaResolved = zaCustom > 0 ? zaCustom : zaFallback
   const usingProvidedZ = activeZMethod === 'none' && ziCustom > 0
   const customZContext = {
     pi,

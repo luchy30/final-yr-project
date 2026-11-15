@@ -51,6 +51,8 @@ export function CalculationsPage() {
     setArpsB,
     providedZi,
     setProvidedZi,
+    providedZa,
+    setProvidedZa,
     targetDepletionYears,
     setTargetDepletionYears,
     handleCalculate,
@@ -228,7 +230,7 @@ export function CalculationsPage() {
             </div>
 
             <div className="input-cell">
-              <label htmlFor="providedZi">Provided Z Factor (Optional)</label>
+              <label htmlFor="providedZi">Provided Initial Z Factor zi (Optional)</label>
               <input
                 id="providedZi"
                 type="number"
@@ -236,6 +238,19 @@ export function CalculationsPage() {
                 placeholder="Used when Z correlation is None"
                 value={providedZi}
                 onChange={(e) => setProvidedZi(e.target.value)}
+                className="standard-input"
+              />
+            </div>
+
+            <div className="input-cell">
+              <label htmlFor="providedZa">Provided Abandonment Z Factor za (Optional)</label>
+              <input
+                id="providedZa"
+                type="number"
+                step="any"
+                placeholder="Optional abandonment Z at Pa"
+                value={providedZa}
+                onChange={(e) => setProvidedZa(e.target.value)}
                 className="standard-input"
               />
             </div>

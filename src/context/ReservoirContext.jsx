@@ -442,6 +442,8 @@ export function ReservoirProvider({ children }) {
     setArpsB: makeFieldSetter('arpsB'),
     providedZi: activeInputs.providedZi ?? '',
     setProvidedZi: makeFieldSetter('providedZi'),
+    providedZa: activeInputs.providedZa ?? '',
+    setProvidedZa: makeFieldSetter('providedZa'),
     targetDepletionYears: activeInputs.targetDepletionYears ?? '',
     setTargetDepletionYears: makeFieldSetter('targetDepletionYears'),
     economicLimit: activeInputs.economicLimit,
