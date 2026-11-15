@@ -1,11 +1,15 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient'
 
-const PROJECTS_STORAGE_KEY = 'petroreserves-projects-v1'
-const ACTIVE_PROJECT_KEY = 'petroreserves-active-project-v1'
+const PROJECTS_STORAGE_PREFIX = 'petroreserves-projects-v2'
+const ACTIVE_PROJECT_PREFIX = 'petroreserves-active-project-v2'
 
-export function loadLocalProjects() {
+function getScopedStorageKey(prefix, userId) {
+  return `${prefix}:${userId || 'local-student'}`
+}
+
+export function loadLocalProjects(userId) {
   try {
-    const raw = localStorage.getItem(PROJECTS_STORAGE_KEY)
+    const raw = localStorage.getItem(getScopedStorageKey(PROJECTS_STORAGE_PREFIX, userId))
     if (!raw) return null
     const parsed = JSON.parse(raw)
     return Array.isArray(parsed) && parsed.length > 0 ? parsed : null
@@ -14,102 +18,108 @@ export function loadLocalProjects() {
   }
 }
 
-export function saveLocalProjects(projects) {
+export function saveLocalProjects(projects, userId) {
   try {
-    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects))
+    localStorage.setItem(
+      getScopedStorageKey(PROJECTS_STORAGE_PREFIX, userId),
+      JSON.stringify(projects)
+    )
   } catch {
-    // Ignore storage quota issues
+    // Ignore storage quota errors
   }
 }
 
-export function loadLocalActiveProjectId() {
+export function loadLocalActiveProjectId(userId) {
   try {
-    return localStorage.getItem(ACTIVE_PROJECT_KEY)
+    return localStorage.getItem(getScopedStorageKey(ACTIVE_PROJECT_PREFIX, userId))
   } catch {
     return null
   }
 }
 
-export function saveLocalActiveProjectId(projectId) {
+export function saveLocalActiveProjectId(projectId, userId) {
   try {
     if (projectId) {
-      localStorage.setItem(ACTIVE_PROJECT_KEY, projectId)
+      localStorage.setItem(
+        getScopedStorageKey(ACTIVE_PROJECT_PREFIX, userId),
+        projectId
+      )
     }
   } catch {
-    // Ignore storage quota issues
+    // Ignore storage quota errors
   }
 }
 
-export async function fetchRemoteProjects() {
-  if (!isSupabaseConfigured || !supabase) {
-    return { configured: false, projects: null, error: null }
+export async function fetchRemoteProjects(userId) {
+  if (!isSupabaseConfigured || !supabase || !userId) {
+    return { projects: null, skipped: true, error: null }
   }
 
-  try {
-    const { data, error } = await supabase
-      .from('projects')
-      .select('id, name, description, inputs, active_chart_tab, created_at, updated_at')
-      .order('created_at', { ascending: true })
+  const { data, error } = await supabase
+    .from('projects')
+    .select('id, user_id, name, description, inputs, active_chart_tab, created_at, updated_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
 
-    if (error) {
-      return { configured: true, projects: null, error: error.message }
-    }
-
-    return { configured: true, projects: data, error: null }
-  } catch (err) {
-    return {
-      configured: true,
-      projects: null,
-      error: err instanceof Error ? err.message : 'Failed to connect to Supabase',
-    }
+  if (error) {
+    return { projects: null, skipped: false, error: error.message }
   }
+
+  const mapped = (data || []).map((row) => ({
+    id: row.id,
+    userId: row.user_id,
+    name: row.name,
+    description: row.description || '',
+    inputs: row.inputs,
+    activeChartTab: row.active_chart_tab || 'pz',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }))
+
+  return { projects: mapped, skipped: false, error: null }
 }
 
-export async function upsertRemoteProject(project) {
-  if (!isSupabaseConfigured || !supabase) {
-    return { ok: false, skipped: true }
+export async function upsertRemoteProject(project, userId) {
+  if (!isSupabaseConfigured || !supabase || !project || !userId) {
+    return { ok: false, skipped: true, error: null }
   }
 
-  try {
-    const { error } = await supabase.from('projects').upsert(
-      {
-        id: project.id,
-        name: project.name,
-        description: project.description,
-        inputs: project.inputs,
-        active_chart_tab: project.activeChartTab,
-        created_at: project.createdAt,
-        updated_at: project.updatedAt,
-      },
-      { onConflict: 'id' }
-    )
-    if (error) {
-      return { ok: false, error: error.message }
-    }
-    return { ok: true }
-  } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : 'Failed to save project to Supabase',
-    }
+  const payload = {
+    id: project.id,
+    user_id: userId,
+    name: project.name,
+    description: project.description || '',
+    inputs: project.inputs,
+    active_chart_tab: project.activeChartTab || 'pz',
+    created_at: project.createdAt || new Date().toISOString(),
+    updated_at: project.updatedAt || new Date().toISOString(),
   }
+
+  const { error } = await supabase
+    .from('projects')
+    .upsert(payload, { onConflict: 'id' })
+
+  if (error) {
+    return { ok: false, skipped: false, error: error.message }
+  }
+
+  return { ok: true, skipped: false, error: null }
 }
 
-export async function deleteRemoteProject(projectId) {
-  if (!isSupabaseConfigured || !supabase) {
-    return { ok: false, skipped: true }
+export async function deleteRemoteProject(projectId, userId) {
+  if (!isSupabaseConfigured || !supabase || !projectId || !userId) {
+    return { ok: false, skipped: true, error: null }
   }
 
-  try {
-    const { error } = await supabase.from('projects').delete().eq('id', projectId)
-    if (error) {
-      return { ok: false, error: error.message }
-    }
-    return { ok: true }
-  } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : 'Failed to delete project from Supabase',
-    }
+  const { error } = await supabase
+    .from('projects')
+    .delete()
+    .eq('id', projectId)
+    .eq('user_id', userId)
+
+  if (error) {
+    return { ok: false, skipped: false, error: error.message }
   }
+
+  return { ok: true, skipped: false, error: null }
 }

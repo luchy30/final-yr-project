@@ -1,6 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import { useAuth } from './context/useAuth'
 import { ReservoirProvider } from './context/ReservoirContext'
 import { Layout } from './components/Layout'
+import { LoginPage } from './pages/LoginPage'
 import { CalculationsPage } from './pages/CalculationsPage'
 import { ResultsAnalysisPage } from './pages/ResultsAnalysisPage'
 import { FormulasPage } from './pages/FormulasPage'
@@ -9,12 +12,48 @@ import { ReportsPage } from './pages/ReportsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import './App.css'
 
+function AuthLoadingScreen() {
+  const { theme } = useAuth()
+  return (
+    <div className={`auth-page theme-${theme}`} data-theme={theme}>
+      <div className="auth-loading-state">Loading student workspace...</div>
+    </div>
+  )
+}
+
+function PublicLoginRoute() {
+  const { user, loading } = useAuth()
+  if (loading) {
+    return <AuthLoadingScreen />
+  }
+  if (user) {
+    return <Navigate to="/calculations" replace />
+  }
+  return <LoginPage />
+}
+
+function ProtectedWorkspaceShell() {
+  const { user, loading } = useAuth()
+  if (loading) {
+    return <AuthLoadingScreen />
+  }
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+  return (
+    <ReservoirProvider user={user} key={user.id}>
+      <Layout />
+    </ReservoirProvider>
+  )
+}
+
 function App() {
   return (
-    <ReservoirProvider>
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Layout />}>
+          <Route path="/login" element={<PublicLoginRoute />} />
+          <Route path="/" element={<ProtectedWorkspaceShell />}>
             <Route index element={<Navigate to="/calculations" replace />} />
             <Route path="calculations" element={<CalculationsPage />} />
             <Route path="calculation" element={<CalculationsPage />} />
@@ -31,7 +70,7 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
-    </ReservoirProvider>
+    </AuthProvider>
   )
 }
 

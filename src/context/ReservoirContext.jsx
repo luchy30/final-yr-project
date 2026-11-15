@@ -9,6 +9,7 @@ import {
   computeCompleteResults,
 } from '../utils/reservoirEngine'
 import { ReservoirContext } from './useReservoir'
+import { useAuth } from './useAuth'
 import {
   loadLocalProjects,
   saveLocalProjects,
@@ -27,37 +28,39 @@ function createProjectId() {
   return `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-export function ReservoirProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('app-theme')
-    return saved || 'light'
-  })
+function buildStarterProjectsForUser(userId) {
+  const prefix = userId ? `${userId.slice(0, 8)}-` : ''
+  return STARTER_PROJECTS.map((proj) =>
+    normalizeProject({
+      ...proj,
+      id: `${prefix}${proj.id}`,
+    })
+  )
+}
 
-  const handleThemeChange = (newTheme) => {
-    setTheme(newTheme)
-    localStorage.setItem('app-theme', newTheme)
-  }
+export function ReservoirProvider({ user, children }) {
+  const userId = user?.id || null
+  const { theme, handleThemeChange } = useAuth()
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
   const [projects, setProjects] = useState(() => {
-    const local = loadLocalProjects()
+    const local = loadLocalProjects(userId)
     if (local) {
       return local.map(normalizeProject)
     }
-    return STARTER_PROJECTS.map(normalizeProject)
+    return buildStarterProjectsForUser(userId)
   })
 
   const initialProjectsRef = useRef(projects)
 
   const [activeProjectId, setActiveProjectId] = useState(() => {
-    const savedId = loadLocalActiveProjectId()
-    const initialList = loadLocalProjects() || STARTER_PROJECTS
-    if (savedId && initialList.some((p) => p.id === savedId)) {
+    const savedId = loadLocalActiveProjectId(userId)
+    if (savedId && projects.some((p) => p.id === savedId)) {
       return savedId
     }
-    return initialList[0].id
+    return projects[0].id
   })
 
   const [storageStatus, setStorageStatus] = useState({
@@ -71,12 +74,12 @@ export function ReservoirProvider({ children }) {
 
   useEffect(() => {
     projectsRef.current = projects
-    saveLocalProjects(projects)
-  }, [projects])
+    saveLocalProjects(projects, userId)
+  }, [projects, userId])
 
   useEffect(() => {
-    saveLocalActiveProjectId(activeProjectId)
-  }, [activeProjectId])
+    saveLocalActiveProjectId(activeProjectId, userId)
+  }, [activeProjectId, userId])
 
   useEffect(() => {
     return () => {
@@ -86,24 +89,27 @@ export function ReservoirProvider({ children }) {
     }
   }, [])
 
-  const syncProjectToSupabase = useCallback((project) => {
-    if (!isSupabaseConfigured || !project) return
-    upsertRemoteProject(project).then((res) => {
-      if (!res.ok && !res.skipped) {
-        setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
-      } else if (res.ok) {
-        setStorageStatus((prev) => (prev.error ? { ...prev, error: null } : prev))
-      }
-    })
-  }, [])
+  const syncProjectToSupabase = useCallback(
+    (project) => {
+      if (!isSupabaseConfigured || !project || !userId) return
+      upsertRemoteProject(project, userId).then((res) => {
+        if (!res.ok && !res.skipped) {
+          setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
+        } else if (res.ok) {
+          setStorageStatus((prev) => (prev.error ? { ...prev, error: null } : prev))
+        }
+      })
+    },
+    [userId]
+  )
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return
+    if (!isSupabaseConfigured || !userId) return
 
     const controller = new AbortController()
     const syncInitial = async () => {
       setStorageStatus({ mode: 'supabase', syncing: true, error: null })
-      const res = await fetchRemoteProjects()
+      const res = await fetchRemoteProjects(userId)
       if (controller.signal.aborted) return
 
       if (res.error) {
@@ -120,7 +126,7 @@ export function ReservoirProvider({ children }) {
         setStorageStatus({ mode: 'supabase', syncing: false, error: null })
       } else {
         const seedResults = await Promise.all(
-          initialProjectsRef.current.map((proj) => upsertRemoteProject(proj))
+          initialProjectsRef.current.map((proj) => upsertRemoteProject(proj, userId))
         )
         if (controller.signal.aborted) return
         const failed = seedResults.find((item) => !item.ok && !item.skipped)
@@ -136,7 +142,7 @@ export function ReservoirProvider({ children }) {
     return () => {
       controller.abort()
     }
-  }, [])
+  }, [userId])
 
   const activeProject = useMemo(() => {
     return projects.find((p) => p.id === activeProjectId) || projects[0]
@@ -296,8 +302,8 @@ export function ReservoirProvider({ children }) {
     setProjects((prev) => [...prev, newProject])
     setActiveProjectId(newProject.id)
 
-    if (isSupabaseConfigured) {
-      upsertRemoteProject(newProject).then((res) => {
+    if (isSupabaseConfigured && userId) {
+      upsertRemoteProject(newProject, userId).then((res) => {
         setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
       })
     }
@@ -320,8 +326,8 @@ export function ReservoirProvider({ children }) {
       prev.map((proj) => (proj.id === projectId ? updatedTarget : proj))
     )
 
-    if (isSupabaseConfigured) {
-      upsertRemoteProject(updatedTarget).then((res) => {
+    if (isSupabaseConfigured && userId) {
+      upsertRemoteProject(updatedTarget, userId).then((res) => {
         setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
       })
     }
@@ -334,8 +340,8 @@ export function ReservoirProvider({ children }) {
     if (activeProjectId === projectId) {
       setActiveProjectId(remaining[0].id)
     }
-    if (isSupabaseConfigured) {
-      deleteRemoteProject(projectId).then((res) => {
+    if (isSupabaseConfigured && userId) {
+      deleteRemoteProject(projectId, userId).then((res) => {
         setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
       })
     }

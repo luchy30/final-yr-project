@@ -13,8 +13,10 @@ import {
   Cancel01Icon,
   Sun01Icon,
   Moon01Icon,
+  Logout01Icon,
 } from 'hugeicons-react'
 import { useReservoir } from '../context/useReservoir'
+import { useAuth } from '../context/useAuth'
 import CustomSelect from './CustomSelect'
 
 const NAV_ITEMS = [
@@ -36,6 +38,7 @@ export function Layout() {
     activeProject,
     switchProject,
   } = useReservoir()
+  const { user, signOut } = useAuth()
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const sidebarRef = useRef(null)
@@ -187,6 +190,21 @@ export function Layout() {
           </LayoutGroup>
 
           <div className="sidebar-footer">
+            <div className="sidebar-account-box">
+              <div className="sidebar-account-info" title={user?.email || ''}>
+                <span className="sidebar-account-email">{user?.email || 'Student Account'}</span>
+              </div>
+              <button
+                type="button"
+                className="sidebar-signout-btn"
+                onClick={signOut}
+                title="Sign out"
+                aria-label="Sign out"
+              >
+                <Logout01Icon size={16} />
+                <span className="sidebar-signout-label">Sign Out</span>
+              </button>
+            </div>
             <div className="appearance-section">
               <span className="appearance-section-title">APPEARANCE</span>
               <div className="appearance-segmented-toggle">

@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion'
 import { useReservoir } from '../context/useReservoir'
+import { useAuth } from '../context/useAuth'
 
 export function SettingsPage() {
   const { activeProject, storageStatus } = useReservoir()
+  const { user, signOut } = useAuth()
 
   const syncModeLabel =
     storageStatus.mode === 'supabase'
@@ -30,6 +32,22 @@ export function SettingsPage() {
 
       <div className="report-table-box">
         <div className="report-table-row">
+          <span className="report-row-label">Signed-In Student Email</span>
+          <span className="report-row-value">{user?.email || 'Local Student Session'}</span>
+        </div>
+        {user?.fullName && (
+          <div className="report-table-row">
+            <span className="report-row-label">Student Name</span>
+            <span className="report-row-value">{user.fullName}</span>
+          </div>
+        )}
+        {user?.institution && (
+          <div className="report-table-row">
+            <span className="report-row-label">Institution</span>
+            <span className="report-row-value">{user.institution}</span>
+          </div>
+        )}
+        <div className="report-table-row">
           <span className="report-row-label">Active Project Workspace</span>
           <span className="report-row-value">{activeProject.name}</span>
         </div>
@@ -53,6 +71,12 @@ export function SettingsPage() {
           <span className="report-row-label">Non-Linear Solver Tolerance</span>
           <span className="report-row-value">1.0e-7 convergence (1.0e-12 derivative guard)</span>
         </div>
+      </div>
+
+      <div className="settings-actions-row">
+        <button type="button" className="secondary-action-btn" onClick={signOut}>
+          Sign Out of Student Account
+        </button>
       </div>
     </motion.div>
   )
