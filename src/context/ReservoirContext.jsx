@@ -11,10 +11,8 @@ import {
 import { ReservoirContext } from './useReservoir'
 import { useAuth } from './useAuth'
 import {
-  loadLocalProjects,
-  saveLocalProjects,
-  loadLocalActiveProjectId,
-  saveLocalActiveProjectId,
+  loadActiveProjectIdPreference,
+  saveActiveProjectIdPreference,
   fetchRemoteProjects,
   upsertRemoteProject,
   deleteRemoteProject,
@@ -38,34 +36,47 @@ function buildStarterProjectsForUser(userId) {
   )
 }
 
+function buildGuestPreviewProject() {
+  return normalizeProject({
+    ...STARTER_PROJECTS[0],
+    id: 'guest-sample-field',
+    name: `${STARTER_PROJECTS[0].name} (Guest Preview)`,
+  })
+}
+
 export function ReservoirProvider({ user, children }) {
   const userId = user?.id || null
+  const isGuest = Boolean(user?.isGuest)
   const { theme, handleThemeChange } = useAuth()
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
   const [projects, setProjects] = useState(() => {
-    const local = loadLocalProjects(userId)
-    if (local) {
-      return local.map(normalizeProject)
+    if (isGuest) {
+      return [buildGuestPreviewProject()]
     }
     return buildStarterProjectsForUser(userId)
   })
 
-  const initialProjectsRef = useRef(projects)
-
   const [activeProjectId, setActiveProjectId] = useState(() => {
-    const savedId = loadLocalActiveProjectId(userId)
-    if (savedId && projects.some((p) => p.id === savedId)) {
+    if (isGuest) {
+      return projects[0].id
+    }
+    const savedId = loadActiveProjectIdPreference(userId)
+    if (savedId) {
       return savedId
     }
     return projects[0].id
   })
 
+  const [isLoadingProjects, setIsLoadingProjects] = useState(
+    Boolean(!isGuest && isSupabaseConfigured && userId)
+  )
+
   const [storageStatus, setStorageStatus] = useState({
-    mode: isSupabaseConfigured ? 'supabase' : 'local',
-    syncing: false,
+    mode: isGuest ? 'guest' : isSupabaseConfigured ? 'supabase' : 'memory',
+    syncing: Boolean(!isGuest && isSupabaseConfigured && userId),
     error: null,
   })
 
@@ -74,12 +85,13 @@ export function ReservoirProvider({ user, children }) {
 
   useEffect(() => {
     projectsRef.current = projects
-    saveLocalProjects(projects, userId)
-  }, [projects, userId])
+  }, [projects])
 
   useEffect(() => {
-    saveLocalActiveProjectId(activeProjectId, userId)
-  }, [activeProjectId, userId])
+    if (!isGuest && userId) {
+      saveActiveProjectIdPreference(activeProjectId, userId)
+    }
+  }, [activeProjectId, isGuest, userId])
 
   useEffect(() => {
     return () => {
@@ -91,7 +103,7 @@ export function ReservoirProvider({ user, children }) {
 
   const syncProjectToSupabase = useCallback(
     (project) => {
-      if (!isSupabaseConfigured || !project || !userId) return
+      if (isGuest || !isSupabaseConfigured || !project || !userId) return
       upsertRemoteProject(project, userId).then((res) => {
         if (!res.ok && !res.skipped) {
           setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
@@ -100,35 +112,42 @@ export function ReservoirProvider({ user, children }) {
         }
       })
     },
-    [userId]
+    [isGuest, userId]
   )
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !userId) return
+    if (isGuest || !isSupabaseConfigured || !userId) {
+      return undefined
+    }
 
     const controller = new AbortController()
     const syncInitial = async () => {
-      setStorageStatus({ mode: 'supabase', syncing: true, error: null })
       const res = await fetchRemoteProjects(userId)
       if (controller.signal.aborted) return
 
       if (res.error) {
         setStorageStatus({ mode: 'supabase', syncing: false, error: res.error })
+        setIsLoadingProjects(false)
         return
       }
 
       if (res.projects && res.projects.length > 0) {
         const normalized = res.projects.map(normalizeProject)
         setProjects(normalized)
-        setActiveProjectId((prevId) =>
-          normalized.some((p) => p.id === prevId) ? prevId : normalized[0].id
-        )
+        const savedPref = loadActiveProjectIdPreference(userId)
+        setActiveProjectId((prevId) => {
+          const candidate = savedPref || prevId
+          return normalized.some((p) => p.id === candidate) ? candidate : normalized[0].id
+        })
         setStorageStatus({ mode: 'supabase', syncing: false, error: null })
       } else {
+        const starters = buildStarterProjectsForUser(userId)
         const seedResults = await Promise.all(
-          initialProjectsRef.current.map((proj) => upsertRemoteProject(proj, userId))
+          starters.map((proj) => upsertRemoteProject(proj, userId))
         )
         if (controller.signal.aborted) return
+        setProjects(starters)
+        setActiveProjectId(starters[0].id)
         const failed = seedResults.find((item) => !item.ok && !item.skipped)
         setStorageStatus({
           mode: 'supabase',
@@ -136,13 +155,15 @@ export function ReservoirProvider({ user, children }) {
           error: failed ? failed.error || null : null,
         })
       }
+
+      setIsLoadingProjects(false)
     }
 
     syncInitial()
     return () => {
       controller.abort()
     }
-  }, [userId])
+  }, [isGuest, userId])
 
   const activeProject = useMemo(() => {
     return projects.find((p) => p.id === activeProjectId) || projects[0]
@@ -270,6 +291,7 @@ export function ReservoirProvider({ user, children }) {
   }
 
   const createProject = ({ name, description = '', templateKey = 'dry_gas', fieldStage }) => {
+    if (isGuest) return null
     const cleanName = (name || '').trim() || `Gas Field Study ${projects.length + 1}`
     const cleanDesc = (description || '').trim()
 
@@ -312,6 +334,7 @@ export function ReservoirProvider({ user, children }) {
   }
 
   const updateProjectDetails = (projectId, { name, description }) => {
+    if (isGuest) return
     const target = projects.find((p) => p.id === projectId)
     if (!target) return
 
@@ -334,7 +357,7 @@ export function ReservoirProvider({ user, children }) {
   }
 
   const deleteProject = (projectId) => {
-    if (projects.length <= 1) return false
+    if (isGuest || projects.length <= 1) return false
     const remaining = projects.filter((p) => p.id !== projectId)
     setProjects(remaining)
     if (activeProjectId === projectId) {
@@ -460,6 +483,15 @@ export function ReservoirProvider({ user, children }) {
     getZMethodLabel,
     driveIndicesData,
     chartThemeStyles,
+    isGuest,
+  }
+
+  if (isLoadingProjects) {
+    return (
+      <div className={`auth-page theme-${theme}`} data-theme={theme}>
+        <div className="auth-loading-state">Loading your reservoir workspaces...</div>
+      </div>
+    )
   }
 
   return (

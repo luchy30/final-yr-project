@@ -36,8 +36,15 @@ const ACADEMIC_HOST_PATTERNS = [
   /(?:^|\.)(?:student|students|stu|campus)\.[a-z0-9-]+(?:\.[a-z]{2,4})+$/i,
 ]
 
-const LOCAL_USERS_KEY = 'petroreserves-local-students-v1'
-const LOCAL_SESSION_KEY = 'petroreserves-local-session-v1'
+const GUEST_SESSION_KEY = 'petroreserves-guest-session-v1'
+
+export const GUEST_USER = {
+  id: 'guest-preview',
+  email: 'Guest Preview (Limited)',
+  fullName: 'Guest Visitor',
+  institution: 'Sample Reservoir Preview',
+  isGuest: true,
+}
 
 function isBlockedDomain(domain) {
   for (const blocked of BLOCKED_PERSONAL_DOMAINS) {
@@ -109,127 +116,30 @@ export function formatStudentUser(rawUser) {
     email,
     fullName: (metadata.full_name || metadata.fullName || '').trim(),
     institution: (metadata.institution || '').trim() || getEmailDomain(email),
+    isGuest: false,
   }
 }
 
-async function hashLocalPassword(password) {
-  if (typeof crypto !== 'undefined' && crypto.subtle && typeof TextEncoder !== 'undefined') {
-    const encoded = new TextEncoder().encode(password)
-    const digest = await crypto.subtle.digest('SHA-256', encoded)
-    return Array.from(new Uint8Array(digest))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('')
-  }
-  return btoa(unescape(encodeURIComponent(password)))
-}
-
-function loadLocalUsers() {
+export function loadGuestSessionFlag() {
   try {
-    const raw = localStorage.getItem(LOCAL_USERS_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
+    return sessionStorage.getItem(GUEST_SESSION_KEY) === '1'
   } catch {
-    return []
+    return false
   }
 }
 
-function saveLocalUsers(users) {
+export function saveGuestSessionFlag() {
   try {
-    localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users))
+    sessionStorage.setItem(GUEST_SESSION_KEY, '1')
   } catch {
     // Ignore storage quota errors
   }
 }
 
-export function loadLocalStudentSession() {
+export function clearGuestSessionFlag() {
   try {
-    const raw = localStorage.getItem(LOCAL_SESSION_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    return parsed && parsed.id && parsed.email ? parsed : null
-  } catch {
-    return null
-  }
-}
-
-function saveLocalStudentSession(user) {
-  try {
-    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(user))
+    sessionStorage.removeItem(GUEST_SESSION_KEY)
   } catch {
     // Ignore storage quota errors
-  }
-}
-
-export function clearLocalStudentSession() {
-  try {
-    localStorage.removeItem(LOCAL_SESSION_KEY)
-  } catch {
-    // Ignore storage quota errors
-  }
-}
-
-function createLocalUserId() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID()
-  }
-  return `stu-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
-}
-
-export async function registerLocalStudentAccount({ email, password, fullName = '', institution = '' }) {
-  const users = loadLocalUsers()
-  const existing = users.find((item) => item.email === email)
-  if (existing) {
-    return {
-      ok: false,
-      error: 'An account with this student email already exists. Sign in instead.',
-    }
-  }
-
-  const passwordHash = await hashLocalPassword(password)
-  const record = {
-    id: createLocalUserId(),
-    email,
-    fullName: fullName.trim(),
-    institution: institution.trim() || getEmailDomain(email),
-    passwordHash,
-    createdAt: new Date().toISOString(),
-  }
-
-  saveLocalUsers([...users, record])
-  const sessionUser = formatStudentUser(record)
-  saveLocalStudentSession(sessionUser)
-
-  return {
-    ok: true,
-    requiresConfirmation: false,
-    user: sessionUser,
-  }
-}
-
-export async function signInLocalStudentAccount({ email, password }) {
-  const users = loadLocalUsers()
-  const record = users.find((item) => item.email === email)
-  if (!record) {
-    return {
-      ok: false,
-      error: 'No local student account found for this email. Create a student account first.',
-    }
-  }
-
-  const passwordHash = await hashLocalPassword(password)
-  if (record.passwordHash !== passwordHash) {
-    return {
-      ok: false,
-      error: 'Incorrect student email or password.',
-    }
-  }
-
-  const sessionUser = formatStudentUser(record)
-  saveLocalStudentSession(sessionUser)
-
-  return {
-    ok: true,
-    user: sessionUser,
   }
 }

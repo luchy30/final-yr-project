@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { AuthContext } from './useAuth'
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient'
 import {
+  GUEST_USER,
   validateStudentEmail,
   formatStudentUser,
   getEmailDomain,
-  loadLocalStudentSession,
-  clearLocalStudentSession,
-  registerLocalStudentAccount,
-  signInLocalStudentAccount,
+  loadGuestSessionFlag,
+  saveGuestSessionFlag,
+  clearGuestSessionFlag,
 } from '../lib/studentAuth'
 
 function mapAuthErrorMessage(rawMessage) {
@@ -37,8 +37,10 @@ export function AuthProvider({ children }) {
   }, [])
 
   const [user, setUser] = useState(() => {
-    if (isSupabaseConfigured) return null
-    return formatStudentUser(loadLocalStudentSession())
+    if (!isSupabaseConfigured && loadGuestSessionFlag()) {
+      return GUEST_USER
+    }
+    return null
   })
   const [loading, setLoading] = useState(isSupabaseConfigured)
 
@@ -53,18 +55,32 @@ export function AuthProvider({ children }) {
       .getSession()
       .then(({ data }) => {
         if (!isMounted) return
-        setUser(formatStudentUser(data?.session?.user || null))
+        const supabaseUser = formatStudentUser(data?.session?.user || null)
+        if (supabaseUser) {
+          clearGuestSessionFlag()
+          setUser(supabaseUser)
+        } else if (loadGuestSessionFlag()) {
+          setUser(GUEST_USER)
+        } else {
+          setUser(null)
+        }
         setLoading(false)
       })
       .catch(() => {
         if (!isMounted) return
-        setUser(null)
+        setUser(loadGuestSessionFlag() ? GUEST_USER : null)
         setLoading(false)
       })
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!isMounted) return
-      setUser(formatStudentUser(session?.user || null))
+      const supabaseUser = formatStudentUser(session?.user || null)
+      if (supabaseUser) {
+        clearGuestSessionFlag()
+        setUser(supabaseUser)
+      } else {
+        setUser(loadGuestSessionFlag() ? GUEST_USER : null)
+      }
       setLoading(false)
     })
 
@@ -72,6 +88,12 @@ export function AuthProvider({ children }) {
       isMounted = false
       authListener?.subscription?.unsubscribe()
     }
+  }, [])
+
+  const enterGuestMode = useCallback(() => {
+    saveGuestSessionFlag()
+    setUser(GUEST_USER)
+    setLoading(false)
   }, [])
 
   const signIn = useCallback(async ({ email, password }) => {
@@ -84,31 +106,26 @@ export function AuthProvider({ children }) {
       return { ok: false, error: 'Enter your password.' }
     }
 
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: validation.normalizedEmail,
-        password,
-      })
-
-      if (error) {
-        return { ok: false, error: mapAuthErrorMessage(error.message) }
+    if (!isSupabaseConfigured || !supabase) {
+      return {
+        ok: false,
+        error: 'Cloud authentication is not configured for this environment yet.',
       }
-
-      const mappedUser = formatStudentUser(data?.user || null)
-      setUser(mappedUser)
-      return { ok: true, user: mappedUser }
     }
 
-    const localResult = await signInLocalStudentAccount({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: validation.normalizedEmail,
       password,
     })
 
-    if (localResult.ok) {
-      setUser(localResult.user)
+    if (error) {
+      return { ok: false, error: mapAuthErrorMessage(error.message) }
     }
 
-    return localResult
+    clearGuestSessionFlag()
+    const mappedUser = formatStudentUser(data?.user || null)
+    setUser(mappedUser)
+    return { ok: true, user: mappedUser }
   }, [])
 
   const signUp = useCallback(
@@ -132,56 +149,50 @@ export function AuthProvider({ children }) {
         }
       }
 
+      if (!isSupabaseConfigured || !supabase) {
+        return {
+          ok: false,
+          error: 'Cloud authentication is not configured for this environment yet.',
+        }
+      }
+
       const cleanFullName = fullName.trim()
       const cleanInstitution = institution.trim() || getEmailDomain(validation.normalizedEmail)
 
-      if (isSupabaseConfigured && supabase) {
-        const { data, error } = await supabase.auth.signUp({
-          email: validation.normalizedEmail,
-          password,
-          options: {
-            data: {
-              full_name: cleanFullName,
-              institution: cleanInstitution,
-            },
-          },
-        })
-
-        if (error) {
-          return { ok: false, error: mapAuthErrorMessage(error.message) }
-        }
-
-        if (data?.session && data?.user) {
-          const mappedUser = formatStudentUser(data.user)
-          setUser(mappedUser)
-          return { ok: true, requiresConfirmation: false, user: mappedUser }
-        }
-
-        return {
-          ok: true,
-          requiresConfirmation: true,
-          message: 'Account created. Check your student email inbox to confirm, then sign in.',
-        }
-      }
-
-      const localResult = await registerLocalStudentAccount({
+      const { data, error } = await supabase.auth.signUp({
         email: validation.normalizedEmail,
         password,
-        fullName: cleanFullName,
-        institution: cleanInstitution,
+        options: {
+          data: {
+            full_name: cleanFullName,
+            institution: cleanInstitution,
+          },
+        },
       })
 
-      if (localResult.ok) {
-        setUser(localResult.user)
+      if (error) {
+        return { ok: false, error: mapAuthErrorMessage(error.message) }
       }
 
-      return localResult
+      clearGuestSessionFlag()
+
+      if (data?.session && data?.user) {
+        const mappedUser = formatStudentUser(data.user)
+        setUser(mappedUser)
+        return { ok: true, requiresConfirmation: false, user: mappedUser }
+      }
+
+      return {
+        ok: true,
+        requiresConfirmation: true,
+        message: 'Account created. Check your student email inbox to confirm, then sign in.',
+      }
     },
     []
   )
 
   const signOut = useCallback(async () => {
-    clearLocalStudentSession()
+    clearGuestSessionFlag()
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut()
     }
@@ -192,9 +203,11 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         user,
+        isGuest: Boolean(user?.isGuest),
         loading,
         theme,
         handleThemeChange,
+        enterGuestMode,
         signIn,
         signUp,
         signOut,

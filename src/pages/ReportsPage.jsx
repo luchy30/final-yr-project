@@ -1,8 +1,33 @@
 import { motion } from 'framer-motion'
 import { useReservoir } from '../context/useReservoir'
+import { useAuth } from '../context/useAuth'
+import { StudentAccessGate } from '../components/StudentAccessGate'
 
 export function ReportsPage() {
   const { activeProject, results, getZMethodLabel } = useReservoir()
+  const { isGuest } = useAuth()
+
+  if (isGuest) {
+    return (
+      <motion.div
+        key="reports-guest-gate"
+        className="form-view-container"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+      >
+        <StudentAccessGate
+          title="Executive Gas Reserves Report and Export"
+          description="Detailed audit summaries, CSV spreadsheet downloads, and print-ready executive reports unlock with a free student account."
+          highlights={[
+            'Export volumetric, material balance, PRMS, and yearly schedule tables to CSV',
+            'Print formatted executive audit sheets for academic coursework and defense review',
+            'Access full Z-factor and water influx audit rows',
+          ]}
+        />
+      </motion.div>
+    )
+  }
 
   const aquiferName =
     results.activeAquiferModel === 'schilthuis'

@@ -1,50 +1,24 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient'
 
-const PROJECTS_STORAGE_PREFIX = 'petroreserves-projects-v2'
-const ACTIVE_PROJECT_PREFIX = 'petroreserves-active-project-v2'
+const ACTIVE_PROJECT_PREFIX = 'petroreserves-active-project-id'
 
-function getScopedStorageKey(prefix, userId) {
-  return `${prefix}:${userId || 'local-student'}`
+function getActiveProjectKey(userId) {
+  return `${ACTIVE_PROJECT_PREFIX}:${userId}`
 }
 
-export function loadLocalProjects(userId) {
+export function loadActiveProjectIdPreference(userId) {
+  if (!userId) return null
   try {
-    const raw = localStorage.getItem(getScopedStorageKey(PROJECTS_STORAGE_PREFIX, userId))
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null
+    return localStorage.getItem(getActiveProjectKey(userId))
   } catch {
     return null
   }
 }
 
-export function saveLocalProjects(projects, userId) {
+export function saveActiveProjectIdPreference(projectId, userId) {
+  if (!userId || !projectId) return
   try {
-    localStorage.setItem(
-      getScopedStorageKey(PROJECTS_STORAGE_PREFIX, userId),
-      JSON.stringify(projects)
-    )
-  } catch {
-    // Ignore storage quota errors
-  }
-}
-
-export function loadLocalActiveProjectId(userId) {
-  try {
-    return localStorage.getItem(getScopedStorageKey(ACTIVE_PROJECT_PREFIX, userId))
-  } catch {
-    return null
-  }
-}
-
-export function saveLocalActiveProjectId(projectId, userId) {
-  try {
-    if (projectId) {
-      localStorage.setItem(
-        getScopedStorageKey(ACTIVE_PROJECT_PREFIX, userId),
-        projectId
-      )
-    }
+    localStorage.setItem(getActiveProjectKey(userId), projectId)
   } catch {
     // Ignore storage quota errors
   }

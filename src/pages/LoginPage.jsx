@@ -4,7 +4,7 @@ import { Sun01Icon, Moon01Icon } from 'hugeicons-react'
 import { useAuth } from '../context/useAuth'
 
 export function LoginPage() {
-  const { theme, handleThemeChange, signIn, signUp } = useAuth()
+  const { theme, handleThemeChange, signIn, signUp, enterGuestMode } = useAuth()
   const navigate = useNavigate()
 
   const [mode, setMode] = useState('signin')
@@ -22,6 +22,11 @@ export function LoginPage() {
     setMode(nextMode)
     setErrorMessage('')
     setNoticeMessage('')
+  }
+
+  const handleGuestAccess = () => {
+    enterGuestMode()
+    navigate('/calculations', { replace: true })
   }
 
   const handleSubmit = async (event) => {
@@ -271,6 +276,20 @@ export function LoginPage() {
                 Already have an account? Sign in
               </button>
             )}
+          </div>
+
+          <div className="auth-guest-block">
+            <button
+              type="button"
+              className="secondary-action-btn auth-guest-btn"
+              onClick={handleGuestAccess}
+            >
+              Continue as Guest Preview
+            </button>
+            <p className="auth-guest-note">
+              Explore sample reserve calculations without an account. Multi-project cloud workspaces,
+              PRMS 1P/2P/3P breakdown, and downloadable reports require a student email.
+            </p>
           </div>
         </section>
       </main>
