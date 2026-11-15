@@ -430,6 +430,7 @@ body {
 .reserve-switch-group {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.25rem;
   background-color: var(--bg-element);
   border-radius: 10px;

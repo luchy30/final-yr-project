@@ -308,9 +308,20 @@ export function calcMaterialBalanceAndDriveIndices({
   const trappedByWaterScf = bgaRb > 0 ? (activeWeFinal * sgr) / bgaRb : 0
   const mbeEurBscf = Math.max(0, baseMbeRecBscf - trappedByWaterScf / 1e9)
 
+  // Always expose both Volumetric MBE (We = 0) and Hydraulic / Water-Drive MBE (We > 0)
+  const hydraulicTrappedScf = bgaRb > 0 ? (weBbl * sgr) / bgaRb : 0
+  const hydraulicApparentGiipBscf =
+    ega + efwa > 0 ? (G * (ega + efwa) + weBbl) / (ega + efwa) / 1e9 : G / 1e9
+  const volumetricMbeGiipBscf = Math.max(0, G / 1e9)
+  const volumetricMbeEurBscf = Math.max(0, baseMbeRecBscf)
+  const hydraulicMbeGiipBscf = Math.max(0, mbeGiipBscf)
+  const hydraulicMbeEurBscf = Math.max(0, baseMbeRecBscf - hydraulicTrappedScf / 1e9)
+
   return {
     Ce,
-    cumulativeWeBbl: weBbl,
+    cumulativeWeBbl: activeWeFinal,
+    aquiferPotentialWeBbl: weBbl,
+    activeWeBbl: activeWeFinal,
     IDD: latestIDD,
     ICD: latestICD,
     IWD: latestIWD,
@@ -318,6 +329,11 @@ export function calcMaterialBalanceAndDriveIndices({
     mbeGiipBscf,
     apparentColeGiipBscf,
     mbeEurBscf,
+    volumetricMbeGiipBscf,
+    volumetricMbeEurBscf,
+    hydraulicMbeGiipBscf,
+    hydraulicApparentGiipBscf,
+    hydraulicMbeEurBscf,
     pzComparisonCurve,
     havlenaOdehPoints,
   }

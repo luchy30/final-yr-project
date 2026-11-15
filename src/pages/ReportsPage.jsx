@@ -19,7 +19,13 @@ export function ReportsPage() {
       ['Initial Z-Factor', results.zi],
       ['Aquifer Model', aquiferName],
       ['Original Gas in Place (Bscf)', results.volRes.giipBscf.toFixed(2)],
+      ['Volumetric Gas MBE EUR We = 0 (Bscf)', results.mbeRes.volumetricMbeEurBscf.toFixed(2)],
+      ['Hydraulic Water-Drive MBE EUR We > 0 (Bscf)', results.mbeRes.hydraulicMbeEurBscf.toFixed(2)],
+      ['Cumulative Water Influx Active We (MMbbl)', (results.mbeRes.activeWeBbl / 1e6).toFixed(2)],
+      ['Aquifer Model Influx Potential We (MMbbl)', (results.mbeRes.aquiferPotentialWeBbl / 1e6).toFixed(2)],
       ['Estimated Ultimate Recovery (Bscf)', results.recommendation.finalRecommendedEurBscf.toFixed(2)],
+      ['Assumed Production Rate qi (Mscf/day)', results.forecastRes.qiMscfDay],
+      ['Calculated Economic Limit qa (Mscf/day)', results.forecastRes.qaMscfDay],
       ['Estimated Depletion Time (Years)', results.forecastRes.yearsToDeplete.toFixed(2)],
       ['PRMS 1P Proved Reserves (Bscf)', results.prmsRes.reserve1P.toFixed(2)],
       ['PRMS Incremental Probable Reserves (Bscf)', results.prmsRes.probableIncrementalBscf.toFixed(2)],
@@ -31,6 +37,7 @@ export function ReportsPage() {
       [
         'Year',
         'Rate (Mscf/day)',
+        'Pressure (psia)',
         'Period Production (Bscf)',
         'Cumulative Produced (Bscf)',
         'Remaining Reserves (Bscf)',
@@ -39,6 +46,7 @@ export function ReportsPage() {
       ...results.forecastRes.yearlySchedule.map((row) => [
         row.year,
         row.rateMscfDay,
+        row.pressurePsia,
         row.periodProductionBscf,
         row.cumulativeProductionBscf,
         row.remainingReservesBscf,
@@ -112,14 +120,36 @@ export function ReportsPage() {
           <span className="report-row-value">{aquiferName}</span>
         </div>
         <div className="report-table-row">
+          <span className="report-row-label">Cumulative Water Influx (Active / Potential We)</span>
+          <span className="report-row-value">
+            {(results.mbeRes.activeWeBbl / 1e6).toFixed(2)} MMbbl active ({(results.mbeRes.aquiferPotentialWeBbl / 1e6).toFixed(2)} MMbbl potential)
+          </span>
+        </div>
+        <div className="report-table-row">
           <span className="report-row-label">Original Gas in Place (G)</span>
           <span className="report-row-value">{results.volRes.giipBscf.toFixed(2)} Bscf</span>
+        </div>
+        <div className="report-table-row">
+          <span className="report-row-label">Volumetric Gas MBE EUR (We = 0)</span>
+          <span className="report-row-value">{results.mbeRes.volumetricMbeEurBscf.toFixed(2)} Bscf</span>
+        </div>
+        <div className="report-table-row">
+          <span className="report-row-label">Hydraulic Water-Drive MBE EUR (We &gt; 0)</span>
+          <span className="report-row-value">{results.mbeRes.hydraulicMbeEurBscf.toFixed(2)} Bscf</span>
         </div>
         <div className="report-table-row">
           <span className="report-row-label">Estimated Ultimate Recovery (EUR)</span>
           <span className="report-row-value accent">
             {results.recommendation.finalRecommendedEurBscf.toFixed(2)} Bscf
           </span>
+        </div>
+        <div className="report-table-row">
+          <span className="report-row-label">Assumed Production Rate (qi)</span>
+          <span className="report-row-value">{results.forecastRes.qiMscfDay.toLocaleString()} Mscf/day</span>
+        </div>
+        <div className="report-table-row">
+          <span className="report-row-label">Calculated Economic Limit (qa Output)</span>
+          <span className="report-row-value accent">{results.forecastRes.qaMscfDay.toLocaleString()} Mscf/day</span>
         </div>
         <div className="report-table-row">
           <span className="report-row-label">Estimated Depletion Time (Reserve-Matched)</span>

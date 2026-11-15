@@ -456,7 +456,7 @@ export function FormulasPage() {
               9. Reserves-Coupled Production Forecast and Depletion Time
             </h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
-              Couples the estimated recoverable gas volume (EUR) with initial field rate and economic abandonment limit to compute the years required to deplete the reservoir.
+              Couples the estimated recoverable gas volume (EUR) with the assumed initial production rate and calculated abandonment economic limit (qa) to compute depletion duration in years (X), or solves the required rate for a target X years alongside P/Z reservoir pressure decline.
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.25rem' }}>

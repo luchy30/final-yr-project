@@ -21,6 +21,13 @@ const RESERVE_CLASS_TABS = [
   { id: 'possible', label: 'Possible (3P)' },
 ]
 
+const FORECAST_SCENARIO_TABS = [
+  { id: 'recommended', label: 'Recommended' },
+  { id: 'proved', label: '1P (P90)' },
+  { id: 'probable', label: '2P Midcase (P50)' },
+  { id: 'possible', label: '3P (P10)' },
+]
+
 export function ResultsAnalysisPage() {
   const {
     activeProject,
@@ -35,6 +42,10 @@ export function ResultsAnalysisPage() {
 
   const [activeSection, setActiveSection] = useState(0)
   const [activeReserveClass, setActiveReserveClass] = useState('proved')
+  const [activeForecastScenario, setActiveForecastScenario] = useState('recommended')
+
+  const activeForecast =
+    results.forecastScenarios?.[activeForecastScenario] || results.forecastRes
 
   const toggleSection = (index) => {
     setActiveSection((prev) => (prev === index ? -1 : index))
@@ -169,10 +180,28 @@ export function ResultsAnalysisPage() {
             </div>
 
             <div className="kpi-cell">
+              <span className="kpi-label">Calculated Economic Limit (qa)</span>
+              <div className="kpi-number">{results.forecastRes.qaMscfDay.toLocaleString()}</div>
+              <span className="kpi-context">Mscf/day abandonment cutoff at Pa</span>
+            </div>
+
+            <div className="kpi-cell">
+              <span className="kpi-label">Cumulative Water Influx (We)</span>
+              <div className="kpi-number">
+                {(results.mbeRes.activeWeBbl / 1e6).toFixed(2)} MMbbl
+              </div>
+              <span className="kpi-context">
+                {results.mbeRes.activeWeBbl > 0
+                  ? `${aquiferDisplayName} (Active drive)`
+                  : `Aquifer potential: ${(results.mbeRes.aquiferPotentialWeBbl / 1e6).toFixed(2)} MMbbl`}
+              </span>
+            </div>
+
+            <div className="kpi-cell">
               <span className="kpi-label">Estimated Depletion Time</span>
               <div className="kpi-number">{results.forecastRes.yearsToDeplete.toFixed(1)} yrs</div>
               <span className="kpi-context">
-                {results.forecastRes.monthsToDeplete.toFixed(0)} months to economic limit
+                {results.forecastRes.monthsToDeplete.toFixed(0)} months at {results.forecastRes.qiMscfDay.toLocaleString()} Mscf/day
               </span>
             </div>
 
@@ -273,6 +302,52 @@ export function ResultsAnalysisPage() {
           </AnimatePresence>
         </div>
 
+        {/* All Methods and Volumetric vs Hydraulic MBE Comparison Card */}
+        <div className="grid-card reserve-classification-card">
+          <div className="card-header-row">
+            <div>
+              <h3 className="card-title">Reserves Estimation Method Comparison</h3>
+              <div className="card-subtitle">
+                Side-by-side Volumetric, Volumetric Gas MBE (We = 0), Hydraulic Water-Drive MBE (We &gt; 0), and Arps Decline results
+              </div>
+            </div>
+          </div>
+
+          <div className="reserve-classification-kpis">
+            <div className="kpi-cell">
+              <span className="kpi-label">Volumetric Method EUR</span>
+              <div className="kpi-number">{results.volRes.ultimateRecoveryBscf.toFixed(2)} Bscf</div>
+              <span className="kpi-context">
+                GIIP {results.volRes.giipBscf.toFixed(2)} Bscf (Rf {(results.volRes.activeRf * 100).toFixed(1)}%)
+              </span>
+            </div>
+
+            <div className="kpi-cell">
+              <span className="kpi-label">Volumetric Gas MBE (We = 0)</span>
+              <div className="kpi-number">{results.mbeRes.volumetricMbeEurBscf.toFixed(2)} Bscf</div>
+              <span className="kpi-context">
+                GIIP {results.mbeRes.volumetricMbeGiipBscf.toFixed(2)} Bscf (No water influx)
+              </span>
+            </div>
+
+            <div className="kpi-cell">
+              <span className="kpi-label">Hydraulic Water-Drive MBE (We &gt; 0)</span>
+              <div className="kpi-number">{results.mbeRes.hydraulicMbeEurBscf.toFixed(2)} Bscf</div>
+              <span className="kpi-context">
+                Apparent GIIP {results.mbeRes.hydraulicApparentGiipBscf.toFixed(2)} Bscf (We {(results.mbeRes.aquiferPotentialWeBbl / 1e6).toFixed(2)} MMbbl)
+              </span>
+            </div>
+
+            <div className="kpi-cell">
+              <span className="kpi-label">Arps Decline Curve EUR</span>
+              <div className="kpi-number">{results.dcaRes.activeEurBscf.toFixed(2)} Bscf</div>
+              <span className="kpi-context">
+                {results.activeDeclineModel} (b = {results.dcaRes.bExponent}, qa {results.dcaRes.estimatedEconomicLimitMscfDay.toLocaleString()} Mscf/d)
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Bottom Left Card: Main Chart with Tab Switcher */}
         <div className="grid-card large-chart-card">
           <div className="card-header-row">
@@ -351,6 +426,9 @@ export function ResultsAnalysisPage() {
                   <Line type="monotone" dataKey="hallYarborough" name="Hall-Yarborough" stroke={chartThemeStyles.contrastLine} strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="brillBeggs" name="Brill-Beggs" stroke="#059669" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="dak" name="Dranchuk-Abou-Kassem" stroke="#34d399" strokeWidth={2} dot={false} />
+                  {results.zCurve.some((pt) => pt.providedZ !== undefined) && (
+                    <Line type="monotone" dataKey="providedZ" name="Provided Z Factor" stroke="#d97706" strokeWidth={2} strokeDasharray="4 3" dot={{ r: 2, fill: '#d97706' }} />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -389,7 +467,7 @@ export function ResultsAnalysisPage() {
 
             {activeChartTab === 'forecast' && (
               <ResponsiveContainer width="100%" height={260}>
-                <LineChart data={results.forecastRes.forecastCurve} margin={{ top: 10, right: 16, left: -6, bottom: 10 }}>
+                <LineChart data={activeForecast.forecastCurve} margin={{ top: 10, right: 16, left: -6, bottom: 10 }}>
                   <XAxis
                     dataKey="year"
                     stroke={chartThemeStyles.axisStroke}
@@ -397,11 +475,13 @@ export function ResultsAnalysisPage() {
                     tick={{ fontSize: 11, fill: chartThemeStyles.tickFill }}
                     tickFormatter={(v) => `${v}y`}
                   />
-                  <YAxis stroke={chartThemeStyles.axisStroke} tickLine={false} tick={{ fontSize: 11, fill: chartThemeStyles.tickFill }} />
+                  <YAxis yAxisId="left" stroke={chartThemeStyles.axisStroke} tickLine={false} tick={{ fontSize: 11, fill: chartThemeStyles.tickFill }} />
+                  <YAxis yAxisId="right" orientation="right" stroke={chartThemeStyles.axisStroke} tickLine={false} tick={{ fontSize: 11, fill: chartThemeStyles.tickFill }} />
                   <Tooltip contentStyle={chartThemeStyles.tooltip} labelFormatter={(v) => `Year ${v}`} />
                   <Legend verticalAlign="top" height={32} wrapperStyle={{ fontSize: 11 }} />
-                  <Line type="monotone" dataKey="cumulativeBscf" name="Cumulative Produced (Bscf)" stroke="#059669" strokeWidth={2.5} dot={false} />
-                  <Line type="monotone" dataKey="remainingBscf" name="Remaining Reserves (Bscf)" stroke={chartThemeStyles.contrastLine} strokeWidth={2} dot={false} />
+                  <Line yAxisId="left" type="monotone" dataKey="cumulativeBscf" name="Gas Production Cumulative (Bscf)" stroke="#059669" strokeWidth={2.5} dot={false} />
+                  <Line yAxisId="left" type="monotone" dataKey="rateMmscfDay" name="Gas Production Rate (MMscf/d)" stroke={chartThemeStyles.contrastLine} strokeWidth={2} dot={false} />
+                  <Line yAxisId="right" type="monotone" dataKey="pressurePsia" name="Reservoir Pressure (psia)" stroke="#c026d3" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -477,44 +557,65 @@ export function ResultsAnalysisPage() {
           <div>
             <h3 className="card-title">Decline Curve and Gas Production Forecast</h3>
             <div className="card-subtitle">
-              Production rate decline and estimated years to deplete {results.forecastRes.eurBscf.toFixed(2)} Bscf for {activeProject.name}
+              Production rate, cumulative gas, and reservoir pressure trajectory to deplete {activeForecast.eurBscf.toFixed(2)} Bscf for {activeProject.name}
             </div>
+          </div>
+
+          <div className="reserve-switch-group" role="tablist" aria-label="Forecast Reserves Basis">
+            {FORECAST_SCENARIO_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeForecastScenario === tab.id}
+                onClick={() => setActiveForecastScenario(tab.id)}
+                className={
+                  activeForecastScenario === tab.id ? 'reserve-switch-btn active' : 'reserve-switch-btn'
+                }
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="forecast-kpi-row">
           <div className="kpi-cell">
-            <span className="kpi-label">Years to Deplete (Reserve-Matched)</span>
-            <div className="kpi-number">{results.forecastRes.yearsToDeplete.toFixed(1)} years</div>
+            <span className="kpi-label">Years to Deplete (X)</span>
+            <div className="kpi-number">{activeForecast.yearsToDeplete.toFixed(1)} years</div>
             <span className="kpi-context">
-              {results.forecastRes.monthsToDeplete.toFixed(0)} months to exhaust EUR at qa
+              {activeForecast.monthsToDeplete.toFixed(0)} months ({activeForecast.targetDepletionApplied ? 'Target X applied' : 'Calculated at assumed qi'})
             </span>
           </div>
 
           <div className="kpi-cell">
-            <span className="kpi-label">Recoverable Volume Target (EUR)</span>
-            <div className="kpi-number">{results.forecastRes.eurBscf.toFixed(2)} Bscf</div>
-            <span className="kpi-context">{results.recommendation.recommendedMethod}</span>
-          </div>
-
-          <div className="kpi-cell">
-            <span className="kpi-label">Arps Economic Limit Time (User Di)</span>
-            <div className="kpi-number">{results.dcaRes.activeTaYears.toFixed(1)} years</div>
+            <span className="kpi-label">Assumed Production Rate (qi)</span>
+            <div className="kpi-number">{activeForecast.qiMscfDay.toLocaleString()} Mscf/day</div>
             <span className="kpi-context">
-              Model: {results.activeDeclineModel} (EUR {results.dcaRes.activeEurBscf.toFixed(2)} Bscf)
+              {activeForecast.targetDepletionApplied
+                ? `Required rate to deplete ${activeForecast.eurBscf.toFixed(2)} Bscf in ${activeForecast.yearsToDeplete.toFixed(1)} yrs`
+                : `Avg rate ${activeForecast.averageRateMscfDay.toLocaleString()} Mscf/day (EUR ${activeForecast.eurBscf.toFixed(2)} Bscf)`}
             </span>
           </div>
 
           <div className="kpi-cell">
-            <span className="kpi-label">Volume-Matched Decline Rate</span>
-            <div className="kpi-number">{results.forecastRes.impliedAnnualDeclinePct.toFixed(1)}% / yr</div>
+            <span className="kpi-label">Calculated Economic Limit (qa)</span>
+            <div className="kpi-number">{activeForecast.qaMscfDay.toLocaleString()} Mscf/day</div>
             <span className="kpi-context">
-              From {results.forecastRes.qiMscfDay.toLocaleString()} to {results.forecastRes.qaMscfDay.toLocaleString()} Mscf/day
+              Output cutoff ({results.activeDeclineModel}, b = {activeForecast.bExponent})
+            </span>
+          </div>
+
+          <div className="kpi-cell">
+            <span className="kpi-label">Cumulative Water Influx (We)</span>
+            <div className="kpi-number">{(results.mbeRes.activeWeBbl / 1e6).toFixed(2)} MMbbl</div>
+            <span className="kpi-context">
+              Aquifer potential {(results.mbeRes.aquiferPotentialWeBbl / 1e6).toFixed(2)} MMbbl ({aquiferDisplayName})
             </span>
           </div>
         </div>
 
-        {results.forecastRes.canProduce ? (
+        {activeForecast.canProduce ? (
           <div className="forecast-charts-grid">
             <div className="forecast-chart-box">
               <div className="forecast-chart-title">Arps Decline Curve (Rate vs Years)</div>
@@ -542,12 +643,12 @@ export function ResultsAnalysisPage() {
             </div>
 
             <div className="forecast-chart-box">
-              <div className="forecast-chart-title">Reserves Depletion Forecast (Bscf vs Years)</div>
+              <div className="forecast-chart-title">Gas Production, Rate, and Pressure Forecast</div>
               <div className="forecast-chart-subtitle">
-                Cumulative gas produced and remaining recoverable reserves over {results.forecastRes.yearsToDeplete.toFixed(1)} years
+                Cumulative gas produced (Bscf), gas production rate (MMscf/d), and reservoir pressure (psia) over {activeForecast.yearsToDeplete.toFixed(1)} years
               </div>
               <ResponsiveContainer width="100%" height={260}>
-                <LineChart data={results.forecastRes.forecastCurve} margin={{ top: 10, right: 16, left: -4, bottom: 10 }}>
+                <LineChart data={activeForecast.forecastCurve} margin={{ top: 10, right: 16, left: -4, bottom: 10 }}>
                   <XAxis
                     dataKey="year"
                     stroke={chartThemeStyles.axisStroke}
@@ -555,11 +656,13 @@ export function ResultsAnalysisPage() {
                     tick={{ fontSize: 11, fill: chartThemeStyles.tickFill }}
                     tickFormatter={(v) => `${v}y`}
                   />
-                  <YAxis stroke={chartThemeStyles.axisStroke} tickLine={false} tick={{ fontSize: 11, fill: chartThemeStyles.tickFill }} />
+                  <YAxis yAxisId="left" stroke={chartThemeStyles.axisStroke} tickLine={false} tick={{ fontSize: 11, fill: chartThemeStyles.tickFill }} />
+                  <YAxis yAxisId="right" orientation="right" stroke={chartThemeStyles.axisStroke} tickLine={false} tick={{ fontSize: 11, fill: chartThemeStyles.tickFill }} />
                   <Tooltip contentStyle={chartThemeStyles.tooltip} labelFormatter={(v) => `Year ${v}`} />
                   <Legend verticalAlign="top" height={32} wrapperStyle={{ fontSize: 11 }} />
-                  <Line type="monotone" dataKey="cumulativeBscf" name="Cumulative Produced (Bscf)" stroke="#059669" strokeWidth={2.5} dot={false} />
-                  <Line type="monotone" dataKey="remainingBscf" name="Remaining Reserves (Bscf)" stroke={chartThemeStyles.contrastLine} strokeWidth={2} dot={false} />
+                  <Line yAxisId="left" type="monotone" dataKey="cumulativeBscf" name="Cumulative Gas (Bscf)" stroke="#059669" strokeWidth={2.5} dot={false} />
+                  <Line yAxisId="left" type="monotone" dataKey="rateMmscfDay" name="Gas Rate (MMscf/d)" stroke={chartThemeStyles.contrastLine} strokeWidth={2} dot={false} />
+                  <Line yAxisId="right" type="monotone" dataKey="pressurePsia" name="Pressure (psia)" stroke="#c026d3" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -736,12 +839,24 @@ export function ResultsAnalysisPage() {
                   <span className="data-value">{results.volRes.piOverZi.toFixed(0)} psia</span>
                 </div>
                 <div className="data-item">
+                  <span className="data-label">Volumetric Gas MBE EUR (We = 0)</span>
+                  <span className="data-value">{results.mbeRes.volumetricMbeEurBscf.toFixed(2)} Bscf</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Hydraulic Water-Drive MBE EUR (We &gt; 0)</span>
+                  <span className="data-value">{results.mbeRes.hydraulicMbeEurBscf.toFixed(2)} Bscf</span>
+                </div>
+                <div className="data-item">
                   <span className="data-label">Aquifer Influx Model</span>
                   <span className="data-value">{aquiferDisplayName}</span>
                 </div>
                 <div className="data-item">
-                  <span className="data-label">Cumulative Water Influx (We)</span>
-                  <span className="data-value">{(results.mbeRes.cumulativeWeBbl / 1e6).toFixed(2)} MMbbl</span>
+                  <span className="data-label">Cumulative Water Influx (Active We)</span>
+                  <span className="data-value">{(results.mbeRes.activeWeBbl / 1e6).toFixed(2)} MMbbl</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Aquifer Influx Potential (We)</span>
+                  <span className="data-value">{(results.mbeRes.aquiferPotentialWeBbl / 1e6).toFixed(2)} MMbbl</span>
                 </div>
               </div>
             </CollapsibleSection>
@@ -750,7 +865,7 @@ export function ResultsAnalysisPage() {
           {sectionMatches('production forecast years deplete decline schedule cumulative') && (
             <CollapsibleSection
               index={4}
-              title={`Annual Production Forecast Schedule (${results.forecastRes.yearsToDeplete.toFixed(1)} Years to Deplete)`}
+              title={`Annual Production Forecast Schedule (${activeForecast.yearsToDeplete.toFixed(1)} Years to Deplete)`}
               isOpen={activeSection === 4}
               onToggle={toggleSection}
               delay={0.17}
@@ -761,6 +876,7 @@ export function ResultsAnalysisPage() {
                     <tr>
                       <th>Time</th>
                       <th>Rate (Mscf/d)</th>
+                      <th>Pressure (psia)</th>
                       <th>Period Volume (Bscf)</th>
                       <th>Cumulative (Bscf)</th>
                       <th>Remaining (Bscf)</th>
@@ -768,10 +884,11 @@ export function ResultsAnalysisPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {results.forecastRes.yearlySchedule.map((row) => (
+                    {activeForecast.yearlySchedule.map((row) => (
                       <tr key={row.yearLabel}>
                         <td>{row.yearLabel}</td>
                         <td>{row.rateMscfDay.toLocaleString()}</td>
+                        <td>{row.pressurePsia}</td>
                         <td>{row.periodProductionBscf.toFixed(2)}</td>
                         <td>{row.cumulativeProductionBscf.toFixed(2)}</td>
                         <td>{row.remainingReservesBscf.toFixed(2)}</td>

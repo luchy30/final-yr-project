@@ -41,6 +41,9 @@ export const DEFAULT_INPUTS = {
   declineRate: '0.025',
   arpsB: '0.5',
   economicLimit: '500',
+  providedZi: '',
+  providedZa: '',
+  targetDepletionYears: '',
 }
 
 export const PROJECT_TEMPLATES = {
@@ -140,6 +143,14 @@ export function normalizeInputs(rawInputs) {
   if (merged.aquiferModel !== 'pot' && merged.aquiferModel !== 'schilthuis') {
     merged.aquiferModel = 'pot'
   }
+  if (!['hall_yarborough', 'brill_beggs', 'dak', 'none'].includes(merged.zMethod)) {
+    merged.zMethod = 'hall_yarborough'
+  }
+  if (merged.declineModel === 'exponential') {
+    merged.arpsB = '0'
+  } else if (merged.declineModel === 'harmonic') {
+    merged.arpsB = '1'
+  }
   return merged
 }
 
@@ -170,11 +181,29 @@ export function getZMethodLabel(selectedMethod) {
   if (selectedMethod === 'dak') {
     return 'Dranchuk and Abou-Kassem'
   }
+  if (selectedMethod === 'none') {
+    return 'Provided Z Factor (None)'
+  }
   return 'Hall and Yarborough'
 }
 
-function computeZByMethod(pPsia, tempF, gg, selectedMethod, selectedPseudoMethod) {
+function computeZByMethod(
+  pPsia,
+  tempF,
+  gg,
+  selectedMethod,
+  selectedPseudoMethod,
+  customZContext = null
+) {
   const { ppr, tpr } = calcPseudoReduced(pPsia, tempF, gg, selectedPseudoMethod)
+  if (selectedMethod === 'none' && customZContext && customZContext.ziCustom > 0) {
+    const { pi, pa, ziCustom, zaResolved } = customZContext
+    if (pi > pa) {
+      const frac = Math.max(0, Math.min(1.2, (pPsia - pa) / (pi - pa)))
+      return Math.max(0.2, Math.min(2.0, zaResolved + (ziCustom - zaResolved) * frac))
+    }
+    return Math.max(0.2, Math.min(2.0, ziCustom))
+  }
   if (selectedMethod === 'brill_beggs') {
     return calcBrillBeggsZ(ppr, tpr)
   }
@@ -235,8 +264,34 @@ export function computeCompleteResults(rawConfig) {
   const zHallYarboroughInitial = calcHallYarboroughZ(initialReduced.ppr, initialReduced.tpr)
   const zDakInitial = calcDranchukAbouKassemZ(initialReduced.ppr, initialReduced.tpr)
 
-  const zi = computeZByMethod(pi, tempF, effectiveGasGravity, activeZMethod, activePseudoMethod)
-  const za = computeZByMethod(pa, tempF, effectiveGasGravity, activeZMethod, activePseudoMethod)
+  const ziCustom = parseNumeric(config.providedZi, 0)
+  const zaCustom = parseNumeric(config.providedZa, 0)
+  const zaFallback = calcHallYarboroughZ(abandonmentReduced.ppr, abandonmentReduced.tpr)
+  const zaResolved = zaCustom > 0 ? zaCustom : zaFallback
+  const usingProvidedZ = activeZMethod === 'none' && ziCustom > 0
+  const customZContext = {
+    pi,
+    pa,
+    ziCustom,
+    zaResolved,
+  }
+
+  const zi = computeZByMethod(
+    pi,
+    tempF,
+    effectiveGasGravity,
+    activeZMethod,
+    activePseudoMethod,
+    customZContext
+  )
+  const za = computeZByMethod(
+    pa,
+    tempF,
+    effectiveGasGravity,
+    activeZMethod,
+    activePseudoMethod,
+    customZContext
+  )
 
   const { bgCuftScf: bgiCuft, bgRbScf: bgiRb } = calcBg({
     pressurePsia: pi,
@@ -292,7 +347,14 @@ export function computeCompleteResults(rawConfig) {
     aquiferModel: activeAquiferModel,
     driveMechanism: activeDriveMechanism,
     calcZFunc: (pVal) =>
-      computeZByMethod(pVal, tempF, effectiveGasGravity, activeZMethod, activePseudoMethod),
+      computeZByMethod(
+        pVal,
+        tempF,
+        effectiveGasGravity,
+        activeZMethod,
+        activePseudoMethod,
+        customZContext
+      ),
     calcBgFunc: (pVal, zVal) =>
       calcBg({ pressurePsia: pVal, tempR: initialReduced.tempR, zFactor: zVal }),
     aquiferProps,
@@ -300,14 +362,20 @@ export function computeCompleteResults(rawConfig) {
 
   const qInit = parseNumeric(config.initialRate, 12000)
   const dNom = parseNumeric(config.declineRate, 0.025)
-  const bExp = parseNumeric(config.arpsB, 0.5)
-  const qAband = parseNumeric(config.economicLimit, 500)
+  const rawB = parseNumeric(config.arpsB, 0.5, true)
+  const bExp =
+    activeDeclineModel === 'exponential' ? 0 : activeDeclineModel === 'harmonic' ? 1 : rawB
+  const targetYearsNum = parseNumeric(config.targetDepletionYears, 0)
+  const preliminaryTargetEurBscf =
+    activeFieldStage === 'producing' ? mbeRes.mbeEurBscf : volRes.ultimateRecoveryBscf
 
   const dcaRes = calcArpsDecline({
     initialRateMscfDay: qInit,
-    nominalDeclinePerMonth: dNom,
-    hyperbolicExponentB: bExp,
-    economicLimitMscfDay: qAband,
+    nominalDeclineMonthly: dNom,
+    arpsExponent: bExp,
+    targetEurBscf: preliminaryTargetEurBscf,
+    piPsia: pi,
+    paPsia: pa,
     activeModel: activeDeclineModel,
   })
 
@@ -321,18 +389,12 @@ export function computeCompleteResults(rawConfig) {
     IDD: mbeRes.IDD,
     ICD: mbeRes.ICD,
     IWD: mbeRes.IWD,
-    zMethodLabel: getZMethodLabel(activeZMethod),
+    zMethodLabel: usingProvidedZ ? 'Provided Z Factor (None)' : getZMethodLabel(activeZMethod),
     effectiveGasGravity,
   })
 
-  const forecastRes = calcProductionForecast({
-    estimatedRecoverableBscf: recommendation.finalRecommendedEurBscf,
-    giipBscf: volRes.giipBscf,
-    initialRateMscfDay: qInit,
-    economicLimitMscfDay: qAband,
-    hyperbolicExponentB: bExp,
-    declineModel: activeDeclineModel,
-  })
+  const hasWaterDrive =
+    activeDriveMechanism === 'water_drive' || activeDriveMechanism === 'combination'
 
   const prmsRes = calcPRMSReserves({
     areaAcres: a,
@@ -346,6 +408,67 @@ export function computeCompleteResults(rawConfig) {
     trials: 2500,
   })
 
+  const forecastRes = calcProductionForecast({
+    estimatedRecoverableBscf: recommendation.finalRecommendedEurBscf,
+    giipBscf: volRes.giipBscf,
+    initialRateMscfDay: qInit,
+    targetDepletionYears: targetYearsNum,
+    nominalDeclineMonthly: dNom,
+    arpsExponent: bExp,
+    declineModel: activeDeclineModel,
+    piPsia: pi,
+    paPsia: pa,
+    ziFactor: zi,
+    zaFactor: za,
+    hasWaterDrive,
+  })
+
+  const forecastScenarios = {
+    recommended: forecastRes,
+    proved: calcProductionForecast({
+      estimatedRecoverableBscf: prmsRes.reserve1P,
+      giipBscf: volRes.giipBscf,
+      initialRateMscfDay: qInit,
+      targetDepletionYears: targetYearsNum,
+      nominalDeclineMonthly: dNom,
+      arpsExponent: bExp,
+      declineModel: activeDeclineModel,
+      piPsia: pi,
+      paPsia: pa,
+      ziFactor: zi,
+      zaFactor: za,
+      hasWaterDrive,
+    }),
+    probable: calcProductionForecast({
+      estimatedRecoverableBscf: prmsRes.reserve2P,
+      giipBscf: volRes.giipBscf,
+      initialRateMscfDay: qInit,
+      targetDepletionYears: targetYearsNum,
+      nominalDeclineMonthly: dNom,
+      arpsExponent: bExp,
+      declineModel: activeDeclineModel,
+      piPsia: pi,
+      paPsia: pa,
+      ziFactor: zi,
+      zaFactor: za,
+      hasWaterDrive,
+    }),
+    possible: calcProductionForecast({
+      estimatedRecoverableBscf: prmsRes.reserve3P,
+      giipBscf: volRes.giipBscf,
+      initialRateMscfDay: qInit,
+      targetDepletionYears: targetYearsNum,
+      nominalDeclineMonthly: dNom,
+      arpsExponent: bExp,
+      declineModel: activeDeclineModel,
+      piPsia: pi,
+      paPsia: pa,
+      ziFactor: zi,
+      zaFactor: za,
+      hasWaterDrive,
+    }),
+  }
+
   const zCurve = []
   const pSteps = 10
   const deltaP = (pi - pa) / pSteps
@@ -357,12 +480,25 @@ export function computeCompleteResults(rawConfig) {
       effectiveGasGravity,
       activePseudoMethod
     )
-    zCurve.push({
+    const entry = {
       pressure: Math.round(pCurrent),
       hallYarborough: parseFloat(calcHallYarboroughZ(pprCurr, tprCurr).toFixed(4)),
       brillBeggs: parseFloat(calcBrillBeggsZ(pprCurr, tprCurr).toFixed(4)),
       dak: parseFloat(calcDranchukAbouKassemZ(pprCurr, tprCurr).toFixed(4)),
-    })
+    }
+    if (ziCustom > 0 || activeZMethod === 'none') {
+      entry.providedZ = parseFloat(
+        computeZByMethod(
+          pCurrent,
+          tempF,
+          effectiveGasGravity,
+          'none',
+          activePseudoMethod,
+          customZContext
+        ).toFixed(4)
+      )
+    }
+    zCurve.push(entry)
   }
 
   const matrixStages = [
@@ -412,6 +548,24 @@ export function computeCompleteResults(rawConfig) {
         return calcDranchukAbouKassemZ(prVal, trVal).toFixed(4)
       }),
     },
+    ...(ziCustom > 0 || activeZMethod === 'none'
+      ? [
+          {
+            name: 'Provided Z (None)',
+            key: 'none',
+            values: matrixStages.map((pVal) =>
+              computeZByMethod(
+                pVal,
+                tempF,
+                effectiveGasGravity,
+                'none',
+                activePseudoMethod,
+                customZContext
+              ).toFixed(4)
+            ),
+          },
+        ]
+      : []),
   ]
 
   return {
@@ -426,6 +580,7 @@ export function computeCompleteResults(rawConfig) {
     zDakInitial: zDakInitial.toFixed(4),
     zi: zi.toFixed(4),
     za: za.toFixed(4),
+    usingProvidedZ,
     bgiCuft: bgiCuft.toFixed(5),
     bgaCuft: bgaCuft.toFixed(5),
     bgiRb: bgiRb.toFixed(5),
@@ -434,6 +589,7 @@ export function computeCompleteResults(rawConfig) {
     mbeRes,
     dcaRes,
     forecastRes,
+    forecastScenarios,
     prmsRes,
     recommendation,
     zCurve,

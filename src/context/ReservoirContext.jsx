@@ -135,6 +135,21 @@ export function ReservoirProvider({ children }) {
     updateActiveProjectInputs({ [key]: val })
   }
 
+  const handleSetDeclineModel = (nextModel) => {
+    if (nextModel === 'exponential') {
+      updateActiveProjectInputs({ declineModel: nextModel, arpsB: '0' })
+    } else if (nextModel === 'harmonic') {
+      updateActiveProjectInputs({ declineModel: nextModel, arpsB: '1' })
+    } else {
+      const currentB = parseFloat(activeInputs.arpsB)
+      const nextB =
+        Number.isFinite(currentB) && currentB > 0 && currentB < 1
+          ? activeInputs.arpsB
+          : '0.5'
+      updateActiveProjectInputs({ declineModel: nextModel, arpsB: nextB })
+    }
+  }
+
   const activeInputs = activeProject.inputs
   const activeChartTab = activeProject.activeChartTab || 'pz'
 
@@ -235,7 +250,9 @@ export function ReservoirProvider({ children }) {
     setActiveProjectId(newProject.id)
 
     if (isSupabaseConfigured) {
-      upsertRemoteProject(newProject)
+      upsertRemoteProject(newProject).then((res) => {
+        setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
+      })
     }
 
     return newProject
@@ -257,7 +274,9 @@ export function ReservoirProvider({ children }) {
     )
 
     if (isSupabaseConfigured) {
-      upsertRemoteProject(updatedTarget)
+      upsertRemoteProject(updatedTarget).then((res) => {
+        setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
+      })
     }
   }
 
@@ -269,7 +288,9 @@ export function ReservoirProvider({ children }) {
       setActiveProjectId(remaining[0].id)
     }
     if (isSupabaseConfigured) {
-      deleteRemoteProject(projectId)
+      deleteRemoteProject(projectId).then((res) => {
+        setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
+      })
     }
     return true
   }
@@ -363,7 +384,7 @@ export function ReservoirProvider({ children }) {
     aquiferModel: activeInputs.aquiferModel,
     setAquiferModel: makeFieldSetter('aquiferModel'),
     declineModel: activeInputs.declineModel,
-    setDeclineModel: makeFieldSetter('declineModel'),
+    setDeclineModel: handleSetDeclineModel,
     fieldStage: activeInputs.fieldStage,
     setFieldStage: makeFieldSetter('fieldStage'),
     initialRate: activeInputs.initialRate,
@@ -372,6 +393,12 @@ export function ReservoirProvider({ children }) {
     setDeclineRate: makeFieldSetter('declineRate'),
     arpsB: activeInputs.arpsB,
     setArpsB: makeFieldSetter('arpsB'),
+    providedZi: activeInputs.providedZi ?? '',
+    setProvidedZi: makeFieldSetter('providedZi'),
+    providedZa: activeInputs.providedZa ?? '',
+    setProvidedZa: makeFieldSetter('providedZa'),
+    targetDepletionYears: activeInputs.targetDepletionYears ?? '',
+    setTargetDepletionYears: makeFieldSetter('targetDepletionYears'),
     economicLimit: activeInputs.economicLimit,
     setEconomicLimit: makeFieldSetter('economicLimit'),
     results,

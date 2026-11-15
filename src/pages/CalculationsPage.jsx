@@ -49,8 +49,12 @@ export function CalculationsPage() {
     setDeclineRate,
     arpsB,
     setArpsB,
-    economicLimit,
-    setEconomicLimit,
+    providedZi,
+    setProvidedZi,
+    providedZa,
+    setProvidedZa,
+    targetDepletionYears,
+    setTargetDepletionYears,
     handleCalculate,
     resetProjectDefaults,
   } = useReservoir()
@@ -74,11 +78,11 @@ export function CalculationsPage() {
           Reservoir Parameters and Calculation Setup
         </h2>
         <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0 0', fontSize: '0.95rem' }}>
-          Editing workspace inputs for {activeProject.name}. Changes are saved per project.
+          Editing workspace inputs for {activeProject.name}. Changes are saved per project. Only fill inputs needed for your chosen method.
         </p>
       </div>
 
-      <form onSubmit={onSubmit}>
+      <form onSubmit={onSubmit} noValidate>
         {/* Section 1: Petrophysics and Reservoir Geometry */}
         <div style={{ marginBottom: '2.75rem' }}>
           <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', margin: '0 0 1.25rem 0' }}>
@@ -94,7 +98,6 @@ export function CalculationsPage() {
                 value={area}
                 onChange={(e) => setArea(e.target.value)}
                 className="standard-input"
-                required
               />
             </div>
 
@@ -107,7 +110,6 @@ export function CalculationsPage() {
                 value={thickness}
                 onChange={(e) => setThickness(e.target.value)}
                 className="standard-input"
-                required
               />
             </div>
 
@@ -120,7 +122,6 @@ export function CalculationsPage() {
                 value={porosity}
                 onChange={(e) => setPorosity(e.target.value)}
                 className="standard-input"
-                required
               />
             </div>
 
@@ -133,7 +134,6 @@ export function CalculationsPage() {
                 value={waterSat}
                 onChange={(e) => setWaterSat(e.target.value)}
                 className="standard-input"
-                required
               />
             </div>
 
@@ -146,7 +146,6 @@ export function CalculationsPage() {
                 value={residualGasSat}
                 onChange={(e) => setResidualGasSat(e.target.value)}
                 className="standard-input"
-                required
               />
             </div>
           </div>
@@ -167,7 +166,6 @@ export function CalculationsPage() {
                 value={pressure}
                 onChange={(e) => setPressure(e.target.value)}
                 className="standard-input"
-                required
               />
             </div>
 
@@ -180,7 +178,6 @@ export function CalculationsPage() {
                 value={abandonmentPressure}
                 onChange={(e) => setAbandonmentPressure(e.target.value)}
                 className="standard-input"
-                required
               />
             </div>
 
@@ -193,7 +190,6 @@ export function CalculationsPage() {
                 value={temperature}
                 onChange={(e) => setTemperature(e.target.value)}
                 className="standard-input"
-                required
               />
             </div>
 
@@ -206,7 +202,6 @@ export function CalculationsPage() {
                 value={gasGravity}
                 onChange={(e) => setGasGravity(e.target.value)}
                 className="standard-input"
-                required
               />
             </div>
 
@@ -219,7 +214,6 @@ export function CalculationsPage() {
                 value={gor}
                 onChange={(e) => setGor(e.target.value)}
                 className="standard-input"
-                required
               />
             </div>
 
@@ -232,7 +226,32 @@ export function CalculationsPage() {
                 value={apiGravity}
                 onChange={(e) => setApiGravity(e.target.value)}
                 className="standard-input"
-                required
+              />
+            </div>
+
+            <div className="input-cell">
+              <label htmlFor="providedZi">Provided Initial Z Factor zi (Optional)</label>
+              <input
+                id="providedZi"
+                type="number"
+                step="any"
+                placeholder="Used when Z correlation is None"
+                value={providedZi}
+                onChange={(e) => setProvidedZi(e.target.value)}
+                className="standard-input"
+              />
+            </div>
+
+            <div className="input-cell">
+              <label htmlFor="providedZa">Provided Abandonment Z Factor za (Optional)</label>
+              <input
+                id="providedZa"
+                type="number"
+                step="any"
+                placeholder="Optional abandonment Z at Pa"
+                value={providedZa}
+                onChange={(e) => setProvidedZa(e.target.value)}
+                className="standard-input"
               />
             </div>
           </div>
@@ -254,6 +273,7 @@ export function CalculationsPage() {
                   { value: 'hall_yarborough', label: 'Hall and Yarborough EOS' },
                   { value: 'brill_beggs', label: 'Brill and Beggs Empirical' },
                   { value: 'dak', label: 'Dranchuk and Abou-Kassem EOS' },
+                  { value: 'none', label: 'None (Use Provided Z Factor)' },
                 ]}
               />
             </div>
@@ -349,15 +369,28 @@ export function CalculationsPage() {
             </div>
 
             <div className="input-cell">
-              <label htmlFor="initialRate">Initial Rate qi (Mscf/day)</label>
+              <label htmlFor="initialRate">Assumed Production Rate qi (Mscf/day)</label>
               <input
                 id="initialRate"
                 type="number"
                 step="any"
+                placeholder="Assumed rate (overridden if target years set)"
                 value={initialRate}
                 onChange={(e) => setInitialRate(e.target.value)}
                 className="standard-input"
-                required
+              />
+            </div>
+
+            <div className="input-cell">
+              <label htmlFor="targetDepletionYears">Target Depletion Time X (years, Optional)</label>
+              <input
+                id="targetDepletionYears"
+                type="number"
+                step="any"
+                placeholder="Leave blank to compute years from qi"
+                value={targetDepletionYears}
+                onChange={(e) => setTargetDepletionYears(e.target.value)}
+                className="standard-input"
               />
             </div>
 
@@ -370,7 +403,6 @@ export function CalculationsPage() {
                 value={declineRate}
                 onChange={(e) => setDeclineRate(e.target.value)}
                 className="standard-input"
-                required
               />
             </div>
 
@@ -381,22 +413,9 @@ export function CalculationsPage() {
                 type="number"
                 step="any"
                 value={arpsB}
+                readOnly={declineModel !== 'hyperbolic'}
                 onChange={(e) => setArpsB(e.target.value)}
                 className="standard-input"
-                required
-              />
-            </div>
-
-            <div className="input-cell">
-              <label htmlFor="economicLimit">Economic Limit qa (Mscf/day)</label>
-              <input
-                id="economicLimit"
-                type="number"
-                step="any"
-                value={economicLimit}
-                onChange={(e) => setEconomicLimit(e.target.value)}
-                className="standard-input"
-                required
               />
             </div>
           </div>
