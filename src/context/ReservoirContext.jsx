@@ -59,16 +59,7 @@ export function ReservoirProvider({ user, children }) {
     return buildStarterProjectsForUser(userId)
   })
 
-  const [activeProjectId, setActiveProjectId] = useState(() => {
-    if (isGuest) {
-      return projects[0].id
-    }
-    const savedId = loadActiveProjectIdPreference(userId)
-    if (savedId) {
-      return savedId
-    }
-    return projects[0].id
-  })
+  const [activeProjectId, setActiveProjectId] = useState(() => projects[0].id)
 
   const [isLoadingProjects, setIsLoadingProjects] = useState(
     Boolean(!isGuest && isSupabaseConfigured && userId)
@@ -88,10 +79,10 @@ export function ReservoirProvider({ user, children }) {
   }, [projects])
 
   useEffect(() => {
-    if (!isGuest && userId) {
-      saveActiveProjectIdPreference(activeProjectId, userId)
+    if (!isGuest && userId && !isLoadingProjects) {
+      void saveActiveProjectIdPreference(activeProjectId, userId)
     }
-  }, [activeProjectId, isGuest, userId])
+  }, [activeProjectId, isGuest, isLoadingProjects, userId])
 
   useEffect(() => {
     return () => {
@@ -122,7 +113,10 @@ export function ReservoirProvider({ user, children }) {
 
     const controller = new AbortController()
     const syncInitial = async () => {
-      const res = await fetchRemoteProjects(userId)
+      const [res, savedPref] = await Promise.all([
+        fetchRemoteProjects(userId),
+        loadActiveProjectIdPreference(userId),
+      ])
       if (controller.signal.aborted) return
 
       if (res.error) {
@@ -134,7 +128,6 @@ export function ReservoirProvider({ user, children }) {
       if (res.projects && res.projects.length > 0) {
         const normalized = res.projects.map(normalizeProject)
         setProjects(normalized)
-        const savedPref = loadActiveProjectIdPreference(userId)
         setActiveProjectId((prevId) => {
           const candidate = savedPref || prevId
           return normalized.some((p) => p.id === candidate) ? candidate : normalized[0].id

@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { AuthContext } from './useAuth'
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient'
+import { encryptedLocalStorage } from '../lib/encryptedStorage'
 import {
   GUEST_USER,
   validateStudentEmail,
@@ -26,72 +27,93 @@ function mapAuthErrorMessage(rawMessage) {
 }
 
 export function AuthProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('app-theme')
-    return saved || 'light'
-  })
-
-  const handleThemeChange = useCallback((newTheme) => {
-    setTheme(newTheme)
-    localStorage.setItem('app-theme', newTheme)
-  }, [])
-
-  const [user, setUser] = useState(() => {
-    if (!isSupabaseConfigured && loadGuestSessionFlag()) {
-      return GUEST_USER
-    }
-    return null
-  })
-  const [loading, setLoading] = useState(isSupabaseConfigured)
+  const [theme, setTheme] = useState('light')
+  const userToggledThemeRef = useRef(false)
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
-      return undefined
+    const controller = new AbortController()
+    encryptedLocalStorage.getItem('app-theme').then((savedTheme) => {
+      if (controller.signal.aborted || userToggledThemeRef.current) return
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        setTheme(savedTheme)
+      }
+    })
+    return () => {
+      controller.abort()
     }
+  }, [])
 
-    let isMounted = true
+  const handleThemeChange = useCallback((newTheme) => {
+    userToggledThemeRef.current = true
+    setTheme(newTheme)
+    void encryptedLocalStorage.setItem('app-theme', newTheme)
+  }, [])
+
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    if (!isSupabaseConfigured || !supabase) {
+      loadGuestSessionFlag().then((isGuestActive) => {
+        if (controller.signal.aborted) return
+        setUser(isGuestActive ? GUEST_USER : null)
+        setLoading(false)
+      })
+      return () => {
+        controller.abort()
+      }
+    }
 
     supabase.auth
       .getSession()
-      .then(({ data }) => {
-        if (!isMounted) return
+      .then(async ({ data }) => {
         const supabaseUser = formatStudentUser(data?.session?.user || null)
         if (supabaseUser) {
-          clearGuestSessionFlag()
+          await clearGuestSessionFlag()
+          if (controller.signal.aborted) return
           setUser(supabaseUser)
-        } else if (loadGuestSessionFlag()) {
-          setUser(GUEST_USER)
-        } else {
-          setUser(null)
+          setLoading(false)
+          return
         }
+
+        const isGuestActive = await loadGuestSessionFlag()
+        if (controller.signal.aborted) return
+        setUser(isGuestActive ? GUEST_USER : null)
         setLoading(false)
       })
-      .catch(() => {
-        if (!isMounted) return
-        setUser(loadGuestSessionFlag() ? GUEST_USER : null)
+      .catch(async () => {
+        const isGuestActive = await loadGuestSessionFlag()
+        if (controller.signal.aborted) return
+        setUser(isGuestActive ? GUEST_USER : null)
         setLoading(false)
       })
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!isMounted) return
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const supabaseUser = formatStudentUser(session?.user || null)
       if (supabaseUser) {
-        clearGuestSessionFlag()
+        await clearGuestSessionFlag()
+        if (controller.signal.aborted) return
         setUser(supabaseUser)
-      } else {
-        setUser(loadGuestSessionFlag() ? GUEST_USER : null)
+        setLoading(false)
+        return
       }
+
+      const isGuestActive = await loadGuestSessionFlag()
+      if (controller.signal.aborted) return
+      setUser(isGuestActive ? GUEST_USER : null)
       setLoading(false)
     })
 
     return () => {
-      isMounted = false
+      controller.abort()
       authListener?.subscription?.unsubscribe()
     }
   }, [])
 
   const enterGuestMode = useCallback(() => {
-    saveGuestSessionFlag()
+    void saveGuestSessionFlag()
     setUser(GUEST_USER)
     setLoading(false)
   }, [])
@@ -122,7 +144,7 @@ export function AuthProvider({ children }) {
       return { ok: false, error: mapAuthErrorMessage(error.message) }
     }
 
-    clearGuestSessionFlag()
+    await clearGuestSessionFlag()
     const mappedUser = formatStudentUser(data?.user || null)
     setUser(mappedUser)
     return { ok: true, user: mappedUser }
@@ -174,7 +196,7 @@ export function AuthProvider({ children }) {
         return { ok: false, error: mapAuthErrorMessage(error.message) }
       }
 
-      clearGuestSessionFlag()
+      await clearGuestSessionFlag()
 
       if (data?.session && data?.user) {
         const mappedUser = formatStudentUser(data.user)
@@ -192,7 +214,7 @@ export function AuthProvider({ children }) {
   )
 
   const signOut = useCallback(async () => {
-    clearGuestSessionFlag()
+    await clearGuestSessionFlag()
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut()
     }

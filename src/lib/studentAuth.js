@@ -1,3 +1,5 @@
+import { encryptedSessionStorage } from './encryptedStorage'
+
 const EMAIL_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i
 
 const BLOCKED_PERSONAL_DOMAINS = new Set([
@@ -120,26 +122,15 @@ export function formatStudentUser(rawUser) {
   }
 }
 
-export function loadGuestSessionFlag() {
-  try {
-    return sessionStorage.getItem(GUEST_SESSION_KEY) === '1'
-  } catch {
-    return false
-  }
+export async function loadGuestSessionFlag() {
+  const val = await encryptedSessionStorage.getItem(GUEST_SESSION_KEY)
+  return val === '1'
 }
 
-export function saveGuestSessionFlag() {
-  try {
-    sessionStorage.setItem(GUEST_SESSION_KEY, '1')
-  } catch {
-    // Ignore storage quota errors
-  }
+export async function saveGuestSessionFlag() {
+  await encryptedSessionStorage.setItem(GUEST_SESSION_KEY, '1')
 }
 
-export function clearGuestSessionFlag() {
-  try {
-    sessionStorage.removeItem(GUEST_SESSION_KEY)
-  } catch {
-    // Ignore storage quota errors
-  }
+export async function clearGuestSessionFlag() {
+  await encryptedSessionStorage.removeItem(GUEST_SESSION_KEY)
 }

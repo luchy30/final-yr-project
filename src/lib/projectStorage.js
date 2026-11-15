@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient'
+import { encryptedLocalStorage } from './encryptedStorage'
 
 const ACTIVE_PROJECT_PREFIX = 'petroreserves-active-project-id'
 
@@ -6,22 +7,14 @@ function getActiveProjectKey(userId) {
   return `${ACTIVE_PROJECT_PREFIX}:${userId}`
 }
 
-export function loadActiveProjectIdPreference(userId) {
+export async function loadActiveProjectIdPreference(userId) {
   if (!userId) return null
-  try {
-    return localStorage.getItem(getActiveProjectKey(userId))
-  } catch {
-    return null
-  }
+  return encryptedLocalStorage.getItem(getActiveProjectKey(userId))
 }
 
-export function saveActiveProjectIdPreference(projectId, userId) {
+export async function saveActiveProjectIdPreference(projectId, userId) {
   if (!userId || !projectId) return
-  try {
-    localStorage.setItem(getActiveProjectKey(userId), projectId)
-  } catch {
-    // Ignore storage quota errors
-  }
+  await encryptedLocalStorage.setItem(getActiveProjectKey(userId), projectId)
 }
 
 export async function fetchRemoteProjects(userId) {
