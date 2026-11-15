@@ -251,7 +251,9 @@ export function ResultsAnalysisPage() {
           </div>
 
           <div className="matrix-legend">
-            <span className="matrix-legend-item">Pseudocritical: {results.activePseudoMethod}</span>
+            <span className="matrix-legend-item">
+              Pseudocritical: {results.activePseudoMethod === 'none' ? 'None' : results.activePseudoMethod}
+            </span>
             <span className="matrix-legend-item">Effective Gravity: {results.effectiveGasGravity}</span>
           </div>
         </div>
@@ -799,11 +801,19 @@ export function ResultsAnalysisPage() {
                 </div>
                 <div className="data-item">
                   <span className="data-label">Pseudo-Reduced Pressure Ppr</span>
-                  <span className="data-value">{results.initialReduced.ppr.toFixed(3)}</span>
+                  <span className="data-value">
+                    {results.activePseudoMethod === 'none'
+                      ? 'None (Not Applied)'
+                      : results.initialReduced.ppr.toFixed(3)}
+                  </span>
                 </div>
                 <div className="data-item">
                   <span className="data-label">Pseudo-Reduced Temp Tpr</span>
-                  <span className="data-value">{results.initialReduced.tpr.toFixed(3)}</span>
+                  <span className="data-value">
+                    {results.activePseudoMethod === 'none'
+                      ? 'None (Not Applied)'
+                      : results.initialReduced.tpr.toFixed(3)}
+                  </span>
                 </div>
                 <div className="data-item">
                   <span className="data-label">Initial Bgi (ft3/scf)</span>

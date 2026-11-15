@@ -273,6 +273,7 @@ export function CalculationsPage() {
                   { value: 'chapter3', label: 'Methodology Correlation (Tpc = 170.491 + 307.344 yg)' },
                   { value: 'standing', label: 'Standing Standard Correlation' },
                   { value: 'sutton', label: 'Sutton Extended Correlation' },
+                  { value: 'none', label: 'None' },
                 ]}
               />
             </div>
@@ -286,6 +287,7 @@ export function CalculationsPage() {
                 options={[
                   { value: 'ahmed', label: 'Ahmed Criterion (2019 Table 3.1)' },
                   { value: 'mccain', label: 'McCain Criterion (1990 Table 3.1)' },
+                  { value: 'none', label: 'None' },
                 ]}
               />
             </div>

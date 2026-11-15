@@ -145,6 +145,12 @@ export function normalizeInputs(rawInputs) {
   if (!['hall_yarborough', 'brill_beggs', 'dak', 'none'].includes(merged.zMethod)) {
     merged.zMethod = 'hall_yarborough'
   }
+  if (!['chapter3', 'standing', 'sutton', 'none'].includes(merged.pseudoMethod)) {
+    merged.pseudoMethod = 'chapter3'
+  }
+  if (!['ahmed', 'mccain', 'none'].includes(merged.classificationCriterion)) {
+    merged.classificationCriterion = 'ahmed'
+  }
   if (merged.declineModel === 'exponential') {
     merged.arpsB = '0'
   } else if (merged.declineModel === 'harmonic') {
@@ -252,7 +258,8 @@ export function computeCompleteResults(rawConfig) {
   })
 
   const effectiveGasGravity =
-    classification.fluidType === 'Dry Gas'
+    classification.fluidType === 'Dry Gas' ||
+    classification.fluidType === 'Not Classified (None)'
       ? gg
       : prelimWetProps.wellStreamGravity
 

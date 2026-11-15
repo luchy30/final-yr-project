@@ -12,6 +12,20 @@ export function classifyReservoirFluid({
   const pDew = Number(dewPointPsia)
   const pi = Number(initialPressurePsia)
 
+  if (criterion === 'none') {
+    return {
+      fluidType: 'Not Classified (None)',
+      gorScfStb: gor,
+      apiGravity: api,
+      phaseRegime: 'Fluid classification criterion skipped (None selected)',
+      surfaceLiquid: 'Not evaluated',
+      gorBehavior: 'Not evaluated',
+      tempRegime: 'Not evaluated',
+      requiresTwoPhaseZ: false,
+      criterionName: 'None',
+    }
+  }
+
   if (criterion === 'mccain') {
     if (gor >= 3200 && gor <= 15000) {
       return {

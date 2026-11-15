@@ -93,7 +93,10 @@ export function recommendMethodAndMechanism({
       'Boundary-dominated late-life production trend makes Arps Decline Curve EUR the primary tied reserves figure.'
   }
 
-  const evidence = `Classified as ${fluidType} (${reservoirClass}) with effective well-stream gravity ${Number(effectiveGasGravity).toFixed(4)} feeding the ${zMethodLabel} Z-factor correlation. ${stageExplanation}`
+  const evidence =
+    fluidType === 'Not Classified (None)'
+      ? `Fluid classification skipped (None); evaluated with ${reservoirClass} spread and effective gravity ${Number(effectiveGasGravity).toFixed(4)} using ${zMethodLabel}. ${stageExplanation}`
+      : `Classified as ${fluidType} (${reservoirClass}) with effective well-stream gravity ${Number(effectiveGasGravity).toFixed(4)} feeding the ${zMethodLabel} Z-factor correlation. ${stageExplanation}`
 
   return {
     reservoirClass,
