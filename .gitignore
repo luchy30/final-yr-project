@@ -18,6 +18,9 @@ lerna-debug.log*
 .env
 .env.*
 
+# Supabase CLI temporary state
+supabase/.temp
+
 # Editor files
 .vscode/*
 !.vscode/extensions.json

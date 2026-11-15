@@ -66,13 +66,36 @@ export function ReservoirProvider({ children }) {
     error: null,
   })
 
+  const projectsRef = useRef(projects)
+  const remoteSyncTimerRef = useRef(null)
+
   useEffect(() => {
+    projectsRef.current = projects
     saveLocalProjects(projects)
   }, [projects])
 
   useEffect(() => {
     saveLocalActiveProjectId(activeProjectId)
   }, [activeProjectId])
+
+  useEffect(() => {
+    return () => {
+      if (remoteSyncTimerRef.current) {
+        clearTimeout(remoteSyncTimerRef.current)
+      }
+    }
+  }, [])
+
+  const syncProjectToSupabase = useCallback((project) => {
+    if (!isSupabaseConfigured || !project) return
+    upsertRemoteProject(project).then((res) => {
+      if (!res.ok && !res.skipped) {
+        setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
+      } else if (res.ok) {
+        setStorageStatus((prev) => (prev.error ? { ...prev, error: null } : prev))
+      }
+    })
+  }, [])
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
@@ -94,13 +117,19 @@ export function ReservoirProvider({ children }) {
         setActiveProjectId((prevId) =>
           normalized.some((p) => p.id === prevId) ? prevId : normalized[0].id
         )
+        setStorageStatus({ mode: 'supabase', syncing: false, error: null })
       } else {
-        await Promise.all(
+        const seedResults = await Promise.all(
           initialProjectsRef.current.map((proj) => upsertRemoteProject(proj))
         )
+        if (controller.signal.aborted) return
+        const failed = seedResults.find((item) => !item.ok && !item.skipped)
+        setStorageStatus({
+          mode: 'supabase',
+          syncing: false,
+          error: failed ? failed.error || null : null,
+        })
       }
-
-      setStorageStatus({ mode: 'supabase', syncing: false, error: null })
     }
 
     syncInitial()
@@ -113,12 +142,29 @@ export function ReservoirProvider({ children }) {
     return projects.find((p) => p.id === activeProjectId) || projects[0]
   }, [projects, activeProjectId])
 
+  const scheduleProjectSync = useCallback(
+    (projectId) => {
+      if (!isSupabaseConfigured) return
+      if (remoteSyncTimerRef.current) {
+        clearTimeout(remoteSyncTimerRef.current)
+      }
+      remoteSyncTimerRef.current = setTimeout(() => {
+        const latest = projectsRef.current.find((p) => p.id === projectId)
+        if (latest) {
+          syncProjectToSupabase(latest)
+        }
+      }, 450)
+    },
+    [syncProjectToSupabase]
+  )
+
   const updateActiveProjectInputs = useCallback(
     (patch) => {
+      const targetId = activeProject.id
       const now = new Date().toISOString()
       setProjects((prev) =>
         prev.map((proj) =>
-          proj.id === activeProject.id
+          proj.id === targetId
             ? {
                 ...proj,
                 inputs: { ...proj.inputs, ...patch },
@@ -127,8 +173,9 @@ export function ReservoirProvider({ children }) {
             : proj
         )
       )
+      scheduleProjectSync(targetId)
     },
-    [activeProject.id]
+    [activeProject.id, scheduleProjectSync]
   )
 
   const makeFieldSetter = (key) => (val) => {
@@ -154,14 +201,16 @@ export function ReservoirProvider({ children }) {
   const activeChartTab = activeProject.activeChartTab || 'pz'
 
   const setActiveChartTab = (tabKey) => {
+    const targetId = activeProject.id
     const now = new Date().toISOString()
     setProjects((prev) =>
       prev.map((proj) =>
-        proj.id === activeProject.id
+        proj.id === targetId
           ? { ...proj, activeChartTab: tabKey, updatedAt: now }
           : proj
       )
     )
+    scheduleProjectSync(targetId)
   }
 
   const projectResultsById = useMemo(() => {
@@ -190,19 +239,17 @@ export function ReservoirProvider({ children }) {
       updateActiveProjectInputs(nextInputs)
     }
 
+    if (remoteSyncTimerRef.current) {
+      clearTimeout(remoteSyncTimerRef.current)
+    }
+
     const updatedProject = {
       ...activeProject,
       inputs: nextInputs,
       updatedAt: new Date().toISOString(),
     }
 
-    if (isSupabaseConfigured) {
-      upsertRemoteProject(updatedProject).then((res) => {
-        if (!res.ok && !res.skipped) {
-          setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
-        }
-      })
-    }
+    syncProjectToSupabase(updatedProject)
   }
 
   const resetProjectDefaults = () => {
