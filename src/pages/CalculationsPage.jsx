@@ -27,8 +27,8 @@ export function CalculationsPage() {
     setTemperature,
     gasGravity,
     setGasGravity,
-    gor,
-    setGor,
+    cgr,
+    setCgr,
     apiGravity,
     setApiGravity,
     zMethod,
@@ -233,13 +233,13 @@ export function CalculationsPage() {
             </div>
 
             <div className="input-cell">
-              <label htmlFor="gor">Initial Gas Oil Ratio GOR (scf/STB)</label>
+              <label htmlFor="cgr">Condensate-Gas Ratio CGR (STB/MMscf)</label>
               <input
-                id="gor"
+                id="cgr"
                 type="number"
                 step="any"
-                value={gor}
-                onChange={(e) => setGor(e.target.value)}
+                value={cgr}
+                onChange={(e) => setCgr(e.target.value)}
                 className="standard-input"
               />
             </div>

@@ -28,7 +28,7 @@ export const DEFAULT_INPUTS = {
   abandonmentPressure: '500',
   temperature: '180',
   gasGravity: '0.65',
-  gor: '120000',
+  cgr: '8.33',
   apiGravity: '55',
   zMethod: 'hall_yarborough',
   pseudoMethod: 'chapter3',
@@ -65,7 +65,7 @@ export const PROJECT_TEMPLATES = {
       abandonmentPressure: '800',
       temperature: '215',
       gasGravity: '0.72',
-      gor: '18500',
+      cgr: '54.05',
       apiGravity: '52',
       zMethod: 'dak',
       driveMechanism: 'water_drive',
@@ -90,7 +90,7 @@ export const PROJECT_TEMPLATES = {
       abandonmentPressure: '350',
       temperature: '165',
       gasGravity: '0.62',
-      gor: '95000',
+      cgr: '10.53',
       apiGravity: '58',
       zMethod: 'brill_beggs',
       driveMechanism: 'volumetric',
@@ -140,6 +140,15 @@ export const STARTER_PROJECTS = [
 
 export function normalizeInputs(rawInputs) {
   const merged = { ...DEFAULT_INPUTS, ...(rawInputs || {}) }
+  if (rawInputs && (rawInputs.cgr === undefined || rawInputs.cgr === null || rawInputs.cgr === '')) {
+    const legacyGor = parseFloat(rawInputs.gor)
+    if (Number.isFinite(legacyGor) && legacyGor > 0) {
+      merged.cgr = (1e6 / legacyGor).toFixed(2)
+    } else {
+      merged.cgr = DEFAULT_INPUTS.cgr
+    }
+  }
+  delete merged.gor
   if (merged.aquiferModel !== 'pot' && merged.aquiferModel !== 'schilthuis') {
     merged.aquiferModel = 'pot'
   }
@@ -231,7 +240,8 @@ export function computeCompleteResults(rawConfig) {
   const pa = parseNumeric(config.abandonmentPressure, 500)
   const tempF = parseNumeric(config.temperature, 180)
   const gg = parseNumeric(config.gasGravity, 0.65)
-  const gorVal = parseNumeric(config.gor, 120000)
+  const cgrVal = parseNumeric(config.cgr, 8.33, true)
+  const gorVal = cgrVal > 0 ? 1e6 / cgrVal : 0
   const apiVal = parseNumeric(config.apiGravity, 55)
 
   const activeZMethod = config.zMethod
@@ -577,6 +587,7 @@ export function computeCompleteResults(rawConfig) {
 
   return {
     classification,
+    cgrStbMmscf: cgrVal,
     prelimWetProps,
     wetProps,
     effectiveGasGravity: effectiveGasGravity.toFixed(3),

@@ -304,7 +304,7 @@ export function calcBg({ pressurePsia, tempR, zFactor }) {
 
 // Wet Gas and Condensate Equivalent Properties
 export function calcWetGasProperties({ gorScfStb, apiGravity, surfaceGasGravity, wellStreamGasInPlaceScf }) {
-  const gor = Number(gorScfStb) > 0 ? Number(gorScfStb) : 50000
+  const gorRaw = Number(gorScfStb)
   const api = Number(apiGravity) > 10 ? Number(apiGravity) : 55
   const gg = Number(surfaceGasGravity) > 0 ? Number(surfaceGasGravity) : 0.65
   const gt = Number(wellStreamGasInPlaceScf) > 0 ? Number(wellStreamGasInPlaceScf) : 0
@@ -312,11 +312,26 @@ export function calcWetGasProperties({ gorScfStb, apiGravity, surfaceGasGravity,
   const gammaO = 141.5 / (131.5 + api)
   const molecularWeightMo = 6084 / (api - 5.9)
   const gasEquivalentGE = (133000 * gammaO) / molecularWeightMo
+
+  if (!Number.isFinite(gorRaw) || gorRaw <= 0) {
+    return {
+      gammaO,
+      molecularWeightMo,
+      gasEquivalentGE,
+      wellStreamGravity: gg,
+      dryGasFraction: 1,
+      surfaceGasInPlaceScf: gt,
+      initialCondensateInPlaceStb: 0,
+      condensateYieldStbMmscf: 0,
+    }
+  }
+
+  const gor = gorRaw
   const wellStreamGravity = (gor * gg + 4602 * gammaO) / (gor + gasEquivalentGE)
   const dryGasFraction = gor / (gor + gasEquivalentGE)
   const surfaceGasInPlaceScf = dryGasFraction * gt
   const initialCondensateInPlaceStb = gt / (gor + gasEquivalentGE)
-  const condensateYieldStbMmscf = gor > 0 ? 1e6 / gor : 0
+  const condensateYieldStbMmscf = 1e6 / gor
 
   return {
     gammaO,

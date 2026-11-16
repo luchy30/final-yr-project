@@ -720,7 +720,7 @@ export function ResultsAnalysisPage() {
           </div>
 
           <div className="collapsible-list">
-          {sectionMatches('fluid classification condensate gor api gravity yield') && (
+          {sectionMatches('fluid classification condensate cgr gor api gravity yield') && (
             <CollapsibleSection
               index={0}
               title="Reservoir Fluid Classification and Condensate Properties"
@@ -734,8 +734,8 @@ export function ResultsAnalysisPage() {
                   <span className="data-value highlight">{results.classification.fluidType}</span>
                 </div>
                 <div className="data-item">
-                  <span className="data-label">Initial Gas Oil Ratio GOR</span>
-                  <span className="data-value">{results.classification.gorScfStb.toLocaleString()} scf/STB</span>
+                  <span className="data-label">Condensate-Gas Ratio CGR</span>
+                  <span className="data-value">{results.cgrStbMmscf.toFixed(2)} STB/MMscf</span>
                 </div>
                 <div className="data-item">
                   <span className="data-label">Stock Tank Liquid Gravity</span>
