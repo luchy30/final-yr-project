@@ -203,18 +203,18 @@ export function Layout() {
             <div className="sidebar-account-box">
               <div className="sidebar-account-info" title={user?.email || ''}>
                 <span className="sidebar-account-email">
-                  {isGuest ? 'Guest Preview' : user?.email || 'Student Account'}
+                  {isGuest ? 'Guest Preview' : user?.email || 'Account'}
                 </span>
               </div>
               <button
                 type="button"
                 className="sidebar-signout-btn"
                 onClick={signOut}
-                title={isGuest ? 'Sign in with student email' : 'Sign out'}
-                aria-label={isGuest ? 'Sign in with student email' : 'Sign out'}
+                title={isGuest ? 'Sign in for full access' : 'Sign out'}
+                aria-label={isGuest ? 'Sign in for full access' : 'Sign out'}
               >
                 {isGuest ? <Login01Icon size={16} /> : <Logout01Icon size={16} />}
-                <span className="sidebar-signout-label">{isGuest ? 'Student Sign In' : 'Sign Out'}</span>
+                <span className="sidebar-signout-label">{isGuest ? 'Sign In' : 'Sign Out'}</span>
               </button>
             </div>
             <div className="appearance-section">

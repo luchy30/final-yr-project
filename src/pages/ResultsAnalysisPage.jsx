@@ -745,7 +745,7 @@ export function ResultsAnalysisPage() {
         <StudentAccessGate
           compact
           title="Unlock Full Analysis, PRMS Scenarios, and Depletion Schedule"
-          description="Guest preview displays headline reserves, drive mechanism shares, and the recommended decline curve. Sign in with a student email to inspect the complete analysis on this page."
+          description="Guest preview displays headline reserves, drive mechanism shares, and the recommended decline curve. Sign in with an account to inspect the complete analysis on this page."
           highlights={[
             'PRMS 1P (P90), 2P (P50), and 3P (P10) reserves and uncertainty spread',
             'Side-by-side Volumetric, Material Balance (We = 0 and We > 0), and Arps comparison',

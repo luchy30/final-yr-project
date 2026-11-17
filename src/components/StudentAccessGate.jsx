@@ -3,8 +3,8 @@ import { LockIcon } from 'hugeicons-react'
 import { useAuth } from '../context/useAuth'
 
 export function StudentAccessGate({
-  title = 'Full Student Account Required',
-  description = 'Guest preview provides sample reservoir inputs and top-level metrics. Sign in with your university or institutional student email to unlock the full workspace for free.',
+  title = 'Full Account Required',
+  description = 'Guest preview provides sample reservoir inputs and top-level metrics. Sign in or create a free account with any email to unlock the full workspace.',
   highlights = [],
   compact = false,
 }) {
@@ -39,7 +39,7 @@ export function StudentAccessGate({
 
       <div className="student-gate-actions">
         <button type="button" className="primary-submit-btn student-gate-btn" onClick={handleOpenLogin}>
-          Sign In or Create Free Student Account
+          Sign In or Create Free Account
         </button>
       </div>
     </section>

@@ -20,15 +20,15 @@ import {
 function mapAuthErrorMessage(rawMessage) {
   const message = String(rawMessage || '')
   if (/invalid login credentials/i.test(message)) {
-    return 'Incorrect student email or password.'
+    return 'Incorrect email or password.'
   }
   if (/email not confirmed/i.test(message)) {
-    return 'Confirm your student email before signing in.'
+    return 'Confirm your email before signing in.'
   }
   if (/user already registered/i.test(message)) {
-    return 'A student account with this email already exists. Sign in instead.'
+    return 'An account with this email already exists. Sign in instead.'
   }
-  return message || 'Authentication failed. Check your student details and try again.'
+  return message || 'Authentication failed. Check your account details and try again.'
 }
 
 export function AuthProvider({ children }) {
@@ -265,7 +265,7 @@ export function AuthProvider({ children }) {
       return {
         ok: true,
         requiresConfirmation: true,
-        message: 'Account created. Check your student email inbox to confirm, then sign in.',
+        message: 'Account created. Check your email inbox to confirm, then sign in.',
       }
     },
     []

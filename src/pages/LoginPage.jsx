@@ -115,12 +115,12 @@ export function LoginPage() {
         <section className="auth-card" aria-labelledby="auth-heading">
           <div className="auth-header">
             <h1 id="auth-heading" className="auth-title">
-              Gas Reserves Estimation for Students
+              Gas Reserves Estimation Platform
             </h1>
             <p className="auth-subtitle">
-              Free academic workspace for students without access to industry software. Sign in
-              with your university or institutional student email to save reservoir studies across
-              sessions.
+              Free gas reservoir engineering workspace with P/Z material balance, Monte Carlo
+              reserves, and production forecasting. Sign in with any email address to save
+              your reservoir studies across sessions.
             </p>
           </div>
 
@@ -141,7 +141,7 @@ export function LoginPage() {
               className={`reserve-switch-btn auth-mode-btn ${mode === 'signup' ? 'active' : ''}`}
               onClick={() => handleModeSwitch('signup')}
             >
-              Create Student Account
+              Create Account
             </button>
           </div>
 
@@ -163,7 +163,7 @@ export function LoginPage() {
                 </div>
 
                 <div className="input-cell">
-                  <label htmlFor="auth-institution">University or Institution (Optional)</label>
+                  <label htmlFor="auth-institution">Organization or University (Optional)</label>
                   <input
                     id="auth-institution"
                     name="institution"
@@ -179,7 +179,7 @@ export function LoginPage() {
             )}
 
             <div className="input-cell">
-              <label htmlFor="auth-email">Student Email</label>
+              <label htmlFor="auth-email">Email Address</label>
               <input
                 id="auth-email"
                 name="email"
@@ -187,12 +187,12 @@ export function LoginPage() {
                 className="standard-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@university.edu.ng"
+                placeholder="name@example.com"
                 autoComplete="username"
                 required
               />
               <span className="auth-field-hint">
-                Accepts .edu, .edu.ng, .ac.uk, and recognized university email domains.
+                Open to everyone: use any personal, work, or university email address.
               </span>
             </div>
 
@@ -249,7 +249,7 @@ export function LoginPage() {
               <span className="auth-remember-copy">
                 <span className="auth-remember-title">Save login info on this device</span>
                 <span className="auth-remember-hint">
-                  Stays signed in and remembers your student email with encrypted browser storage.
+                  Stays signed in and remembers your email with encrypted browser storage.
                 </span>
               </span>
             </label>
@@ -277,7 +277,7 @@ export function LoginPage() {
                   : 'Creating Account...'
                 : mode === 'signin'
                   ? 'Sign In to Workspace'
-                  : 'Create Student Account'}
+                  : 'Create Account'}
             </button>
           </form>
 
@@ -288,7 +288,7 @@ export function LoginPage() {
                 className="auth-text-link"
                 onClick={() => handleModeSwitch('signup')}
               >
-                New student? Create a free student account
+                New here? Create a free account
               </button>
             ) : (
               <button
@@ -311,7 +311,7 @@ export function LoginPage() {
             </button>
             <p className="auth-guest-note">
               Explore sample reserve calculations without an account. Multi-project cloud workspaces,
-              PRMS 1P/2P/3P breakdown, and downloadable reports require a student email.
+              PRMS 1P/2P/3P breakdown, and downloadable reports require signing in.
             </p>
           </div>
         </section>

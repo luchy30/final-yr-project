@@ -35,28 +35,28 @@ export function SettingsPage() {
         <div className="report-table-row">
           <span className="report-row-label">Access Level</span>
           <span className="report-row-value">
-            {isGuest ? 'Guest Preview (Limited Access)' : 'Full Student Account'}
+            {isGuest ? 'Guest Preview (Limited Access)' : 'Full Account'}
           </span>
         </div>
         <div className="report-table-row">
-          <span className="report-row-label">{isGuest ? 'Session Mode' : 'Signed-In Student Email'}</span>
-          <span className="report-row-value">{user?.email || 'Student Session'}</span>
+          <span className="report-row-label">{isGuest ? 'Session Mode' : 'Signed-In Email'}</span>
+          <span className="report-row-value">{user?.email || 'Active Session'}</span>
         </div>
         {!isGuest && user?.fullName && (
           <div className="report-table-row">
-            <span className="report-row-label">Student Name</span>
+            <span className="report-row-label">Full Name</span>
             <span className="report-row-value">{user.fullName}</span>
           </div>
         )}
         {!isGuest && user?.institution && (
           <div className="report-table-row">
-            <span className="report-row-label">Institution</span>
+            <span className="report-row-label">Organization / Domain</span>
             <span className="report-row-value">{user.institution}</span>
           </div>
         )}
         {!isGuest && studentProfile && (
           <div className="report-table-row">
-            <span className="report-row-label">Saved Student Login Record</span>
+            <span className="report-row-label">Saved Login Record</span>
             <span className="report-row-value">
               {studentProfile.loginCount} {studentProfile.loginCount === 1 ? 'sign-in' : 'sign-ins'} recorded
               {studentProfile.lastLoginAt
@@ -93,7 +93,7 @@ export function SettingsPage() {
 
       <div className="settings-actions-row">
         <button type="button" className="secondary-action-btn" onClick={signOut}>
-          {isGuest ? 'Sign In or Create Free Student Account' : 'Sign Out of Student Account'}
+          {isGuest ? 'Sign In or Create Free Account' : 'Sign Out'}
         </button>
       </div>
     </motion.div>

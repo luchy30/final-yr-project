@@ -18,7 +18,7 @@ export function ReportsPage() {
       >
         <StudentAccessGate
           title="Executive Gas Reserves Report and Export"
-          description="Detailed audit summaries, CSV spreadsheet downloads, and print-ready executive reports unlock with a free student account."
+          description="Detailed audit summaries, CSV spreadsheet downloads, and print-ready executive reports unlock when you sign in."
           highlights={[
             'Export volumetric, material balance, PRMS, and yearly schedule tables to CSV',
             'Print formatted executive audit sheets for academic coursework and defense review',

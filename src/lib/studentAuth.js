@@ -3,42 +3,6 @@ import { encryptedLocalStorage, encryptedSessionStorage } from './encryptedStora
 
 const EMAIL_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i
 
-const BLOCKED_PERSONAL_DOMAINS = new Set([
-  'gmail.com',
-  'googlemail.com',
-  'yahoo.com',
-  'yahoo.co.uk',
-  'yahoo.ca',
-  'ymail.com',
-  'rocketmail.com',
-  'outlook.com',
-  'hotmail.com',
-  'hotmail.co.uk',
-  'live.com',
-  'msn.com',
-  'icloud.com',
-  'me.com',
-  'mac.com',
-  'aol.com',
-  'proton.me',
-  'protonmail.com',
-  'pm.me',
-  'zoho.com',
-  'gmx.com',
-  'mail.com',
-  'yandex.com',
-  'tutanota.com',
-  'fastmail.com',
-])
-
-const ACADEMIC_HOST_PATTERNS = [
-  /\.edu$/i,
-  /\.edu\.[a-z]{2,4}$/i,
-  /\.ac\.[a-z]{2,4}$/i,
-  /\.sch\.[a-z]{2,4}$/i,
-  /(?:^|\.)(?:student|students|stu|campus)\.[a-z0-9-]+(?:\.[a-z]{2,4})+$/i,
-]
-
 const GUEST_SESSION_KEY = 'petroreserves-guest-session-v1'
 const REMEMBERED_LOGIN_KEY = 'petroreserves-remembered-login-v1'
 
@@ -50,15 +14,6 @@ export const GUEST_USER = {
   isGuest: true,
 }
 
-function isBlockedDomain(domain) {
-  for (const blocked of BLOCKED_PERSONAL_DOMAINS) {
-    if (domain === blocked || domain.endsWith(`.${blocked}`)) {
-      return true
-    }
-  }
-  return false
-}
-
 export function validateStudentEmail(rawEmail) {
   const normalizedEmail = String(rawEmail || '').trim().toLowerCase()
 
@@ -66,7 +21,7 @@ export function validateStudentEmail(rawEmail) {
     return {
       valid: false,
       normalizedEmail: '',
-      error: 'Enter your student email address.',
+      error: 'Enter your email address.',
     }
   }
 
@@ -75,26 +30,6 @@ export function validateStudentEmail(rawEmail) {
       valid: false,
       normalizedEmail,
       error: 'Enter a valid email address.',
-    }
-  }
-
-  const atIndex = normalizedEmail.lastIndexOf('@')
-  const domain = normalizedEmail.slice(atIndex + 1)
-
-  if (!domain || isBlockedDomain(domain)) {
-    return {
-      valid: false,
-      normalizedEmail,
-      error: 'Use your institutional student email (for example, @university.edu.ng, .edu, or .ac.uk). Personal webmail domains are not allowed.',
-    }
-  }
-
-  const isAcademic = ACADEMIC_HOST_PATTERNS.some((pattern) => pattern.test(domain))
-  if (!isAcademic) {
-    return {
-      valid: false,
-      normalizedEmail,
-      error: 'Use an official academic or student email domain ending in .edu, .edu.ng, .ac.uk, or your university domain.',
     }
   }
 

@@ -97,7 +97,7 @@ export function CalculationsPage() {
             <p>
               You can test inputs and compute overview reserves on this sample field. Multi-project
               workspaces, PRMS 1P/2P/3P sensitivity, annual depletion schedules, and CSV reports
-              unlock for free with a student email.
+              unlock with a free account.
             </p>
           </div>
           <button
@@ -108,7 +108,7 @@ export function CalculationsPage() {
               navigate('/login')
             }}
           >
-            Create Student Account
+            Create Free Account
           </button>
         </div>
       )}

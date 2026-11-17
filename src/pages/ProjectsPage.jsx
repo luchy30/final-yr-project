@@ -128,11 +128,11 @@ export function ProjectsPage() {
       >
         <StudentAccessGate
           title="Multi-Field Project Workspaces"
-          description="Guest preview allows testing one sample reservoir in memory. Sign in with your institutional student email to create, clone, switch, and save multiple gas reservoir projects in your personal workspace."
+          description="Guest preview allows testing one sample reservoir in memory. Sign in or create a free account with any email to create, clone, switch, and save multiple gas reservoir projects in your personal workspace."
           highlights={[
             'Create independent Niger Delta, dry gas, wet gas, and condensate field studies',
             'Clone active reservoir setups and compare recovery factors side by side',
-            'Automatic cloud saving tied privately to your student email',
+            'Automatic cloud saving tied privately to your account',
           ]}
         />
       </motion.div>
