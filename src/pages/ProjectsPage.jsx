@@ -13,11 +13,14 @@ import {
   Tick02Icon,
 } from 'hugeicons-react'
 import { useReservoir } from '../context/useReservoir'
+import { useAuth } from '../context/useAuth'
 import { PROJECT_TEMPLATES } from '../utils/reservoirEngine'
 import CustomSelect from '../components/CustomSelect'
+import { StudentAccessGate } from '../components/StudentAccessGate'
 
 export function ProjectsPage() {
   const navigate = useNavigate()
+  const { isGuest } = useAuth()
   const {
     theme,
     projects,
@@ -113,6 +116,28 @@ export function ProjectsPage() {
       proj.description.toLowerCase().includes(normalizedQuery)
     )
   })
+
+  if (isGuest) {
+    return (
+      <motion.div
+        key="projects-guest-gate"
+        className="evaluation-view-container"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+      >
+        <StudentAccessGate
+          title="Multi-Field Project Workspaces"
+          description="Guest preview allows testing one sample reservoir in memory. Sign in with your institutional student email to create, clone, switch, and save multiple gas reservoir projects in your personal workspace."
+          highlights={[
+            'Create independent Niger Delta, dry gas, wet gas, and condensate field studies',
+            'Clone active reservoir setups and compare recovery factors side by side',
+            'Automatic cloud saving tied privately to your student email',
+          ]}
+        />
+      </motion.div>
+    )
+  }
 
   return (
     <motion.div

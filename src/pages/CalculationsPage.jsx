@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useReservoir } from '../context/useReservoir'
+import { useAuth } from '../context/useAuth'
 import CustomSelect from '../components/CustomSelect'
 
 export function CalculationsPage() {
   const navigate = useNavigate()
+  const { isGuest, signOut } = useAuth()
   const {
     activeProject,
     area,
@@ -82,9 +84,34 @@ export function CalculationsPage() {
           Reservoir Parameters and Calculation Setup
         </h2>
         <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0 0', fontSize: '0.95rem' }}>
-          Editing workspace inputs for {activeProject.name}. Changes are saved per project. Only fill inputs needed for your chosen method.
+          {isGuest
+            ? 'Previewing inputs on the sample reservoir. Changes are temporary and will not be saved.'
+            : `Editing workspace inputs for ${activeProject.name}. Changes are saved to your account. Only fill inputs needed for your chosen method.`}
         </p>
       </div>
+
+      {isGuest && (
+        <div className="guest-preview-banner">
+          <div className="guest-preview-copy">
+            <strong>Guest Preview Mode</strong>
+            <p>
+              You can test inputs and compute overview reserves on this sample field. Multi-project
+              workspaces, PRMS 1P/2P/3P sensitivity, annual depletion schedules, and CSV reports
+              unlock for free with a student email.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="secondary-action-btn"
+            onClick={async () => {
+              await signOut()
+              navigate('/login')
+            }}
+          >
+            Create Student Account
+          </button>
+        </div>
+      )}
 
       <form onSubmit={onSubmit} noValidate>
         {/* Section 1: Petrophysics and Reservoir Geometry */}

@@ -192,10 +192,13 @@ export function normalizeInputs(rawInputs) {
     } else if (hasGor && !hasCgr) {
       const parsedGor = parseFloat(rawInputs.gor)
       if (Number.isFinite(parsedGor) && parsedGor > 0) {
-        merged.cgr = (1e6 / parsedGor).toFixed(2)
+        merged.cgr = String(Number((1e6 / parsedGor).toFixed(4)))
       } else if (parsedGor === 0) {
         merged.cgr = '0'
       }
+    } else if (!hasGor && !hasCgr && (rawInputs.gor === '' || rawInputs.cgr === '')) {
+      merged.gor = ''
+      merged.cgr = ''
     }
   }
   if (merged.aquiferModel !== 'pot' && merged.aquiferModel !== 'schilthuis') {

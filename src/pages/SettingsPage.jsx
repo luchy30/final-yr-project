@@ -1,11 +1,14 @@
 import { motion } from 'framer-motion'
 import { useReservoir } from '../context/useReservoir'
+import { useAuth } from '../context/useAuth'
 
 export function SettingsPage() {
   const { activeProject, storageStatus } = useReservoir()
+  const { user, studentProfile, isGuest, signOut } = useAuth()
 
-  const syncModeLabel =
-    storageStatus.mode === 'supabase'
+  const syncModeLabel = isGuest
+    ? 'Guest Preview Session (In-Memory Only, Not Saved)'
+    : storageStatus.mode === 'supabase'
       ? storageStatus.error
         ? `Supabase Cloud Sync Error (${storageStatus.error})`
         : 'Supabase Cloud Sync Active'
@@ -24,11 +27,44 @@ export function SettingsPage() {
           Engineering Methodology Settings
         </h2>
         <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0 0', fontSize: '0.95rem' }}>
-          Active workspace, solver tolerances, and unit conventions used across all calculations.
+          Active workspace, account access level, solver tolerances, and unit conventions used across all calculations.
         </p>
       </div>
 
       <div className="report-table-box">
+        <div className="report-table-row">
+          <span className="report-row-label">Access Level</span>
+          <span className="report-row-value">
+            {isGuest ? 'Guest Preview (Limited Access)' : 'Full Student Account'}
+          </span>
+        </div>
+        <div className="report-table-row">
+          <span className="report-row-label">{isGuest ? 'Session Mode' : 'Signed-In Student Email'}</span>
+          <span className="report-row-value">{user?.email || 'Student Session'}</span>
+        </div>
+        {!isGuest && user?.fullName && (
+          <div className="report-table-row">
+            <span className="report-row-label">Student Name</span>
+            <span className="report-row-value">{user.fullName}</span>
+          </div>
+        )}
+        {!isGuest && user?.institution && (
+          <div className="report-table-row">
+            <span className="report-row-label">Institution</span>
+            <span className="report-row-value">{user.institution}</span>
+          </div>
+        )}
+        {!isGuest && studentProfile && (
+          <div className="report-table-row">
+            <span className="report-row-label">Saved Student Login Record</span>
+            <span className="report-row-value">
+              {studentProfile.loginCount} {studentProfile.loginCount === 1 ? 'sign-in' : 'sign-ins'} recorded
+              {studentProfile.lastLoginAt
+                ? ` (${new Date(studentProfile.lastLoginAt).toLocaleString()})`
+                : ''}
+            </span>
+          </div>
+        )}
         <div className="report-table-row">
           <span className="report-row-label">Active Project Workspace</span>
           <span className="report-row-value">{activeProject.name}</span>
@@ -53,6 +89,12 @@ export function SettingsPage() {
           <span className="report-row-label">Non-Linear Solver Tolerance</span>
           <span className="report-row-value">1.0e-7 convergence (1.0e-12 derivative guard)</span>
         </div>
+      </div>
+
+      <div className="settings-actions-row">
+        <button type="button" className="secondary-action-btn" onClick={signOut}>
+          {isGuest ? 'Sign In or Create Free Student Account' : 'Sign Out of Student Account'}
+        </button>
       </div>
     </motion.div>
   )
