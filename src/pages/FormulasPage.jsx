@@ -486,6 +486,44 @@ export function FormulasPage() {
             </div>
           </div>
         )}
+
+        {/* Section 10: GOR and CGR Relationship */}
+        {matches('gor cgr condensate gas ratio yield reciprocal wellstream api gravity') && (
+          <div className="standard-card">
+            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem', color: 'var(--text-main)' }}>
+              10. Gas-Oil Ratio (GOR) and Condensate-Gas Ratio (CGR) Relationship
+            </h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
+              Because 1 MMscf equals 1,000,000 scf, GOR (scf/STB) and CGR (STB/MMscf) are exact reciprocals scaled by 10^6, while condensate API gravity independently sets liquid density for wellstream correction.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.25rem' }}>
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
+                <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                  Reciprocal GOR and CGR Unit Conversion
+                </div>
+                <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                  <Latex block math="\text{CGR}\;(\text{STB/MMscf}) = \frac{10^6}{\text{GOR}\;(\text{scf/STB})}" />
+                </div>
+                <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                  <Latex block math="\text{GOR}\;(\text{scf/STB}) = \frac{10^6}{\text{CGR}\;(\text{STB/MMscf})}, \qquad \text{GOR} \times \text{CGR} = 10^6" />
+                </div>
+              </div>
+
+              <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
+                <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                  Wellstream Gravity and Condensate Equivalent (GE)
+                </div>
+                <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                  <Latex block math="\gamma_o = \frac{141.5}{131.5 + \text{API}}, \qquad G_E = \frac{133{,}000 \, \gamma_o}{M_o}" />
+                </div>
+                <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                  <Latex block math="\gamma_w = \frac{\text{GOR} \cdot \gamma_g + 4602 \, \gamma_o}{\text{GOR} + G_E}" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   )

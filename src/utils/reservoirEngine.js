@@ -295,8 +295,11 @@ export function computeCompleteResults(rawConfig) {
   const rawGor = parseNumeric(config.gor, -1, true)
   const rawCgr = parseNumeric(config.cgr, -1, true)
   let gorVal = 120000
-  let cgrVal = 8.33
-  if (rawGor >= 0) {
+  let cgrVal = 8.3333
+  if (rawGor >= 0 && rawCgr >= 0) {
+    gorVal = rawGor
+    cgrVal = rawCgr
+  } else if (rawGor >= 0) {
     gorVal = rawGor
     cgrVal = rawGor > 0 ? 1e6 / rawGor : 0
   } else if (rawCgr >= 0) {
