@@ -13,9 +13,7 @@ import {
   Cell,
 } from 'recharts'
 import { useReservoir } from '../context/useReservoir'
-import { useAuth } from '../context/useAuth'
 import { CollapsibleSection } from '../components/CollapsibleSection'
-import { StudentAccessGate } from '../components/StudentAccessGate'
 
 const RESERVE_CLASS_TABS = [
   { id: 'proved', label: 'Proved (1P)' },
@@ -41,15 +39,13 @@ export function ResultsAnalysisPage() {
     setActiveChartTab,
     searchQuery,
   } = useReservoir()
-  const { isGuest } = useAuth()
 
   const [activeSection, setActiveSection] = useState(0)
   const [activeReserveClass, setActiveReserveClass] = useState('proved')
   const [activeForecastScenario, setActiveForecastScenario] = useState('recommended')
 
-  const effectiveForecastScenario = isGuest ? 'recommended' : activeForecastScenario
   const activeForecast =
-    results.forecastScenarios?.[effectiveForecastScenario] || results.forecastRes
+    results.forecastScenarios?.[activeForecastScenario] || results.forecastRes
 
   const toggleSection = (index) => {
     setActiveSection((prev) => (prev === index ? -1 : index))
@@ -262,101 +258,97 @@ export function ResultsAnalysisPage() {
           </div>
         </div>
 
-        {!isGuest && (
-          <>
-            {/* Switched PRMS Reserve Classification Card */}
-            <div className="grid-card reserve-classification-card">
-              <div className="card-header-row">
-                <div>
-                  <h3 className="card-title">PRMS Reserve Classification</h3>
-                  <div className="card-subtitle">{activeReserveView.subtitle}</div>
-                </div>
+        {/* Switched PRMS Reserve Classification Card */}
+        <div className="grid-card reserve-classification-card">
+          <div className="card-header-row">
+            <div>
+              <h3 className="card-title">PRMS Reserve Classification</h3>
+              <div className="card-subtitle">{activeReserveView.subtitle}</div>
+            </div>
 
-                <div className="reserve-switch-group" role="tablist" aria-label="PRMS Reserve Classification">
-                  {RESERVE_CLASS_TABS.map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={activeReserveClass === tab.id}
-                      onClick={() => setActiveReserveClass(tab.id)}
-                      className={
-                        activeReserveClass === tab.id ? 'reserve-switch-btn active' : 'reserve-switch-btn'
-                      }
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeReserveClass}
-                  className="reserve-classification-kpis"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.18 }}
+            <div className="reserve-switch-group" role="tablist" aria-label="PRMS Reserve Classification">
+              {RESERVE_CLASS_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeReserveClass === tab.id}
+                  onClick={() => setActiveReserveClass(tab.id)}
+                  className={
+                    activeReserveClass === tab.id ? 'reserve-switch-btn active' : 'reserve-switch-btn'
+                  }
                 >
-                  {activeReserveView.metrics.map((metric) => (
-                    <div key={metric.label} className="kpi-cell">
-                      <span className="kpi-label">{metric.label}</span>
-                      <div className="kpi-number">{metric.value}</div>
-                      <span className="kpi-context">{metric.context}</span>
-                    </div>
-                  ))}
-                </motion.div>
-              </AnimatePresence>
+                  {tab.label}
+                </button>
+              ))}
             </div>
+          </div>
 
-            {/* All Methods and Volumetric vs Hydraulic MBE Comparison Card */}
-            <div className="grid-card reserve-classification-card">
-              <div className="card-header-row">
-                <div>
-                  <h3 className="card-title">Reserves Estimation Method Comparison</h3>
-                  <div className="card-subtitle">
-                    Side-by-side Volumetric, Volumetric Gas MBE (We = 0), Hydraulic Water-Drive MBE (We &gt; 0), and Arps Decline results
-                  </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeReserveClass}
+              className="reserve-classification-kpis"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.18 }}
+            >
+              {activeReserveView.metrics.map((metric) => (
+                <div key={metric.label} className="kpi-cell">
+                  <span className="kpi-label">{metric.label}</span>
+                  <div className="kpi-number">{metric.value}</div>
+                  <span className="kpi-context">{metric.context}</span>
                 </div>
-              </div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
-              <div className="reserve-classification-kpis">
-                <div className="kpi-cell">
-                  <span className="kpi-label">Volumetric Method EUR</span>
-                  <div className="kpi-number">{results.volRes.ultimateRecoveryBscf.toFixed(2)} Bscf</div>
-                  <span className="kpi-context">
-                    GIIP {results.volRes.giipBscf.toFixed(2)} Bscf (Rf {(results.volRes.activeRf * 100).toFixed(1)}%)
-                  </span>
-                </div>
-
-                <div className="kpi-cell">
-                  <span className="kpi-label">Volumetric Gas MBE (We = 0)</span>
-                  <div className="kpi-number">{results.mbeRes.volumetricMbeEurBscf.toFixed(2)} Bscf</div>
-                  <span className="kpi-context">
-                    GIIP {results.mbeRes.volumetricMbeGiipBscf.toFixed(2)} Bscf (No water influx)
-                  </span>
-                </div>
-
-                <div className="kpi-cell">
-                  <span className="kpi-label">Hydraulic Water-Drive MBE (We &gt; 0)</span>
-                  <div className="kpi-number">{results.mbeRes.hydraulicMbeEurBscf.toFixed(2)} Bscf</div>
-                  <span className="kpi-context">
-                    Apparent GIIP {results.mbeRes.hydraulicApparentGiipBscf.toFixed(2)} Bscf (We {(results.mbeRes.aquiferPotentialWeBbl / 1e6).toFixed(2)} MMbbl)
-                  </span>
-                </div>
-
-                <div className="kpi-cell">
-                  <span className="kpi-label">Arps Decline Curve EUR</span>
-                  <div className="kpi-number">{results.dcaRes.activeEurBscf.toFixed(2)} Bscf</div>
-                  <span className="kpi-context">
-                    {results.activeDeclineModel} (b = {results.dcaRes.bExponent}, qa {results.dcaRes.estimatedEconomicLimitMscfDay.toLocaleString()} Mscf/d)
-                  </span>
-                </div>
+        {/* All Methods and Volumetric vs Hydraulic MBE Comparison Card */}
+        <div className="grid-card reserve-classification-card">
+          <div className="card-header-row">
+            <div>
+              <h3 className="card-title">Reserves Estimation Method Comparison</h3>
+              <div className="card-subtitle">
+                Side-by-side Volumetric, Volumetric Gas MBE (We = 0), Hydraulic Water-Drive MBE (We &gt; 0), and Arps Decline results
               </div>
             </div>
-          </>
-        )}
+          </div>
+
+          <div className="reserve-classification-kpis">
+            <div className="kpi-cell">
+              <span className="kpi-label">Volumetric Method EUR</span>
+              <div className="kpi-number">{results.volRes.ultimateRecoveryBscf.toFixed(2)} Bscf</div>
+              <span className="kpi-context">
+                GIIP {results.volRes.giipBscf.toFixed(2)} Bscf (Rf {(results.volRes.activeRf * 100).toFixed(1)}%)
+              </span>
+            </div>
+
+            <div className="kpi-cell">
+              <span className="kpi-label">Volumetric Gas MBE (We = 0)</span>
+              <div className="kpi-number">{results.mbeRes.volumetricMbeEurBscf.toFixed(2)} Bscf</div>
+              <span className="kpi-context">
+                GIIP {results.mbeRes.volumetricMbeGiipBscf.toFixed(2)} Bscf (No water influx)
+              </span>
+            </div>
+
+            <div className="kpi-cell">
+              <span className="kpi-label">Hydraulic Water-Drive MBE (We &gt; 0)</span>
+              <div className="kpi-number">{results.mbeRes.hydraulicMbeEurBscf.toFixed(2)} Bscf</div>
+              <span className="kpi-context">
+                Apparent GIIP {results.mbeRes.hydraulicApparentGiipBscf.toFixed(2)} Bscf (We {(results.mbeRes.aquiferPotentialWeBbl / 1e6).toFixed(2)} MMbbl)
+              </span>
+            </div>
+
+            <div className="kpi-cell">
+              <span className="kpi-label">Arps Decline Curve EUR</span>
+              <div className="kpi-number">{results.dcaRes.activeEurBscf.toFixed(2)} Bscf</div>
+              <span className="kpi-context">
+                {results.activeDeclineModel} (b = {results.dcaRes.bExponent}, qa {results.dcaRes.estimatedEconomicLimitMscfDay.toLocaleString()} Mscf/d)
+              </span>
+            </div>
+          </div>
+        </div>
 
         {/* Bottom Left Card: Main Chart with Tab Switcher */}
         <div className="grid-card large-chart-card">
@@ -373,6 +365,13 @@ export function ResultsAnalysisPage() {
                 className={activeChartTab === 'pz' ? 'tab-pill active' : 'tab-pill'}
               >
                 p/z Plot
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveChartTab('pz_gp')}
+                className={activeChartTab === 'pz_gp' ? 'tab-pill active' : 'tab-pill'}
+              >
+                p/z vs Gp
               </button>
               <button
                 type="button"
@@ -415,13 +414,48 @@ export function ResultsAnalysisPage() {
           <div className="chart-canvas-area">
             {activeChartTab === 'pz' && (
               <ResponsiveContainer width="100%" height={260}>
-                <LineChart data={results.mbeRes.pzComparisonCurve} margin={{ top: 10, right: 16, left: -6, bottom: 10 }}>
-                  <XAxis dataKey="gp" stroke={chartThemeStyles.axisStroke} tickLine={false} tick={{ fontSize: 11, fill: chartThemeStyles.tickFill }} />
-                  <YAxis stroke={chartThemeStyles.axisStroke} tickLine={false} tick={{ fontSize: 11, fill: chartThemeStyles.tickFill }} />
-                  <Tooltip contentStyle={chartThemeStyles.tooltip} />
+                <LineChart data={results.mbeRes.pzComparisonCurve} margin={{ top: 10, right: 16, left: 6, bottom: 18 }}>
+                  <XAxis
+                    dataKey="gp"
+                    stroke={chartThemeStyles.axisStroke}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: chartThemeStyles.tickFill }}
+                    label={{ value: 'Gp (Bscf)', position: 'insideBottom', offset: -10, fontSize: 11, fill: chartThemeStyles.tickFill }}
+                  />
+                  <YAxis
+                    stroke={chartThemeStyles.axisStroke}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: chartThemeStyles.tickFill }}
+                    label={{ value: 'p/z (psia)', angle: -90, position: 'insideLeft', fontSize: 11, fill: chartThemeStyles.tickFill }}
+                  />
+                  <Tooltip contentStyle={chartThemeStyles.tooltip} labelFormatter={(v) => `Gp: ${v} Bscf`} />
                   <Legend verticalAlign="top" height={32} wrapperStyle={{ fontSize: 11 }} />
                   <Line type="monotone" dataKey="volumetricPz" name="Volumetric (Straight Line)" stroke={chartThemeStyles.contrastLine} strokeWidth={2} dot={{ r: 2, fill: chartThemeStyles.contrastLine }} />
                   <Line type="monotone" dataKey="waterDrivePz" name="Water Drive (Aquifer Support)" stroke="#059669" strokeWidth={2} dot={{ r: 2, fill: '#059669' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+
+            {activeChartTab === 'pz_gp' && (
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={results.mbeRes.pzVsGpCurve} margin={{ top: 10, right: 16, left: 6, bottom: 18 }}>
+                  <XAxis
+                    dataKey="gp"
+                    stroke={chartThemeStyles.axisStroke}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: chartThemeStyles.tickFill }}
+                    label={{ value: 'Cumulative Gas Produced Gp (Bscf)', position: 'insideBottom', offset: -10, fontSize: 11, fill: chartThemeStyles.tickFill }}
+                  />
+                  <YAxis
+                    stroke={chartThemeStyles.axisStroke}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: chartThemeStyles.tickFill }}
+                    label={{ value: 'p/z (psia)', angle: -90, position: 'insideLeft', fontSize: 11, fill: chartThemeStyles.tickFill }}
+                  />
+                  <Tooltip contentStyle={chartThemeStyles.tooltip} labelFormatter={(v) => `Gp: ${v} Bscf`} />
+                  <Legend verticalAlign="top" height={32} wrapperStyle={{ fontSize: 11 }} />
+                  <Line type="monotone" dataKey="volumetricPz" name="p/z vs Gp Extrapolation to GIIP" stroke={chartThemeStyles.contrastLine} strokeWidth={2} dot={{ r: 2.5, fill: chartThemeStyles.contrastLine }} connectNulls={false} />
+                  <Line type="monotone" dataKey="waterDrivePz" name="Water-Drive p/z vs Gp" stroke="#059669" strokeWidth={2} dot={{ r: 2.5, fill: '#059669' }} connectNulls={false} />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -571,31 +605,33 @@ export function ResultsAnalysisPage() {
             </div>
           </div>
 
-          {isGuest ? (
-            <div className="guest-forecast-note">
-              Recommended scenario shown in Guest Preview
-            </div>
-          ) : (
-            <div className="reserve-switch-group" role="tablist" aria-label="Forecast Reserves Basis">
-              {FORECAST_SCENARIO_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeForecastScenario === tab.id}
-                  onClick={() => setActiveForecastScenario(tab.id)}
-                  className={
-                    activeForecastScenario === tab.id ? 'reserve-switch-btn active' : 'reserve-switch-btn'
-                  }
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="reserve-switch-group" role="tablist" aria-label="Forecast Reserves Basis">
+            {FORECAST_SCENARIO_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeForecastScenario === tab.id}
+                onClick={() => setActiveForecastScenario(tab.id)}
+                className={
+                  activeForecastScenario === tab.id ? 'reserve-switch-btn active' : 'reserve-switch-btn'
+                }
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="forecast-kpi-row">
+          <div className="kpi-cell">
+            <span className="kpi-label">Gas in Place (GIIP)</span>
+            <div className="kpi-number">{activeForecast.giipBscf.toFixed(2)} Bscf</div>
+            <span className="kpi-context">
+              {activeForecast.usingProvidedForecastGiip ? 'Provided forecast G' : 'Computed Volumetric GIIP'} (EUR {activeForecast.eurBscf.toFixed(2)} Bscf)
+            </span>
+          </div>
+
           <div className="kpi-cell">
             <span className="kpi-label">Years to Deplete (X)</span>
             <div className="kpi-number">{activeForecast.yearsToDeplete.toFixed(1)} years</div>
@@ -659,9 +695,9 @@ export function ResultsAnalysisPage() {
             </div>
 
             <div className="forecast-chart-box">
-              <div className="forecast-chart-title">Gas Production, Rate, and Pressure Forecast</div>
+              <div className="forecast-chart-title">Gas Production, Gas in Place, Rate, and Pressure Forecast</div>
               <div className="forecast-chart-subtitle">
-                Cumulative gas produced (Bscf), gas production rate (MMscf/d), and reservoir pressure (psia) over {activeForecast.yearsToDeplete.toFixed(1)} years
+                Cumulative gas produced vs {activeForecast.giipBscf.toFixed(2)} Bscf Gas in Place, gas rate (MMscf/d), and reservoir pressure over {activeForecast.yearsToDeplete.toFixed(1)} years
               </div>
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={activeForecast.forecastCurve} margin={{ top: 10, right: 16, left: -4, bottom: 10 }}>
@@ -677,6 +713,7 @@ export function ResultsAnalysisPage() {
                   <Tooltip contentStyle={chartThemeStyles.tooltip} labelFormatter={(v) => `Year ${v}`} />
                   <Legend verticalAlign="top" height={32} wrapperStyle={{ fontSize: 11 }} />
                   <Line yAxisId="left" type="monotone" dataKey="cumulativeBscf" name="Cumulative Gas (Bscf)" stroke="#059669" strokeWidth={2.5} dot={false} />
+                  <Line yAxisId="left" type="monotone" dataKey="giipBscf" name="Gas in Place GIIP (Bscf)" stroke="#0ea5e9" strokeWidth={1.75} strokeDasharray="5 4" dot={false} />
                   <Line yAxisId="left" type="monotone" dataKey="rateMmscfDay" name="Gas Rate (MMscf/d)" stroke={chartThemeStyles.contrastLine} strokeWidth={2} dot={false} />
                   <Line yAxisId="right" type="monotone" dataKey="pressurePsia" name="Pressure (psia)" stroke="#c026d3" strokeWidth={2} dot={false} />
                 </LineChart>
@@ -690,36 +727,24 @@ export function ResultsAnalysisPage() {
         )}
       </motion.div>
 
-      {isGuest ? (
-        <StudentAccessGate
-          compact
-          title="Unlock Full Analysis, PRMS Scenarios, and Depletion Schedule"
-          description="Guest preview displays headline reserves, drive mechanism shares, and the recommended decline curve. Sign in with a student email to inspect the complete analysis on this page."
-          highlights={[
-            'PRMS 1P (P90), 2P (P50), and 3P (P10) reserves and uncertainty spread',
-            'Side-by-side Volumetric, Material Balance (We = 0 and We > 0), and Arps comparison',
-            'Fluid classification, Z-factor audit values, and year-by-year depletion table',
-          ]}
-        />
-      ) : (
-        /* Detailed Evaluation Accordions */
-        <motion.div
-          key={`detailed-eval-${activeProject.id}`}
-          className="evaluation-view-container"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.1 }}
-        >
-          <div style={{ marginBottom: '1.5rem' }}>
-            <h2 className="form-block-heading" style={{ marginTop: 0 }}>
-              Detailed Engineering Results
-            </h2>
-            <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0 0', fontSize: '0.95rem' }}>
-              Expand each section below to inspect fluid classification, PRMS distributions, material balance indices, and the annual production forecast schedule.
-            </p>
-          </div>
+      {/* Detailed Evaluation Accordions */}
+      <motion.div
+        key={`detailed-eval-${activeProject.id}`}
+        className="evaluation-view-container"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.1 }}
+      >
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h2 className="form-block-heading" style={{ marginTop: 0 }}>
+            Detailed Engineering Results
+          </h2>
+          <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0 0', fontSize: '0.95rem' }}>
+            Expand each section below to inspect fluid classification, PRMS distributions, material balance indices, and the annual production forecast schedule.
+          </p>
+        </div>
 
-          <div className="collapsible-list">
+        <div className="collapsible-list">
           {sectionMatches('fluid classification condensate cgr gor api gravity yield') && (
             <CollapsibleSection
               index={0}
@@ -732,6 +757,10 @@ export function ResultsAnalysisPage() {
                 <div className="data-item">
                   <span className="data-label">Identified Fluid Type</span>
                   <span className="data-value highlight">{results.classification.fluidType}</span>
+                </div>
+                <div className="data-item">
+                  <span className="data-label">Initial Gas-Oil Ratio GOR</span>
+                  <span className="data-value">{Math.round(results.gorScfStb).toLocaleString()} scf/STB</span>
                 </div>
                 <div className="data-item">
                   <span className="data-label">Condensate-Gas Ratio CGR</span>
@@ -936,9 +965,8 @@ export function ResultsAnalysisPage() {
               </div>
             </CollapsibleSection>
           )}
-          </div>
-        </motion.div>
-      )}
+        </div>
+      </motion.div>
     </div>
   )
 }

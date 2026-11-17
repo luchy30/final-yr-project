@@ -1,31 +1,25 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient'
 import { encryptedLocalStorage } from './encryptedStorage'
 
-const ACTIVE_PROJECT_PREFIX = 'petroreserves-active-project-id'
+const ACTIVE_PROJECT_KEY = 'petroreserves-active-project-id'
 
-function getActiveProjectKey(userId) {
-  return `${ACTIVE_PROJECT_PREFIX}:${userId}`
+export async function loadActiveProjectIdPreference() {
+  return encryptedLocalStorage.getItem(ACTIVE_PROJECT_KEY)
 }
 
-export async function loadActiveProjectIdPreference(userId) {
-  if (!userId) return null
-  return encryptedLocalStorage.getItem(getActiveProjectKey(userId))
+export async function saveActiveProjectIdPreference(projectId) {
+  if (!projectId) return
+  await encryptedLocalStorage.setItem(ACTIVE_PROJECT_KEY, projectId)
 }
 
-export async function saveActiveProjectIdPreference(projectId, userId) {
-  if (!userId || !projectId) return
-  await encryptedLocalStorage.setItem(getActiveProjectKey(userId), projectId)
-}
-
-export async function fetchRemoteProjects(userId) {
-  if (!isSupabaseConfigured || !supabase || !userId) {
+export async function fetchRemoteProjects() {
+  if (!isSupabaseConfigured || !supabase) {
     return { projects: null, skipped: true, error: null }
   }
 
   const { data, error } = await supabase
     .from('projects')
-    .select('id, user_id, name, description, inputs, active_chart_tab, created_at, updated_at')
-    .eq('user_id', userId)
+    .select('id, name, description, inputs, active_chart_tab, created_at, updated_at')
     .order('created_at', { ascending: true })
 
   if (error) {
@@ -34,7 +28,6 @@ export async function fetchRemoteProjects(userId) {
 
   const mapped = (data || []).map((row) => ({
     id: row.id,
-    userId: row.user_id,
     name: row.name,
     description: row.description || '',
     inputs: row.inputs,
@@ -46,14 +39,13 @@ export async function fetchRemoteProjects(userId) {
   return { projects: mapped, skipped: false, error: null }
 }
 
-export async function upsertRemoteProject(project, userId) {
-  if (!isSupabaseConfigured || !supabase || !project || !userId) {
+export async function upsertRemoteProject(project) {
+  if (!isSupabaseConfigured || !supabase || !project) {
     return { ok: false, skipped: true, error: null }
   }
 
   const payload = {
     id: project.id,
-    user_id: userId,
     name: project.name,
     description: project.description || '',
     inputs: project.inputs,
@@ -73,8 +65,8 @@ export async function upsertRemoteProject(project, userId) {
   return { ok: true, skipped: false, error: null }
 }
 
-export async function deleteRemoteProject(projectId, userId) {
-  if (!isSupabaseConfigured || !supabase || !projectId || !userId) {
+export async function deleteRemoteProject(projectId) {
+  if (!isSupabaseConfigured || !supabase || !projectId) {
     return { ok: false, skipped: true, error: null }
   }
 
@@ -82,7 +74,6 @@ export async function deleteRemoteProject(projectId, userId) {
     .from('projects')
     .delete()
     .eq('id', projectId)
-    .eq('user_id', userId)
 
   if (error) {
     return { ok: false, skipped: false, error: error.message }

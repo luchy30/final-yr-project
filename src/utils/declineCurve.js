@@ -227,6 +227,7 @@ function getArpsDepletionShapeFactor(declineModel, activeB, ratio) {
 export function calcProductionForecast({
   estimatedRecoverableBscf,
   giipBscf = 0,
+  usingProvidedForecastGiip = false,
   initialRateMscfDay = 12000,
   targetDepletionYears = 0,
   nominalDeclineMonthly = 0.025,
@@ -276,6 +277,7 @@ export function calcProductionForecast({
       canProduce: false,
       eurBscf: 0,
       giipBscf: Number(giip.toFixed(2)),
+      usingProvidedForecastGiip,
       qiMscfDay: Math.round(qi),
       qaMscfDay: Math.round(qa),
       averageRateMscfDay: 0,
@@ -368,6 +370,7 @@ export function calcProductionForecast({
       pressurePsia: Number(pressurePsia.toFixed(0)),
       cumulativeBscf: Number(cumulativeBscf.toFixed(2)),
       remainingBscf: Number(remainingBscf.toFixed(2)),
+      giipBscf: Number(giip.toFixed(2)),
       economicLimit: Math.round(qa),
     })
   }
@@ -415,6 +418,7 @@ export function calcProductionForecast({
     canProduce: true,
     eurBscf: Number(eurBscf.toFixed(2)),
     giipBscf: Number(giip.toFixed(2)),
+    usingProvidedForecastGiip,
     qiMscfDay: Math.round(qi),
     qaMscfDay: Math.round(qa),
     averageRateMscfDay: Math.round(averageRateMscfDay),

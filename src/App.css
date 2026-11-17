@@ -2220,6 +2220,19 @@ body {
   padding: 0.95rem 1.65rem;
 }
 
+.project-inline-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.project-inline-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
 @media print {
   body,
   .dashboard-layout,

@@ -9,7 +9,6 @@ import {
   computeCompleteResults,
 } from '../utils/reservoirEngine'
 import { ReservoirContext } from './useReservoir'
-import { useAuth } from './useAuth'
 import {
   loadActiveProjectIdPreference,
   saveActiveProjectIdPreference,
@@ -17,6 +16,7 @@ import {
   upsertRemoteProject,
   deleteRemoteProject,
 } from '../lib/projectStorage'
+import { encryptedLocalStorage } from '../lib/encryptedStorage'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
 
 function createProjectId() {
@@ -26,48 +26,41 @@ function createProjectId() {
   return `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-function buildStarterProjectsForUser(userId) {
-  const prefix = userId ? `${userId.slice(0, 8)}-` : ''
-  return STARTER_PROJECTS.map((proj) =>
-    normalizeProject({
-      ...proj,
-      id: `${prefix}${proj.id}`,
+export function ReservoirProvider({ children }) {
+  const [theme, setTheme] = useState('light')
+  const userToggledThemeRef = useRef(false)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    encryptedLocalStorage.getItem('app-theme').then((savedTheme) => {
+      if (controller.signal.aborted || userToggledThemeRef.current) return
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        setTheme(savedTheme)
+      }
     })
-  )
-}
+    return () => {
+      controller.abort()
+    }
+  }, [])
 
-function buildGuestPreviewProject() {
-  return normalizeProject({
-    ...STARTER_PROJECTS[0],
-    id: 'guest-sample-field',
-    name: `${STARTER_PROJECTS[0].name} (Guest Preview)`,
-  })
-}
-
-export function ReservoirProvider({ user, children }) {
-  const userId = user?.id || null
-  const isGuest = Boolean(user?.isGuest)
-  const { theme, handleThemeChange } = useAuth()
+  const handleThemeChange = useCallback((newTheme) => {
+    userToggledThemeRef.current = true
+    setTheme(newTheme)
+    void encryptedLocalStorage.setItem('app-theme', newTheme)
+  }, [])
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const [projects, setProjects] = useState(() => {
-    if (isGuest) {
-      return [buildGuestPreviewProject()]
-    }
-    return buildStarterProjectsForUser(userId)
-  })
+  const [projects, setProjects] = useState(() =>
+    STARTER_PROJECTS.map(normalizeProject)
+  )
 
   const [activeProjectId, setActiveProjectId] = useState(() => projects[0].id)
 
-  const [isLoadingProjects, setIsLoadingProjects] = useState(
-    Boolean(!isGuest && isSupabaseConfigured && userId)
-  )
-
   const [storageStatus, setStorageStatus] = useState({
-    mode: isGuest ? 'guest' : isSupabaseConfigured ? 'supabase' : 'memory',
-    syncing: Boolean(!isGuest && isSupabaseConfigured && userId),
+    mode: isSupabaseConfigured ? 'supabase' : 'memory',
+    syncing: isSupabaseConfigured,
     error: null,
   })
 
@@ -79,10 +72,8 @@ export function ReservoirProvider({ user, children }) {
   }, [projects])
 
   useEffect(() => {
-    if (!isGuest && userId && !isLoadingProjects) {
-      void saveActiveProjectIdPreference(activeProjectId, userId)
-    }
-  }, [activeProjectId, isGuest, isLoadingProjects, userId])
+    void saveActiveProjectIdPreference(activeProjectId)
+  }, [activeProjectId])
 
   useEffect(() => {
     return () => {
@@ -92,36 +83,30 @@ export function ReservoirProvider({ user, children }) {
     }
   }, [])
 
-  const syncProjectToSupabase = useCallback(
-    (project) => {
-      if (isGuest || !isSupabaseConfigured || !project || !userId) return
-      upsertRemoteProject(project, userId).then((res) => {
-        if (!res.ok && !res.skipped) {
-          setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
-        } else if (res.ok) {
-          setStorageStatus((prev) => (prev.error ? { ...prev, error: null } : prev))
-        }
-      })
-    },
-    [isGuest, userId]
-  )
+  const syncProjectToSupabase = useCallback((project) => {
+    if (!isSupabaseConfigured || !project) return
+    upsertRemoteProject(project).then((res) => {
+      if (!res.ok && !res.skipped) {
+        setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
+      } else if (res.ok) {
+        setStorageStatus((prev) => (prev.error ? { ...prev, error: null } : prev))
+      }
+    })
+  }, [])
 
   useEffect(() => {
-    if (isGuest || !isSupabaseConfigured || !userId) {
-      return undefined
-    }
+    if (!isSupabaseConfigured) return undefined
 
     const controller = new AbortController()
     const syncInitial = async () => {
       const [res, savedPref] = await Promise.all([
-        fetchRemoteProjects(userId),
-        loadActiveProjectIdPreference(userId),
+        fetchRemoteProjects(),
+        loadActiveProjectIdPreference(),
       ])
       if (controller.signal.aborted) return
 
       if (res.error) {
         setStorageStatus({ mode: 'supabase', syncing: false, error: res.error })
-        setIsLoadingProjects(false)
         return
       }
 
@@ -134,13 +119,15 @@ export function ReservoirProvider({ user, children }) {
         })
         setStorageStatus({ mode: 'supabase', syncing: false, error: null })
       } else {
-        const starters = buildStarterProjectsForUser(userId)
+        const starters = STARTER_PROJECTS.map(normalizeProject)
         const seedResults = await Promise.all(
-          starters.map((proj) => upsertRemoteProject(proj, userId))
+          starters.map((proj) => upsertRemoteProject(proj))
         )
         if (controller.signal.aborted) return
         setProjects(starters)
-        setActiveProjectId(starters[0].id)
+        if (savedPref && starters.some((p) => p.id === savedPref)) {
+          setActiveProjectId(savedPref)
+        }
         const failed = seedResults.find((item) => !item.ok && !item.skipped)
         setStorageStatus({
           mode: 'supabase',
@@ -148,15 +135,13 @@ export function ReservoirProvider({ user, children }) {
           error: failed ? failed.error || null : null,
         })
       }
-
-      setIsLoadingProjects(false)
     }
 
     syncInitial()
     return () => {
       controller.abort()
     }
-  }, [isGuest, userId])
+  }, [])
 
   const activeProject = useMemo(() => {
     return projects.find((p) => p.id === activeProjectId) || projects[0]
@@ -200,6 +185,28 @@ export function ReservoirProvider({ user, children }) {
 
   const makeFieldSetter = (key) => (val) => {
     updateActiveProjectInputs({ [key]: val })
+  }
+
+  const handleSetGor = (val) => {
+    const parsed = parseFloat(val)
+    if (Number.isFinite(parsed) && parsed > 0) {
+      updateActiveProjectInputs({ gor: val, cgr: (1e6 / parsed).toFixed(2) })
+    } else if (val === '0') {
+      updateActiveProjectInputs({ gor: '0', cgr: '0' })
+    } else {
+      updateActiveProjectInputs({ gor: val })
+    }
+  }
+
+  const handleSetCgr = (val) => {
+    const parsed = parseFloat(val)
+    if (Number.isFinite(parsed) && parsed > 0) {
+      updateActiveProjectInputs({ cgr: val, gor: String(Math.round(1e6 / parsed)) })
+    } else if (val === '0') {
+      updateActiveProjectInputs({ cgr: '0', gor: '0' })
+    } else {
+      updateActiveProjectInputs({ cgr: val })
+    }
   }
 
   const handleSetDeclineModel = (nextModel) => {
@@ -283,8 +290,7 @@ export function ReservoirProvider({ user, children }) {
     }
   }
 
-  const createProject = ({ name, description = '', templateKey = 'dry_gas', fieldStage }) => {
-    if (isGuest) return null
+  const createProject = ({ name, description = '', templateKey = 'custom', fieldStage }) => {
     const cleanName = (name || '').trim() || `Gas Field Study ${projects.length + 1}`
     const cleanDesc = (description || '').trim()
 
@@ -317,8 +323,8 @@ export function ReservoirProvider({ user, children }) {
     setProjects((prev) => [...prev, newProject])
     setActiveProjectId(newProject.id)
 
-    if (isSupabaseConfigured && userId) {
-      upsertRemoteProject(newProject, userId).then((res) => {
+    if (isSupabaseConfigured) {
+      upsertRemoteProject(newProject).then((res) => {
         setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
       })
     }
@@ -327,14 +333,16 @@ export function ReservoirProvider({ user, children }) {
   }
 
   const updateProjectDetails = (projectId, { name, description }) => {
-    if (isGuest) return
     const target = projects.find((p) => p.id === projectId)
     if (!target) return
 
+    const nextName = name !== undefined ? name.trim() || target.name : target.name
+    const nextDesc = description !== undefined ? description.trim() : target.description
+
     const updatedTarget = {
       ...target,
-      name: name !== undefined ? name : target.name,
-      description: description !== undefined ? description : target.description,
+      name: nextName,
+      description: nextDesc,
       updatedAt: new Date().toISOString(),
     }
 
@@ -342,22 +350,22 @@ export function ReservoirProvider({ user, children }) {
       prev.map((proj) => (proj.id === projectId ? updatedTarget : proj))
     )
 
-    if (isSupabaseConfigured && userId) {
-      upsertRemoteProject(updatedTarget, userId).then((res) => {
+    if (isSupabaseConfigured) {
+      upsertRemoteProject(updatedTarget).then((res) => {
         setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
       })
     }
   }
 
   const deleteProject = (projectId) => {
-    if (isGuest || projects.length <= 1) return false
+    if (projects.length <= 1) return false
     const remaining = projects.filter((p) => p.id !== projectId)
     setProjects(remaining)
     if (activeProjectId === projectId) {
       setActiveProjectId(remaining[0].id)
     }
-    if (isSupabaseConfigured && userId) {
-      deleteRemoteProject(projectId, userId).then((res) => {
+    if (isSupabaseConfigured) {
+      deleteRemoteProject(projectId).then((res) => {
         setStorageStatus((prev) => ({ ...prev, error: res.error || null }))
       })
     }
@@ -438,8 +446,10 @@ export function ReservoirProvider({ user, children }) {
     setTemperature: makeFieldSetter('temperature'),
     gasGravity: activeInputs.gasGravity,
     setGasGravity: makeFieldSetter('gasGravity'),
+    gor: activeInputs.gor,
+    setGor: handleSetGor,
     cgr: activeInputs.cgr,
-    setCgr: makeFieldSetter('cgr'),
+    setCgr: handleSetCgr,
     apiGravity: activeInputs.apiGravity,
     setApiGravity: makeFieldSetter('apiGravity'),
     zMethod: activeInputs.zMethod,
@@ -468,6 +478,8 @@ export function ReservoirProvider({ user, children }) {
     setProvidedZa: makeFieldSetter('providedZa'),
     targetDepletionYears: activeInputs.targetDepletionYears ?? '',
     setTargetDepletionYears: makeFieldSetter('targetDepletionYears'),
+    forecastGiipBscf: activeInputs.forecastGiipBscf ?? '',
+    setForecastGiipBscf: makeFieldSetter('forecastGiipBscf'),
     economicLimit: activeInputs.economicLimit,
     setEconomicLimit: makeFieldSetter('economicLimit'),
     results,
@@ -476,15 +488,6 @@ export function ReservoirProvider({ user, children }) {
     getZMethodLabel,
     driveIndicesData,
     chartThemeStyles,
-    isGuest,
-  }
-
-  if (isLoadingProjects) {
-    return (
-      <div className={`auth-page theme-${theme}`} data-theme={theme}>
-        <div className="auth-loading-state">Loading your reservoir workspaces...</div>
-      </div>
-    )
   }
 
   return (

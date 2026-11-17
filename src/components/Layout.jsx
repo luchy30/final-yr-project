@@ -13,20 +13,16 @@ import {
   Cancel01Icon,
   Sun01Icon,
   Moon01Icon,
-  Logout01Icon,
-  Login01Icon,
-  LockIcon,
 } from 'hugeicons-react'
 import { useReservoir } from '../context/useReservoir'
-import { useAuth } from '../context/useAuth'
 import CustomSelect from './CustomSelect'
 
 const NAV_ITEMS = [
-  { to: '/projects', label: 'Projects', icon: Folder01Icon, requiresStudent: true },
+  { to: '/projects', label: 'Projects', icon: Folder01Icon },
   { to: '/calculations', label: 'Calculations', icon: Calculator01Icon },
   { to: '/results', label: 'Results and Analysis', icon: ChartLineData01Icon },
   { to: '/formulas', label: 'Formulas', icon: MathIcon },
-  { to: '/reports', label: 'Reports', icon: File01Icon, requiresStudent: true },
+  { to: '/reports', label: 'Reports', icon: File01Icon },
   { to: '/settings', label: 'Settings', icon: Settings01Icon },
 ]
 
@@ -40,7 +36,6 @@ export function Layout() {
     activeProject,
     switchProject,
   } = useReservoir()
-  const { user, isGuest, signOut } = useAuth()
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const sidebarRef = useRef(null)
@@ -139,29 +134,22 @@ export function Layout() {
             <label htmlFor="sidebar-workspace-select" className="sidebar-workspace-label">
               ACTIVE FIELD WORKSPACE
             </label>
-            {isGuest ? (
-              <div className="sidebar-guest-workspace" title={activeProject.name}>
-                <span>{activeProject.name}</span>
-              </div>
-            ) : (
-              <CustomSelect
-                id="sidebar-workspace-select"
-                variant="sidebar"
-                value={activeProject.id}
-                onChange={switchProject}
-                options={projects.map((proj) => ({
-                  value: proj.id,
-                  label: proj.name,
-                }))}
-              />
-            )}
+            <CustomSelect
+              id="sidebar-workspace-select"
+              variant="sidebar"
+              value={activeProject.id}
+              onChange={switchProject}
+              options={projects.map((proj) => ({
+                value: proj.id,
+                label: proj.name,
+              }))}
+            />
           </div>
 
           <LayoutGroup id="sidebar-nav">
             <nav className="sidebar-nav">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon
-                const isLocked = isGuest && item.requiresStudent
                 return (
                   <NavLink
                     key={item.to}
@@ -189,7 +177,6 @@ export function Layout() {
                         <span className="nav-button-content">
                           <Icon size={20} />
                           <span className="nav-label-text">{item.label}</span>
-                          {isLocked && <LockIcon size={14} className="nav-lock-icon" />}
                         </span>
                       </>
                     )}
@@ -200,23 +187,6 @@ export function Layout() {
           </LayoutGroup>
 
           <div className="sidebar-footer">
-            <div className="sidebar-account-box">
-              <div className="sidebar-account-info" title={user?.email || ''}>
-                <span className="sidebar-account-email">
-                  {isGuest ? 'Guest Preview' : user?.email || 'Student Account'}
-                </span>
-              </div>
-              <button
-                type="button"
-                className="sidebar-signout-btn"
-                onClick={signOut}
-                title={isGuest ? 'Sign in with student email' : 'Sign out'}
-                aria-label={isGuest ? 'Sign in with student email' : 'Sign out'}
-              >
-                {isGuest ? <Login01Icon size={16} /> : <Logout01Icon size={16} />}
-                <span className="sidebar-signout-label">{isGuest ? 'Student Sign In' : 'Sign Out'}</span>
-              </button>
-            </div>
             <div className="appearance-section">
               <span className="appearance-section-title">APPEARANCE</span>
               <div className="appearance-segmented-toggle">

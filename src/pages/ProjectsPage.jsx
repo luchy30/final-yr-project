@@ -9,17 +9,15 @@ import {
   Cancel01Icon,
   ChartLineData01Icon,
   Delete02Icon,
+  PencilEdit02Icon,
   Tick02Icon,
 } from 'hugeicons-react'
 import { useReservoir } from '../context/useReservoir'
-import { useAuth } from '../context/useAuth'
 import { PROJECT_TEMPLATES } from '../utils/reservoirEngine'
 import CustomSelect from '../components/CustomSelect'
-import { StudentAccessGate } from '../components/StudentAccessGate'
 
 export function ProjectsPage() {
   const navigate = useNavigate()
-  const { isGuest } = useAuth()
   const {
     theme,
     projects,
@@ -27,6 +25,7 @@ export function ProjectsPage() {
     projectResultsById,
     switchProject,
     createProject,
+    updateProjectDetails,
     deleteProject,
     searchQuery,
   } = useReservoir()
@@ -34,9 +33,12 @@ export function ProjectsPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [nameInput, setNameInput] = useState('')
   const [descriptionInput, setDescriptionInput] = useState('')
-  const [templateKey, setTemplateKey] = useState('dry_gas')
+  const [templateKey, setTemplateKey] = useState('custom')
   const [stageInput, setStageInput] = useState('producing')
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [editingProjectId, setEditingProjectId] = useState(null)
+  const [editNameInput, setEditNameInput] = useState('')
+  const [editDescriptionInput, setEditDescriptionInput] = useState('')
   const nameInputRef = useRef(null)
 
   const closeModal = () => {
@@ -72,12 +74,35 @@ export function ProjectsPage() {
     })
     setNameInput('')
     setDescriptionInput('')
-    setTemplateKey('dry_gas')
+    setTemplateKey('custom')
     setStageInput('producing')
     setIsCreating(false)
     if (openCalculations) {
       navigate('/calculations')
     }
+  }
+
+  const startEditingProject = (project) => {
+    setConfirmDeleteId(null)
+    setEditingProjectId(project.id)
+    setEditNameInput(project.name)
+    setEditDescriptionInput(project.description || '')
+  }
+
+  const cancelEditingProject = () => {
+    setEditingProjectId(null)
+    setEditNameInput('')
+    setEditDescriptionInput('')
+  }
+
+  const saveEditingProject = (projectId) => {
+    const trimmedName = editNameInput.trim()
+    if (!trimmedName) return
+    updateProjectDetails(projectId, {
+      name: trimmedName,
+      description: editDescriptionInput,
+    })
+    cancelEditingProject()
   }
 
   const normalizedQuery = searchQuery.trim().toLowerCase()
@@ -88,28 +113,6 @@ export function ProjectsPage() {
       proj.description.toLowerCase().includes(normalizedQuery)
     )
   })
-
-  if (isGuest) {
-    return (
-      <motion.div
-        key="projects-guest-gate"
-        className="evaluation-view-container"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-      >
-        <StudentAccessGate
-          title="Multi-Field Project Workspaces"
-          description="Guest preview allows testing one sample reservoir in memory. Sign in with your institutional student email to create, clone, switch, and save multiple gas reservoir projects in your personal workspace."
-          highlights={[
-            'Create independent Niger Delta, dry gas, wet gas, and condensate field studies',
-            'Clone active reservoir setups and compare recovery factors side by side',
-            'Automatic cloud saving tied privately to your student email',
-          ]}
-        />
-      </motion.div>
-    )
-  }
 
   return (
     <motion.div
@@ -298,12 +301,72 @@ export function ProjectsPage() {
             >
               <div className="project-card-top">
                 <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-                  <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: 'var(--text-main)' }}>
-                    {project.name}
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-                    {project.description}
-                  </p>
+                  {editingProjectId === project.id ? (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault()
+                        saveEditingProject(project.id)
+                      }}
+                      className="project-inline-edit-form"
+                    >
+                      <div className="input-cell">
+                        <label htmlFor={`edit-name-${project.id}`}>Project Name</label>
+                        <input
+                          id={`edit-name-${project.id}`}
+                          type="text"
+                          value={editNameInput}
+                          onChange={(e) => setEditNameInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                              cancelEditingProject()
+                            }
+                          }}
+                          className="standard-input"
+                          autoFocus
+                          required
+                        />
+                      </div>
+                      <div className="input-cell">
+                        <label htmlFor={`edit-desc-${project.id}`}>Description</label>
+                        <input
+                          id={`edit-desc-${project.id}`}
+                          type="text"
+                          value={editDescriptionInput}
+                          onChange={(e) => setEditDescriptionInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                              cancelEditingProject()
+                            }
+                          }}
+                          className="standard-input"
+                          placeholder="Optional workspace notes"
+                        />
+                      </div>
+                      <div className="project-inline-edit-actions">
+                        <button type="submit" className="top-action-btn">
+                          <Tick02Icon size={16} />
+                          <span>Save Name</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelEditingProject}
+                          className="secondary-action-btn"
+                        >
+                          <Cancel01Icon size={16} />
+                          <span>Cancel</span>
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: 'var(--text-main)' }}>
+                        {project.name}
+                      </h3>
+                      <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+                        {project.description}
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 <div
@@ -363,6 +426,15 @@ export function ProjectsPage() {
                 >
                   <Calculator01Icon size={16} />
                   <span>Open Inputs</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => startEditingProject(project)}
+                  className="secondary-action-btn"
+                >
+                  <PencilEdit02Icon size={16} />
+                  <span>Edit Name</span>
                 </button>
 
                 <button

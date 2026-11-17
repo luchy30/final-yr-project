@@ -197,6 +197,7 @@ export function calcMaterialBalanceAndDriveIndices({
 
   const steps = 6
   const pzComparisonCurve = []
+  const pzVsGpCurve = []
   const havlenaOdehPoints = []
   let weBbl = 0
   let paqPrev = pi
@@ -259,6 +260,23 @@ export function calcMaterialBalanceAndDriveIndices({
       volumetricPz: Number(pzVal.toFixed(1)),
       waterDrivePz: Number(waterDrivePz.toFixed(1)),
     })
+
+    pzVsGpCurve.push({
+      gp: Number(Math.max(0, gpVolumetricBscf).toFixed(2)),
+      volumetricPz: Number(pzVal.toFixed(1)),
+      waterDrivePz: Number(waterDrivePz.toFixed(1)),
+    })
+
+    if (i === steps) {
+      const giipBscf = G / 1e9
+      if (giipBscf > gpVolumetricBscf) {
+        pzVsGpCurve.push({
+          gp: Number(giipBscf.toFixed(2)),
+          volumetricPz: 0,
+          waterDrivePz: null,
+        })
+      }
+    }
 
     if (i > 0 && Eg > 0) {
       // Equation (3.23): F = Gp * Bg + Wp * Bw
@@ -335,6 +353,7 @@ export function calcMaterialBalanceAndDriveIndices({
     hydraulicApparentGiipBscf,
     hydraulicMbeEurBscf,
     pzComparisonCurve,
+    pzVsGpCurve,
     havlenaOdehPoints,
   }
 }

@@ -1,33 +1,8 @@
 import { motion } from 'framer-motion'
 import { useReservoir } from '../context/useReservoir'
-import { useAuth } from '../context/useAuth'
-import { StudentAccessGate } from '../components/StudentAccessGate'
 
 export function ReportsPage() {
   const { activeProject, results, getZMethodLabel } = useReservoir()
-  const { isGuest } = useAuth()
-
-  if (isGuest) {
-    return (
-      <motion.div
-        key="reports-guest-gate"
-        className="form-view-container"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-      >
-        <StudentAccessGate
-          title="Executive Gas Reserves Report and Export"
-          description="Detailed audit summaries, CSV spreadsheet downloads, and print-ready executive reports unlock with a free student account."
-          highlights={[
-            'Export volumetric, material balance, PRMS, and yearly schedule tables to CSV',
-            'Print formatted executive audit sheets for academic coursework and defense review',
-            'Access full Z-factor and water influx audit rows',
-          ]}
-        />
-      </motion.div>
-    )
-  }
 
   const aquiferName =
     results.activeAquiferModel === 'schilthuis'
@@ -40,10 +15,13 @@ export function ReportsPage() {
       ['Description', activeProject.description],
       ['Project Classification', results.recommendation.reservoirClass],
       ['Identified Fluid Type', results.classification.fluidType],
+      ['Gas-Oil Ratio GOR (scf/STB)', Math.round(results.gorScfStb)],
+      ['Condensate-Gas Ratio CGR (STB/MMscf)', results.cgrStbMmscf.toFixed(2)],
       ['Z-Factor Correlation', getZMethodLabel(results.activeZMethod)],
       ['Initial Z-Factor', results.zi],
       ['Aquifer Model', aquiferName],
       ['Original Gas in Place (Bscf)', results.volRes.giipBscf.toFixed(2)],
+      ['Forecast Gas in Place (Bscf)', results.forecastRes.giipBscf.toFixed(2)],
       ['Volumetric Gas MBE EUR We = 0 (Bscf)', results.mbeRes.volumetricMbeEurBscf.toFixed(2)],
       ['Hydraulic Water-Drive MBE EUR We > 0 (Bscf)', results.mbeRes.hydraulicMbeEurBscf.toFixed(2)],
       ['Cumulative Water Influx Active We (MMbbl)', (results.mbeRes.activeWeBbl / 1e6).toFixed(2)],
@@ -135,6 +113,12 @@ export function ReportsPage() {
           <span className="report-row-value">{results.classification.fluidType}</span>
         </div>
         <div className="report-table-row">
+          <span className="report-row-label">Gas-Oil Ratio GOR / CGR</span>
+          <span className="report-row-value">
+            {Math.round(results.gorScfStb).toLocaleString()} scf/STB ({results.cgrStbMmscf.toFixed(2)} STB/MMscf)
+          </span>
+        </div>
+        <div className="report-table-row">
           <span className="report-row-label">Z-Factor Correlation and Initial Z</span>
           <span className="report-row-value">
             {getZMethodLabel(results.activeZMethod)} ({results.zi})
@@ -153,6 +137,10 @@ export function ReportsPage() {
         <div className="report-table-row">
           <span className="report-row-label">Original Gas in Place (G)</span>
           <span className="report-row-value">{results.volRes.giipBscf.toFixed(2)} Bscf</span>
+        </div>
+        <div className="report-table-row">
+          <span className="report-row-label">Forecast Gas in Place (GIIP)</span>
+          <span className="report-row-value">{results.forecastRes.giipBscf.toFixed(2)} Bscf</span>
         </div>
         <div className="report-table-row">
           <span className="report-row-label">Volumetric Gas MBE EUR (We = 0)</span>

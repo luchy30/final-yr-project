@@ -28,6 +28,7 @@ export const DEFAULT_INPUTS = {
   abandonmentPressure: '500',
   temperature: '180',
   gasGravity: '0.65',
+  gor: '120000',
   cgr: '8.33',
   apiGravity: '55',
   zMethod: 'hall_yarborough',
@@ -44,13 +45,49 @@ export const DEFAULT_INPUTS = {
   providedZi: '',
   providedZa: '',
   targetDepletionYears: '',
+  forecastGiipBscf: '',
 }
 
 export const PROJECT_TEMPLATES = {
+  custom: {
+    label: 'Standard Baseline (Custom)',
+    description: 'Clean baseline parameters ready for custom field inputs across any fluid type.',
+    inputs: {
+      ...DEFAULT_INPUTS,
+      gor: '100000',
+      cgr: '10.00',
+    },
+  },
   dry_gas: {
-    label: 'Dry Gas Field (Default)',
+    label: 'Dry Gas Field',
     description: 'Volumetric or aquifer-supported dry gas reservoir evaluation.',
     inputs: { ...DEFAULT_INPUTS },
+  },
+  wet_gas: {
+    label: 'Wet Gas Field',
+    description: 'Single-phase wet gas reservoir with surface light condensate yield.',
+    inputs: {
+      ...DEFAULT_INPUTS,
+      area: '780',
+      thickness: '52',
+      porosity: '0.19',
+      waterSat: '0.24',
+      pressure: '3750',
+      abandonmentPressure: '600',
+      temperature: '195',
+      gasGravity: '0.68',
+      gor: '75000',
+      cgr: '13.33',
+      apiGravity: '62',
+      zMethod: 'hall_yarborough',
+      driveMechanism: 'volumetric',
+      aquiferModel: 'pot',
+      fieldStage: 'producing',
+      initialRate: '14000',
+      declineRate: '0.022',
+      arpsB: '0.5',
+      economicLimit: '550',
+    },
   },
   condensate: {
     label: 'Gas Condensate Field',
@@ -65,6 +102,7 @@ export const PROJECT_TEMPLATES = {
       abandonmentPressure: '800',
       temperature: '215',
       gasGravity: '0.72',
+      gor: '18500',
       cgr: '54.05',
       apiGravity: '52',
       zMethod: 'dak',
@@ -90,6 +128,7 @@ export const PROJECT_TEMPLATES = {
       abandonmentPressure: '350',
       temperature: '165',
       gasGravity: '0.62',
+      gor: '95000',
       cgr: '10.53',
       apiGravity: '58',
       zMethod: 'brill_beggs',
@@ -140,15 +179,25 @@ export const STARTER_PROJECTS = [
 
 export function normalizeInputs(rawInputs) {
   const merged = { ...DEFAULT_INPUTS, ...(rawInputs || {}) }
-  if (rawInputs && (rawInputs.cgr === undefined || rawInputs.cgr === null || rawInputs.cgr === '')) {
-    const legacyGor = parseFloat(rawInputs.gor)
-    if (Number.isFinite(legacyGor) && legacyGor > 0) {
-      merged.cgr = (1e6 / legacyGor).toFixed(2)
-    } else {
-      merged.cgr = DEFAULT_INPUTS.cgr
+  if (rawInputs) {
+    const hasGor = rawInputs.gor !== undefined && rawInputs.gor !== null && rawInputs.gor !== ''
+    const hasCgr = rawInputs.cgr !== undefined && rawInputs.cgr !== null && rawInputs.cgr !== ''
+    if (!hasGor && hasCgr) {
+      const parsedCgr = parseFloat(rawInputs.cgr)
+      if (Number.isFinite(parsedCgr) && parsedCgr > 0) {
+        merged.gor = String(Math.round(1e6 / parsedCgr))
+      } else if (parsedCgr === 0) {
+        merged.gor = '0'
+      }
+    } else if (hasGor && !hasCgr) {
+      const parsedGor = parseFloat(rawInputs.gor)
+      if (Number.isFinite(parsedGor) && parsedGor > 0) {
+        merged.cgr = (1e6 / parsedGor).toFixed(2)
+      } else if (parsedGor === 0) {
+        merged.cgr = '0'
+      }
     }
   }
-  delete merged.gor
   if (merged.aquiferModel !== 'pot' && merged.aquiferModel !== 'schilthuis') {
     merged.aquiferModel = 'pot'
   }
@@ -240,8 +289,17 @@ export function computeCompleteResults(rawConfig) {
   const pa = parseNumeric(config.abandonmentPressure, 500)
   const tempF = parseNumeric(config.temperature, 180)
   const gg = parseNumeric(config.gasGravity, 0.65)
-  const cgrVal = parseNumeric(config.cgr, 8.33, true)
-  const gorVal = cgrVal > 0 ? 1e6 / cgrVal : 0
+  const rawGor = parseNumeric(config.gor, -1, true)
+  const rawCgr = parseNumeric(config.cgr, -1, true)
+  let gorVal = 120000
+  let cgrVal = 8.33
+  if (rawGor >= 0) {
+    gorVal = rawGor
+    cgrVal = rawGor > 0 ? 1e6 / rawGor : 0
+  } else if (rawCgr >= 0) {
+    cgrVal = rawCgr
+    gorVal = rawCgr > 0 ? 1e6 / rawCgr : 0
+  }
   const apiVal = parseNumeric(config.apiGravity, 55)
 
   const activeZMethod = config.zMethod
@@ -425,9 +483,18 @@ export function computeCompleteResults(rawConfig) {
     trials: 2500,
   })
 
+  const providedForecastGiipBscf = parseNumeric(config.forecastGiipBscf, 0)
+  const effectiveForecastGiipBscf =
+    providedForecastGiipBscf > 0 ? providedForecastGiipBscf : volRes.giipBscf
+  const forecastScale =
+    providedForecastGiipBscf > 0 && volRes.giipBscf > 0
+      ? providedForecastGiipBscf / volRes.giipBscf
+      : 1
+
   const forecastRes = calcProductionForecast({
-    estimatedRecoverableBscf: recommendation.finalRecommendedEurBscf,
-    giipBscf: volRes.giipBscf,
+    estimatedRecoverableBscf: recommendation.finalRecommendedEurBscf * forecastScale,
+    giipBscf: effectiveForecastGiipBscf,
+    usingProvidedForecastGiip: providedForecastGiipBscf > 0,
     initialRateMscfDay: qInit,
     targetDepletionYears: targetYearsNum,
     nominalDeclineMonthly: dNom,
@@ -443,8 +510,9 @@ export function computeCompleteResults(rawConfig) {
   const forecastScenarios = {
     recommended: forecastRes,
     proved: calcProductionForecast({
-      estimatedRecoverableBscf: prmsRes.reserve1P,
-      giipBscf: volRes.giipBscf,
+      estimatedRecoverableBscf: prmsRes.reserve1P * forecastScale,
+      giipBscf: effectiveForecastGiipBscf,
+      usingProvidedForecastGiip: providedForecastGiipBscf > 0,
       initialRateMscfDay: qInit,
       targetDepletionYears: targetYearsNum,
       nominalDeclineMonthly: dNom,
@@ -457,8 +525,9 @@ export function computeCompleteResults(rawConfig) {
       hasWaterDrive,
     }),
     probable: calcProductionForecast({
-      estimatedRecoverableBscf: prmsRes.reserve2P,
-      giipBscf: volRes.giipBscf,
+      estimatedRecoverableBscf: prmsRes.reserve2P * forecastScale,
+      giipBscf: effectiveForecastGiipBscf,
+      usingProvidedForecastGiip: providedForecastGiipBscf > 0,
       initialRateMscfDay: qInit,
       targetDepletionYears: targetYearsNum,
       nominalDeclineMonthly: dNom,
@@ -471,8 +540,9 @@ export function computeCompleteResults(rawConfig) {
       hasWaterDrive,
     }),
     possible: calcProductionForecast({
-      estimatedRecoverableBscf: prmsRes.reserve3P,
-      giipBscf: volRes.giipBscf,
+      estimatedRecoverableBscf: prmsRes.reserve3P * forecastScale,
+      giipBscf: effectiveForecastGiipBscf,
+      usingProvidedForecastGiip: providedForecastGiipBscf > 0,
       initialRateMscfDay: qInit,
       targetDepletionYears: targetYearsNum,
       nominalDeclineMonthly: dNom,
@@ -587,7 +657,10 @@ export function computeCompleteResults(rawConfig) {
 
   return {
     classification,
+    gorScfStb: gorVal,
     cgrStbMmscf: cgrVal,
+    forecastGiipBscf: effectiveForecastGiipBscf,
+    usingProvidedForecastGiip: providedForecastGiipBscf > 0,
     prelimWetProps,
     wetProps,
     effectiveGasGravity: effectiveGasGravity.toFixed(3),
