@@ -246,9 +246,6 @@ export function CalculationsPage() {
                 onChange={(e) => setGor(e.target.value)}
                 className="standard-input"
               />
-              <span className="auth-field-hint">
-                Reciprocal relation: GOR = 1,000,000 / CGR
-              </span>
             </div>
 
             <div className="input-cell">
@@ -261,9 +258,6 @@ export function CalculationsPage() {
                 onChange={(e) => setCgr(e.target.value)}
                 className="standard-input"
               />
-              <span className="auth-field-hint">
-                Reciprocal relation: CGR = 1,000,000 / GOR
-              </span>
             </div>
 
             <div className="input-cell">

@@ -179,28 +179,6 @@ export const STARTER_PROJECTS = [
 
 export function normalizeInputs(rawInputs) {
   const merged = { ...DEFAULT_INPUTS, ...(rawInputs || {}) }
-  if (rawInputs) {
-    const hasGor = rawInputs.gor !== undefined && rawInputs.gor !== null && rawInputs.gor !== ''
-    const hasCgr = rawInputs.cgr !== undefined && rawInputs.cgr !== null && rawInputs.cgr !== ''
-    if (!hasGor && hasCgr) {
-      const parsedCgr = parseFloat(rawInputs.cgr)
-      if (Number.isFinite(parsedCgr) && parsedCgr > 0) {
-        merged.gor = String(Math.round(1e6 / parsedCgr))
-      } else if (parsedCgr === 0) {
-        merged.gor = '0'
-      }
-    } else if (hasGor && !hasCgr) {
-      const parsedGor = parseFloat(rawInputs.gor)
-      if (Number.isFinite(parsedGor) && parsedGor > 0) {
-        merged.cgr = String(Number((1e6 / parsedGor).toFixed(4)))
-      } else if (parsedGor === 0) {
-        merged.cgr = '0'
-      }
-    } else if (!hasGor && !hasCgr && (rawInputs.gor === '' || rawInputs.cgr === '')) {
-      merged.gor = ''
-      merged.cgr = ''
-    }
-  }
   if (merged.aquiferModel !== 'pot' && merged.aquiferModel !== 'schilthuis') {
     merged.aquiferModel = 'pot'
   }
@@ -292,20 +270,8 @@ export function computeCompleteResults(rawConfig) {
   const pa = parseNumeric(config.abandonmentPressure, 500)
   const tempF = parseNumeric(config.temperature, 180)
   const gg = parseNumeric(config.gasGravity, 0.65)
-  const rawGor = parseNumeric(config.gor, -1, true)
-  const rawCgr = parseNumeric(config.cgr, -1, true)
-  let gorVal = 120000
-  let cgrVal = 8.3333
-  if (rawGor >= 0 && rawCgr >= 0) {
-    gorVal = rawGor
-    cgrVal = rawCgr
-  } else if (rawGor >= 0) {
-    gorVal = rawGor
-    cgrVal = rawGor > 0 ? 1e6 / rawGor : 0
-  } else if (rawCgr >= 0) {
-    cgrVal = rawCgr
-    gorVal = rawCgr > 0 ? 1e6 / rawCgr : 0
-  }
+  const gorVal = parseNumeric(config.gor, 120000, true)
+  const cgrVal = parseNumeric(config.cgr, 8.33, true)
   const apiVal = parseNumeric(config.apiGravity, 55)
 
   const activeZMethod = config.zMethod
@@ -327,6 +293,7 @@ export function computeCompleteResults(rawConfig) {
 
   const prelimWetProps = calcWetGasProperties({
     gorScfStb: gorVal,
+    cgrStbMmscf: cgrVal,
     apiGravity: apiVal,
     surfaceGasGravity: gg,
     wellStreamGasInPlaceScf: 0,
@@ -403,6 +370,7 @@ export function computeCompleteResults(rawConfig) {
 
   const wetProps = calcWetGasProperties({
     gorScfStb: gorVal,
+    cgrStbMmscf: cgrVal,
     apiGravity: apiVal,
     surfaceGasGravity: gg,
     wellStreamGasInPlaceScf: volRes.giipScf,

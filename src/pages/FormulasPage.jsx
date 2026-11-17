@@ -487,38 +487,38 @@ export function FormulasPage() {
           </div>
         )}
 
-        {/* Section 10: GOR and CGR Relationship */}
-        {matches('gor cgr condensate gas ratio yield reciprocal wellstream api gravity') && (
+        {/* Section 10: Wellstream and Condensate Properties */}
+        {matches('condensate yield wellstream api gravity gas equivalent') && (
           <div className="standard-card">
             <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem', color: 'var(--text-main)' }}>
-              10. Gas-Oil Ratio (GOR) and Condensate-Gas Ratio (CGR) Relationship
+              10. Gas-Condensate and Wellstream Gravity Properties
             </h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
-              Because 1 MMscf equals 1,000,000 scf, GOR (scf/STB) and CGR (STB/MMscf) are exact reciprocals scaled by 10^6, while condensate API gravity independently sets liquid density for wellstream correction.
+              Specific gravity, condensate gas equivalent, and wellstream gravity corrections computed independently from GOR, CGR, and condensate API gravity inputs.
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.25rem' }}>
               <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                  Reciprocal GOR and CGR Unit Conversion
+                  Condensate Specific Gravity and Equivalent
                 </div>
                 <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                  <Latex block math="\text{CGR}\;(\text{STB/MMscf}) = \frac{10^6}{\text{GOR}\;(\text{scf/STB})}" />
+                  <Latex block math="\gamma_o = \frac{141.5}{131.5 + \text{API}}, \qquad M_o = \frac{6084}{\text{API} - 5.9}" />
                 </div>
                 <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                  <Latex block math="\text{GOR}\;(\text{scf/STB}) = \frac{10^6}{\text{CGR}\;(\text{STB/MMscf})}, \qquad \text{GOR} \times \text{CGR} = 10^6" />
+                  <Latex block math="G_E = \frac{133{,}000 \, \gamma_o}{M_o}" />
                 </div>
               </div>
 
               <div style={{ backgroundColor: 'var(--bg-element)', padding: '1.25rem', borderRadius: '10px', minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                  Wellstream Gravity and Condensate Equivalent (GE)
-                </div>
-                <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
-                  <Latex block math="\gamma_o = \frac{141.5}{131.5 + \text{API}}, \qquad G_E = \frac{133{,}000 \, \gamma_o}{M_o}" />
+                  Wellstream Specific Gravity
                 </div>
                 <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
                   <Latex block math="\gamma_w = \frac{\text{GOR} \cdot \gamma_g + 4602 \, \gamma_o}{\text{GOR} + G_E}" />
+                </div>
+                <div style={{ overflowX: 'auto', padding: '0.35rem 0' }}>
+                  <Latex block math="N_c = \text{CGR} \cdot \frac{G}{10^6} \quad [\text{STB}]" />
                 </div>
               </div>
             </div>

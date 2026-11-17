@@ -303,8 +303,16 @@ export function calcBg({ pressurePsia, tempR, zFactor }) {
 }
 
 // Wet Gas and Condensate Equivalent Properties
-export function calcWetGasProperties({ gorScfStb, apiGravity, surfaceGasGravity, wellStreamGasInPlaceScf }) {
+export function calcWetGasProperties({
+  gorScfStb,
+  cgrStbMmscf,
+  apiGravity,
+  surfaceGasGravity,
+  wellStreamGasInPlaceScf,
+}) {
   const gorRaw = Number(gorScfStb)
+  const cgrRaw = Number(cgrStbMmscf)
+  const hasExplicitCgr = Number.isFinite(cgrRaw) && cgrRaw >= 0
   const api = Number(apiGravity) > 10 ? Number(apiGravity) : 55
   const gg = Number(surfaceGasGravity) > 0 ? Number(surfaceGasGravity) : 0.65
   const gt = Number(wellStreamGasInPlaceScf) > 0 ? Number(wellStreamGasInPlaceScf) : 0
@@ -314,6 +322,7 @@ export function calcWetGasProperties({ gorScfStb, apiGravity, surfaceGasGravity,
   const gasEquivalentGE = (133000 * gammaO) / molecularWeightMo
 
   if (!Number.isFinite(gorRaw) || gorRaw <= 0) {
+    const yieldVal = hasExplicitCgr ? cgrRaw : 0
     return {
       gammaO,
       molecularWeightMo,
@@ -321,8 +330,8 @@ export function calcWetGasProperties({ gorScfStb, apiGravity, surfaceGasGravity,
       wellStreamGravity: gg,
       dryGasFraction: 1,
       surfaceGasInPlaceScf: gt,
-      initialCondensateInPlaceStb: 0,
-      condensateYieldStbMmscf: 0,
+      initialCondensateInPlaceStb: (yieldVal * gt) / 1e6,
+      condensateYieldStbMmscf: yieldVal,
     }
   }
 
@@ -330,8 +339,10 @@ export function calcWetGasProperties({ gorScfStb, apiGravity, surfaceGasGravity,
   const wellStreamGravity = (gor * gg + 4602 * gammaO) / (gor + gasEquivalentGE)
   const dryGasFraction = gor / (gor + gasEquivalentGE)
   const surfaceGasInPlaceScf = dryGasFraction * gt
-  const initialCondensateInPlaceStb = gt / (gor + gasEquivalentGE)
-  const condensateYieldStbMmscf = 1e6 / gor
+  const condensateYieldStbMmscf = hasExplicitCgr ? cgrRaw : 1e6 / gor
+  const initialCondensateInPlaceStb = hasExplicitCgr
+    ? (cgrRaw * gt) / 1e6
+    : gt / (gor + gasEquivalentGE)
 
   return {
     gammaO,

@@ -202,41 +202,6 @@ export function ReservoirProvider({ user, children }) {
     updateActiveProjectInputs({ [key]: val })
   }
 
-  const handleSetGor = (val) => {
-    const trimmed = String(val ?? '').trim()
-    if (trimmed === '') {
-      updateActiveProjectInputs({ gor: '', cgr: '' })
-      return
-    }
-    const parsed = parseFloat(trimmed)
-    if (Number.isFinite(parsed) && parsed > 0) {
-      updateActiveProjectInputs({
-        gor: val,
-        cgr: String(Number((1e6 / parsed).toFixed(4))),
-      })
-    } else if (trimmed === '0') {
-      updateActiveProjectInputs({ gor: '0', cgr: '0' })
-    } else {
-      updateActiveProjectInputs({ gor: val })
-    }
-  }
-
-  const handleSetCgr = (val) => {
-    const trimmed = String(val ?? '').trim()
-    if (trimmed === '') {
-      updateActiveProjectInputs({ cgr: '', gor: '' })
-      return
-    }
-    const parsed = parseFloat(trimmed)
-    if (Number.isFinite(parsed) && parsed > 0) {
-      updateActiveProjectInputs({ cgr: val, gor: String(Math.round(1e6 / parsed)) })
-    } else if (trimmed === '0') {
-      updateActiveProjectInputs({ cgr: '0', gor: '0' })
-    } else {
-      updateActiveProjectInputs({ cgr: val })
-    }
-  }
-
   const handleSetDeclineModel = (nextModel) => {
     if (nextModel === 'exponential') {
       updateActiveProjectInputs({ declineModel: nextModel, arpsB: '0' })
@@ -477,9 +442,9 @@ export function ReservoirProvider({ user, children }) {
     gasGravity: activeInputs.gasGravity,
     setGasGravity: makeFieldSetter('gasGravity'),
     gor: activeInputs.gor,
-    setGor: handleSetGor,
+    setGor: makeFieldSetter('gor'),
     cgr: activeInputs.cgr,
-    setCgr: handleSetCgr,
+    setCgr: makeFieldSetter('cgr'),
     apiGravity: activeInputs.apiGravity,
     setApiGravity: makeFieldSetter('apiGravity'),
     zMethod: activeInputs.zMethod,
