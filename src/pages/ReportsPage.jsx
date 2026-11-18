@@ -56,7 +56,7 @@ export function ReportsPage() {
       ['Calculated Economic Limit qa (Mscf/day)', results.forecastRes.qaMscfDay],
       [
         'Producing / Production Time (Years)',
-        results.productionTimeYears > 0 ? results.productionTimeYears : 'Default (1080 days)',
+        results.productionTimeYears > 0 ? results.productionTimeYears : 'Not Provided',
       ],
       ['Estimated Depletion Time (Years)', results.forecastRes.yearsToDeplete.toFixed(2)],
       ['PRMS 1P Proved Reserves (Bscf)', results.prmsRes.reserve1P.toFixed(2)],
@@ -198,7 +198,7 @@ export function ReportsPage() {
           <span className="report-row-value">
             {results.productionTimeYears > 0
               ? `${results.productionTimeYears} years (${Math.round(results.productionTimeDays).toLocaleString()} days)`
-              : 'Default (3.0 years / 1,080 days)'}
+              : 'Not Provided'}
           </span>
         </div>
         <div className="report-table-row">

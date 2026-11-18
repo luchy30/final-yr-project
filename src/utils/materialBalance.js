@@ -176,7 +176,7 @@ export function calcMaterialBalanceAndDriveIndices({
   rockCompressibilityPsi = 4e-6,
   aquiferModel = 'fetkovich',
   driveMechanism = 'volumetric',
-  productionTimeDays = 1080,
+  productionTimeDays = 0,
   calcZFunc,
   calcBgFunc,
   aquiferProps,
@@ -197,7 +197,7 @@ export function calcMaterialBalanceAndDriveIndices({
   const piOverZi = zi > 0 ? pi / zi : pi
 
   const steps = 6
-  const totalInfluxDays = Number(productionTimeDays) > 0 ? Number(productionTimeDays) : 1080
+  const totalInfluxDays = Number(productionTimeDays) > 0 ? Number(productionTimeDays) : 0
   const deltaInfluxDays = totalInfluxDays / steps
   const pzComparisonCurve = []
   const pzVsGpCurve = []

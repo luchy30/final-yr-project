@@ -387,7 +387,7 @@ export function computeCompleteResults(rawConfig) {
   })
 
   const prodTimeYearsVal = parseNumeric(config.productionTimeYears, 0)
-  const productionTimeDaysVal = prodTimeYearsVal > 0 ? prodTimeYearsVal * 365.25 : 1080
+  const productionTimeDaysVal = prodTimeYearsVal > 0 ? prodTimeYearsVal * 365.25 : 0
   const productionTimeMonthsVal = prodTimeYearsVal > 0 ? prodTimeYearsVal * 12 : 0
 
   const mbeRes = calcMaterialBalanceAndDriveIndices({
