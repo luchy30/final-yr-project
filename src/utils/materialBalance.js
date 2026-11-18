@@ -176,6 +176,7 @@ export function calcMaterialBalanceAndDriveIndices({
   rockCompressibilityPsi = 4e-6,
   aquiferModel = 'fetkovich',
   driveMechanism = 'volumetric',
+  productionTimeDays = 1080,
   calcZFunc,
   calcBgFunc,
   aquiferProps,
@@ -196,6 +197,8 @@ export function calcMaterialBalanceAndDriveIndices({
   const piOverZi = zi > 0 ? pi / zi : pi
 
   const steps = 6
+  const totalInfluxDays = Number(productionTimeDays) > 0 ? Number(productionTimeDays) : 1080
+  const deltaInfluxDays = totalInfluxDays / steps
   const pzComparisonCurve = []
   const pzVsGpCurve = []
   const havlenaOdehPoints = []
@@ -228,8 +231,8 @@ export function calcMaterialBalanceAndDriveIndices({
         prevPressurePsia: pPrev,
         prevAquiferPressurePsia: paqPrev,
         prevWeBbl: weBbl,
-        deltaTimeDays: 180,
-        totalTimeDays: i * 180,
+        deltaTimeDays: deltaInfluxDays,
+        totalTimeDays: i * deltaInfluxDays,
       })
       weBbl = influxStep.weBbl
       paqPrev = influxStep.nextAquiferPressure

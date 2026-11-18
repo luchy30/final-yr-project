@@ -473,6 +473,8 @@ export function ReservoirProvider({ user, children }) {
     setProvidedZa: makeFieldSetter('providedZa'),
     targetDepletionYears: activeInputs.targetDepletionYears ?? '',
     setTargetDepletionYears: makeFieldSetter('targetDepletionYears'),
+    productionTimeYears: activeInputs.productionTimeYears ?? '',
+    setProductionTimeYears: makeFieldSetter('productionTimeYears'),
     forecastGiipBscf: activeInputs.forecastGiipBscf ?? '',
     setForecastGiipBscf: makeFieldSetter('forecastGiipBscf'),
     economicLimit: activeInputs.economicLimit,

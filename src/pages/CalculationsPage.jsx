@@ -59,6 +59,8 @@ export function CalculationsPage() {
     setProvidedZa,
     targetDepletionYears,
     setTargetDepletionYears,
+    productionTimeYears,
+    setProductionTimeYears,
     forecastGiipBscf,
     setForecastGiipBscf,
     handleCalculate,
@@ -435,6 +437,19 @@ export function CalculationsPage() {
                 placeholder="Leave blank to compute years from qi"
                 value={targetDepletionYears}
                 onChange={(e) => setTargetDepletionYears(e.target.value)}
+                className="standard-input"
+              />
+            </div>
+
+            <div className="input-cell">
+              <label htmlFor="productionTimeYears">Producing / Production Time t (years, Optional)</label>
+              <input
+                id="productionTimeYears"
+                type="number"
+                step="any"
+                placeholder="Used for aquifer influx, DCA horizon, and rate at t"
+                value={productionTimeYears}
+                onChange={(e) => setProductionTimeYears(e.target.value)}
                 className="standard-input"
               />
             </div>

@@ -45,6 +45,7 @@ export const DEFAULT_INPUTS = {
   providedZi: '',
   providedZa: '',
   targetDepletionYears: '',
+  productionTimeYears: '',
   forecastGiipBscf: '',
 }
 
@@ -385,6 +386,10 @@ export function computeCompleteResults(rawConfig) {
     initialPressurePsia: pi,
   })
 
+  const prodTimeYearsVal = parseNumeric(config.productionTimeYears, 0)
+  const productionTimeDaysVal = prodTimeYearsVal > 0 ? prodTimeYearsVal * 365.25 : 1080
+  const productionTimeMonthsVal = prodTimeYearsVal > 0 ? prodTimeYearsVal * 12 : 0
+
   const mbeRes = calcMaterialBalanceAndDriveIndices({
     giipScf: volRes.giipScf,
     initialPressurePsia: pi,
@@ -395,6 +400,7 @@ export function computeCompleteResults(rawConfig) {
     residualGasSat: sgr,
     aquiferModel: activeAquiferModel,
     driveMechanism: activeDriveMechanism,
+    productionTimeDays: productionTimeDaysVal,
     calcZFunc: (pVal) =>
       computeZByMethod(
         pVal,
@@ -425,6 +431,7 @@ export function computeCompleteResults(rawConfig) {
     targetEurBscf: preliminaryTargetEurBscf,
     piPsia: pi,
     paPsia: pa,
+    forecastMonths: productionTimeMonthsVal,
     activeModel: activeDeclineModel,
   })
 
@@ -635,6 +642,8 @@ export function computeCompleteResults(rawConfig) {
     cgrStbMmscf: cgrVal,
     forecastGiipBscf: effectiveForecastGiipBscf,
     usingProvidedForecastGiip: providedForecastGiipBscf > 0,
+    productionTimeYears: prodTimeYearsVal,
+    productionTimeDays: productionTimeDaysVal,
     prelimWetProps,
     wetProps,
     effectiveGasGravity: effectiveGasGravity.toFixed(3),

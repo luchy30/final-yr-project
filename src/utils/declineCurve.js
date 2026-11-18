@@ -160,10 +160,33 @@ export function calcArpsDecline({
 
   // Build decline forecast series up to 105% of active model's economic limit time
   const defaultHorizonMonths = Math.min(600, Math.max(36, Math.ceil(activeTaMonths || 36)))
-  const horizonMonths = Number(forecastMonths) > 0 ? Number(forecastMonths) : defaultHorizonMonths
+  const explicitMonths = Number(forecastMonths) > 0 ? Number(forecastMonths) : 0
+  const horizonMonths = explicitMonths > 0 ? explicitMonths : defaultHorizonMonths
   const totalPoints = 48
   const stepMonths = Math.max(1, Math.ceil(horizonMonths / totalPoints))
   const dcaCurve = []
+
+  const evalArpsAtMonth = (mVal) => {
+    if (activeModel === 'exponential' || activeB === 0) {
+      const q = qi * Math.exp(-Di * mVal)
+      const gp = (((qi - q) / Di) * daysPerMonth) / 1e6
+      return { q, gp }
+    }
+    if (activeModel === 'harmonic' || activeB === 1) {
+      const q = qi / (1 + Di * mVal)
+      const gp = (((qi / Di) * Math.log(qi / q)) * daysPerMonth) / 1e6
+      return { q, gp }
+    }
+    const q = qi / Math.pow(1 + activeB * Di * mVal, 1 / activeB)
+    const gp =
+      (((Math.pow(qi, activeB) / ((1 - activeB) * Di)) *
+        (Math.pow(qi, 1 - activeB) - Math.pow(q, 1 - activeB))) *
+        daysPerMonth) /
+      1e6
+    return { q, gp }
+  }
+
+  const horizonEval = explicitMonths > 0 ? evalArpsAtMonth(explicitMonths) : null
 
   for (let m = 0; m <= horizonMonths; m += stepMonths) {
     const qExp = qi * Math.exp(-Di * m)
@@ -184,7 +207,7 @@ export function calcArpsDecline({
       economicLimit: Math.round(qa),
     })
 
-    if (qExp < qa && qHyp < qa && qHarm < qa && m > 24) {
+    if (explicitMonths <= 0 && qExp < qa && qHyp < qa && qHarm < qa && m > 24) {
       break
     }
   }
@@ -192,6 +215,8 @@ export function calcArpsDecline({
   return {
     bExponent: activeB,
     estimatedEconomicLimitMscfDay: Math.round(qa),
+    rateAtHorizonMscfDay: horizonEval ? Math.round(horizonEval.q) : null,
+    gpAtHorizonBscf: horizonEval ? Number(horizonEval.gp.toFixed(2)) : null,
     effectiveMonthlyExp,
     effectiveMonthlyHyp,
     effectiveMonthlyHarm,

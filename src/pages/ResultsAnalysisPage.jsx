@@ -949,6 +949,22 @@ export function ResultsAnalysisPage() {
                   <span className="data-label">Aquifer Influx Potential (We)</span>
                   <span className="data-value">{(results.mbeRes.aquiferPotentialWeBbl / 1e6).toFixed(2)} MMbbl</span>
                 </div>
+                <div className="data-item">
+                  <span className="data-label">Producing / Production Time</span>
+                  <span className="data-value">
+                    {results.productionTimeYears > 0
+                      ? `${results.productionTimeYears} years (${Math.round(results.productionTimeDays).toLocaleString()} days)`
+                      : 'Default (3.0 years / 1,080 days)'}
+                  </span>
+                </div>
+                {results.productionTimeYears > 0 && results.dcaRes.rateAtHorizonMscfDay !== null && (
+                  <div className="data-item">
+                    <span className="data-label">Arps Output at t = {results.productionTimeYears} yrs</span>
+                    <span className="data-value">
+                      {results.dcaRes.rateAtHorizonMscfDay.toLocaleString()} Mscf/d ({results.dcaRes.gpAtHorizonBscf.toFixed(2)} Bscf)
+                    </span>
+                  </div>
+                )}
               </div>
             </CollapsibleSection>
           )}

@@ -54,6 +54,10 @@ export function ReportsPage() {
       ['Estimated Ultimate Recovery (Bscf)', results.recommendation.finalRecommendedEurBscf.toFixed(2)],
       ['Assumed Production Rate qi (Mscf/day)', results.forecastRes.qiMscfDay],
       ['Calculated Economic Limit qa (Mscf/day)', results.forecastRes.qaMscfDay],
+      [
+        'Producing / Production Time (Years)',
+        results.productionTimeYears > 0 ? results.productionTimeYears : 'Default (1080 days)',
+      ],
       ['Estimated Depletion Time (Years)', results.forecastRes.yearsToDeplete.toFixed(2)],
       ['PRMS 1P Proved Reserves (Bscf)', results.prmsRes.reserve1P.toFixed(2)],
       ['PRMS Incremental Probable Reserves (Bscf)', results.prmsRes.probableIncrementalBscf.toFixed(2)],
@@ -188,6 +192,14 @@ export function ReportsPage() {
         <div className="report-table-row">
           <span className="report-row-label">Calculated Economic Limit (qa Output)</span>
           <span className="report-row-value accent">{results.forecastRes.qaMscfDay.toLocaleString()} Mscf/day</span>
+        </div>
+        <div className="report-table-row">
+          <span className="report-row-label">Producing / Production Time (t)</span>
+          <span className="report-row-value">
+            {results.productionTimeYears > 0
+              ? `${results.productionTimeYears} years (${Math.round(results.productionTimeDays).toLocaleString()} days)`
+              : 'Default (3.0 years / 1,080 days)'}
+          </span>
         </div>
         <div className="report-table-row">
           <span className="report-row-label">Estimated Depletion Time (Reserve-Matched)</span>
